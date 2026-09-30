@@ -20,7 +20,7 @@ def test_registry_is_well_formed():
     assert len({e["id"] for e in raw}) == len(raw), "duplicate metric ids"
     for e in raw:
         assert {"id", "label", "description", "unit", "higher_is_better", "format", "min_sample", "source"} <= set(e)
-        assert e["unit"] in {"count", "rate", "pct", "per90", "prob", "odds"}, e["id"]
+        assert e["unit"] in {"count", "rate", "pct", "per90", "prob", "odds", "score100"}, e["id"]
         assert e["higher_is_better"] in (True, False, None), e["id"]
         assert e["label"] and e["description"] and e["format"], e["id"]
         assert isinstance(e["min_sample"], int) and e["min_sample"] > 0

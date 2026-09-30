@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 
 import metrics as M
+import style
 
 ROOT = Path(__file__).parent
 PROCESSED = ROOT / "data" / "processed"
@@ -229,6 +230,9 @@ def esc(t) -> str:
 def glossary_html() -> str:
     seen, parts = set(), []
     groups = [(t, [i for i in ids if i in M.REGISTRY]) for t, ids in GLOSSARY_GROUPS]
+    scfg = style.load_config()
+    groups.append(("Style of play (proxy scores, not good or bad)",
+                   [p["index_id"] for p in scfg["phases"].values()] + list(scfg["axes"]) + list(scfg["kpis"])))
     for _, ids in groups:
         seen.update(ids)
     rest = [i for i in M.REGISTRY if i not in seen]

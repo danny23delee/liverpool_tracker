@@ -201,3 +201,9 @@ The first CI run of the redesign failed two browser tests that pass on Windows: 
 ### Style of play: S1 ETL (2026-09-30)
 - `etl.build_style_raw` adds `data/processed/style_raw.parquet` (260 club-seasons × raw zone/speed/PPDA/deep/xGChain aggregates, 80 KB) from the already-cached team pages, league history and league player table. **0 new requests, 0 new raw data.**
 - Tests (17 in `test_etl.py`, +3): 20 clubs per season and match counts equal the team-match table; zone and speed splits add up to total shots for and against in every club-season; league shots for = against; Liverpool's shots for and against equal the shot-level dataset exactly in all 13 seasons (own goals accounted for), and Understat's in-box counts agree with a geometric classification within 6%.
+
+### Style of play: S2 scoring, config, registry (2026-09-30)
+- `config/style.json` holds phases, axes, KPIs (sign, unit, source, confidence), transform, min KPIs, the central-rectangle assumption and the external CSV path. `style.py` holds the KPI formulas (keyed by KPI id), z-scores, re-standardisation, Φ or percentile transform, competition ranking, composite indices (partial flag, none below 2 axes), the optional external CSV hook and the dashboard payload.
+- `metrics.json` gains 49 entries (9 axes, 3 indices, 17 KPIs, plus section entries): unit `score100`, `higher_is_better: null`, `status` (proxy or external) and `confidence`. The glossary gets a "Style of play" group.
+- `tests/test_style.py` (hand-computed fixtures): z-score mean 0 and unit sd, sign handling for Active and Tight, single-KPI axis is null, scores in (0, 100) and a mean club at 50, tie rule, composite and partial flags, box and central-rectangle boundaries, Liverpool reconciliation, 20 clubs per season, external CSV override / enable / reject / absent.
+- All non-browser tests pass (88). Open: payload wiring and UI (S3 onward).
