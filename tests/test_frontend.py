@@ -1268,9 +1268,10 @@ def test_open_drawer_is_sized_to_its_content(page):
         m = page.evaluate("""() => { const d = document.querySelector('[data-testid=drawer]'), kids = [...d.children], last = kids[kids.length - 1];
             const db = d.getBoundingClientRect(), lb = last.getBoundingClientRect(), pad = parseFloat(getComputedStyle(d).paddingBottom);
             return {scroll: d.scrollHeight - d.clientHeight, bandBelowContent: db.bottom - lb.bottom - pad, stage: document.querySelector('.stage').getBoundingClientRect().height, height: db.height}; }""")
-        assert m["scroll"] <= 1, (route, m)                 # no internal scrolling: the panel is as tall as its content
-        assert m["bandBelowContent"] < 4, (route, m)         # and no empty band under the last block
         assert m["height"] <= m["stage"] + 1
+        if m["height"] < m["stage"] - 2:  # content taller than the stage is capped at the stage height and scrolls inside (by design; fonts differ per OS)
+            assert m["scroll"] <= 1, (route, m)           # otherwise no internal scrolling: the panel is as tall as its content
+            assert m["bandBelowContent"] < 4, (route, m)   # and no empty band under the last block
 
 
 def test_threat_mix_appears_exactly_once_on_attack_and_inside_the_drawer(page):
@@ -1351,4 +1352,29 @@ def test_crest_falls_back_to_a_red_bar_without_errors(browser, data, tmp_path):
     for route in PAGES:
         go(pg, route, "2025-26")
     assert pg.errors == []
+    ctx.close()
+
+
+@pytest.mark.parametrize("width", [390, 768])
+def test_no_overflow_with_wide_fallback_fonts(browser, data, width):
+    """The web fonts are stubbed in tests and may fail to load for real users, so layouts must survive the widest
+    system fallback (the runner falls back to DejaVu Sans, much wider than Barlow Condensed): nothing outside a
+    scroll container may extend past the screen, on any page."""
+    ctx, pg = _new_page(browser, width, 900)
+    pg.goto(DIST.as_uri())
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    pg.evaluate("""() => { const s = document.documentElement.style, f = '"DejaVu Sans", Verdana, sans-serif'; s.setProperty('--font-body', f); s.setProperty('--font-display', f); }""")
+    bad = []
+    for theme in ("dark", "light"):
+        pg.evaluate("t => { document.documentElement.dataset.theme = t }", theme)
+        for route in PAGES:
+            for season in (data["default_season"], "all", "2026-27", "2014-15"):
+                go(pg, route, season)
+                res = pg.evaluate("""() => { const w = innerWidth, off = [];
+                    document.querySelectorAll('body *').forEach(e => { const r = e.getBoundingClientRect();
+                      if (r.width && r.right > w + 1 && !e.closest('.tbl-x, .chart-wrap, .sq-wrap, .tbl-scroll, .shot-list, .nav, pre, .chart-fill, details.tbl')) off.push((e.className && e.className.baseVal === undefined ? e.className : e.tagName) + ':' + (e.textContent || '').trim().slice(0, 20)); });
+                    return [document.documentElement.scrollWidth <= w + 1, off.slice(0, 3)]; }""")
+                if not res[0] or res[1]:
+                    bad.append((theme, route, season, res[1]))
+    assert bad == [], bad[:6]
     ctx.close()
