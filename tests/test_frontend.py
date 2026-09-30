@@ -97,6 +97,12 @@ def go(page, route, season, era="all", extra=""):
         addEventListener('hashchange', () => setTimeout(r, 0), {once: true}); location.hash = h; })""", h)
 
 
+def open_drawer(page):
+    page.click("[data-testid=drawer-tab]")
+    page.wait_for_function("document.querySelector('.stage').classList.contains('open')")
+    page.locator("[data-testid=drawer]").wait_for(state="visible")
+
+
 def visible_text(page):
     return page.evaluate(VISIBLE_TEXT_JS)
 
@@ -291,6 +297,7 @@ def _table_rows(locator):
 
 def test_attack_shot_map_stats_and_filters_match_data(page):
     go(page, "attack", "2024-25")
+    open_drawer(page)
     liv = _shots("2024-25")
 
     def n():
@@ -324,13 +331,13 @@ def test_pitch_proportions_and_transforms(page):
     pitch = page.eval_on_selector("[data-chart=attack] svg rect", "e => [+e.getAttribute('width'), +e.getAttribute('height')]")
     assert pitch == [105, 68]  # true 105 x 68 m proportions
     liv = _shots("2025-26")
-    exp = sorted((round(105 * x, 3), round(68 * y, 3)) for x, y in zip(liv.x, liv.y) if 105 * x >= 36)
+    exp = sorted((round(105 * x, 3), round(68 * y, 3)) for x, y in zip(liv.x, liv.y))  # the whole pitch: every shot is plotted
     assert _circles(page, "attack") == exp  # attack drawn as-is, towards the right goal
     go(page, "defence", "2025-26")
     opp = _shots("2025-26", liverpool=False)
-    exp = sorted((round(105 * (1 - x), 3), round(68 * (1 - y), 3)) for x, y in zip(opp.x, opp.y) if 105 * (1 - x) <= 69)
+    exp = sorted((round(105 * (1 - x), 3), round(68 * (1 - y), 3)) for x, y in zip(opp.x, opp.y))
     assert _circles(page, "defence") == exp  # opposition shots rotated: Liverpool defend the left goal
-    assert int(page.inner_text("[data-stat=shots]")) == len(opp)
+    assert int(page.text_content("[data-stat=shots]").replace(",", "")) == len(opp)
 
 
 def test_finishing_chart_and_source_mix_match_data(page):
@@ -352,7 +359,7 @@ def test_finishing_chart_and_source_mix_match_data(page):
     for name, shots, goals, xg, diff in rows:
         assert int(goals) == npl.loc[name].goals and xg == f"{npl.loc[name].xg:.2f}", name
     # source mix: xG by source equals pandas
-    mix = _table_rows(page.locator("section[aria-label='Threat source mix']").locator("tbody tr"))
+    mix = _table_rows(page.locator("[aria-label='Threat source mix']").locator("tbody tr"))
     src = liv.situation.map({"OpenPlay": "Open play", "FromCorner": "Set pieces", "SetPiece": "Set pieces",
                              "DirectFreekick": "Set pieces", "Penalty": "Penalties"})
     for _, name, xg, shots, goals in mix:
@@ -382,11 +389,11 @@ def test_defence_charts_and_clean_sheets(page, data):
         assert page.locator("[data-strip=clean-sheets] i.cs").count() == sel["record"]["clean_sheets"]
         assert num(page.inner_text("[data-metric=clean_sheets]")) == sel["record"]["clean_sheets"]
         assert page.locator("[data-chart=xga-trend] line[stroke-dasharray]").count() == 1  # league average line
-        mix = page.locator("section[aria-label='Open play vs set piece xGA'] tbody tr").evaluate_all("trs => trs.map(t => t.children[2].textContent)")
+        mix = page.locator("[aria-label='Open play vs set piece xGA'] tbody tr").evaluate_all("trs => trs.map(t => t.children[2].textContent)")
         assert sum(float(x) for x in mix) == pytest.approx(sel["record"]["xga"], abs=0.2)
     go(page, "defence", "all")
     assert page.locator("[data-chart=xga-trend] line[stroke-dasharray]").count() == 13  # per-season league averages
-    assert page.locator("section[aria-label='Open play vs set piece xGA'] .mixrow").count() == 13
+    assert page.locator("[aria-label='Open play vs set piece xGA'] .mixrow").count() == 13
 
 
 def test_attack_defence_small_sample_and_empty_states(page):
@@ -945,6 +952,7 @@ def test_render_failure_shows_message_and_keeps_navigation(browser, data, tmp_pa
 
 def test_empty_filter_results_are_explained(page):
     go(page, "attack", "2025-26")
+    open_drawer(page)
     page.select_option("#f-player", label="Virgil van Dijk")
     page.select_option("#f-sit", "Penalty")
     assert page.inner_text("[data-stat=shots]") == "0" and page.locator("[data-chart=attack] .empty-note").count() == 1
@@ -952,6 +960,7 @@ def test_empty_filter_results_are_explained(page):
     page.select_option("#f-sit", "all")
     assert page.locator("[data-chart=attack] .empty-note").count() == 0
     go(page, "defence", "2025-26")
+    open_drawer(page)
     page.select_option("#f-opp", label="Arsenal")
     page.select_option("#f-res", "ShotOnPost")
     page.select_option("#f-typ", "OtherBodyPart")
@@ -1153,4 +1162,158 @@ def test_takeaway_grid_has_no_orphan_gaps(browser, width):
             for a, b in zip(tiles, tiles[1:]):
                 assert 0 < b[0] - a[1] < 40, (width, n, "gap between tiles")  # only the 20px gutter, no hole
     assert pg.errors == []
+    ctx.close()
+
+
+# ------------------------------------------------------------------ Redesign: shot-map stage and drawer
+PPM_BEFORE = 14.109376877073258  # pixels per metre measured before the redesign at 1920x1080 (penalty area 568.89 px / 40.32 m)
+
+
+def _map_metrics(page, chart):
+    return page.evaluate("""(chart) => { const svg = document.querySelector(`[data-chart=${chart}] svg`);
+        const pen = svg.querySelector('rect[height="40.32"]').getBoundingClientRect(), pitch = svg.querySelector('rect[width="105"]').getBoundingClientRect();
+        return {penH: pen.height, pitchW: pitch.width, pitchH: pitch.height}; }""", chart)
+
+
+def test_map_scale_is_unchanged_at_1920_and_pitch_keeps_its_aspect_everywhere(browser):
+    ctx, pg = _new_page(browser, 1920, 1080)
+    pg.goto(DIST.as_uri())
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    for route, chart in (("attack", "attack"), ("defence", "defence")):
+        go(pg, route, "2025-26")
+        m = _map_metrics(pg, chart)
+        assert abs(m["penH"] / 40.32 / PPM_BEFORE - 1) < 0.01, (route, m["penH"] / 40.32)  # within 1% of the pre-redesign scale
+        assert abs(m["pitchW"] / 105 / PPM_BEFORE - 1) < 0.01
+    ctx.close()
+    for width in (1920, 1440, 1024, 800, 390):
+        ctx, pg = _new_page(browser, width, 900)
+        pg.goto(DIST.as_uri())
+        pg.wait_for_function("window.__tracker && window.__tracker.ready")
+        for route in ("attack", "defence"):
+            for season in ("2025-26", "all"):
+                go(pg, route, season)
+                m = _map_metrics(pg, route)
+                assert abs(m["pitchW"] / m["pitchH"] / (105 / 68) - 1) < 0.005, (width, route, season, m)  # 105:68 at every width
+                assert m["pitchW"] <= width  # never wider than the screen
+        ctx.close()
+
+
+def test_shots_shown_equals_plotted_dots_and_tab_label_for_several_filters(page):
+    import re
+    for route, combos in (
+        ("attack", [{}, {"#f-sit": "OpenPlay"}, {"#f-player": "Mohamed Salah", "#f-typ": "RightFoot"}, {"#f-res": "Goal", "#f-sit": "Penalty"}, {"#f-typ": "Head", "#f-res": "SavedShot"}]),
+        ("defence", [{}, {"#f-opp": "Arsenal"}, {"#f-sit": "FromCorner", "#f-typ": "Head"}, {"#f-res": "Goal", "#f-opp": "Chelsea"}]),
+    ):
+        go(page, route, "2024-25")
+        open_drawer(page)
+        for combo in combos:
+            for sel_id in ("#f-player", "#f-opp", "#f-sit", "#f-typ", "#f-res"):
+                if page.locator(sel_id).count():
+                    page.select_option(sel_id, "all")
+            for sel_id, val in combo.items():
+                page.select_option(sel_id, label=val) if sel_id == "#f-player" else page.select_option(sel_id, val)
+            shown = int(page.inner_text("[data-stat=shots]").replace(",", ""))
+            assert page.locator(f"[data-chart={route}] circle.shot").count() == shown, (route, combo)
+            page.click("[data-testid=drawer-tab]")  # collapse: the tab then reads "Filters · N shots"
+            assert int(re.search(r"([\d,]+) shots", page.text_content("[data-testid=drawer-tab]")).group(1).replace(",", "")) == shown, (route, combo)
+            page.click("[data-testid=drawer-tab]")
+            goals = int(page.inner_text("[data-stat=goals]"))
+            solid = page.eval_on_selector_all(f"[data-chart={route}] circle.shot", "els => els.filter(e => getComputedStyle(e).fill.startsWith('rgb(') ).length")
+            assert solid == goals, (route, combo)  # goals are exactly the solid-filled dots
+
+
+def test_goal_and_no_goal_shots_differ_by_fill_not_hue(page):
+    page.evaluate("document.documentElement.dataset.theme = 'dark'")
+    go(page, "attack", "2025-26")
+    styles = page.evaluate("""() => { const c = [...document.querySelectorAll('[data-chart=attack] circle.shot')].map(e => { const s = getComputedStyle(e); return [s.fill, s.stroke, s.strokeWidth]; });
+        return {goal: c.find(x => x[0].startsWith('rgb(')), miss: c.find(x => x[0].startsWith('rgba(')), n: c.length}; }""")
+    assert styles["goal"] and styles["miss"]
+    assert styles["goal"][1] == "rgb(255, 255, 255)" and styles["goal"][0] == "rgb(255, 59, 82)"  # #ff3b52 with a white 1.3px stroke
+    assert styles["miss"][0].endswith(", 0.07)")  # a near-transparent (hollow) fill with an outline
+
+
+def test_drawer_starts_collapsed_and_opens_closes_with_click_and_escape(page):
+    go(page, "attack", "2025-26")
+    tab, drawer = page.locator("[data-testid=drawer-tab]"), page.locator("[data-testid=drawer]")
+    box = tab.bounding_box()
+    assert tab.get_attribute("aria-expanded") == "false" and not drawer.is_visible()
+    assert abs(box["width"] - 46) < 1.5 and abs(box["height"] - 190) < 1.5  # collapsed tab: 46 x 190
+    assert "filters" in tab.text_content().lower() and "shots" in tab.text_content().lower()
+    tab.click()
+    drawer.wait_for(state="visible")
+    assert tab.get_attribute("aria-expanded") == "true"
+    assert page.evaluate("document.querySelector('[data-testid=drawer]').contains(document.activeElement)")  # focus moves into the panel
+    page.wait_for_timeout(350)  # let the 220 ms slide finish before measuring
+    assert abs(tab.bounding_box()["height"] - 64) < 1.5 and tab.text_content().strip().lower().endswith("hide")
+    dbox = drawer.bounding_box()
+    assert abs(dbox["width"] - 420) < 2 or dbox["width"] < 420
+    assert tab.bounding_box()["x"] >= dbox["x"] + dbox["width"] - 3  # the tab rides on the panel's right edge
+    page.keyboard.press("Escape")
+    page.wait_for_function("!document.querySelector('.stage').classList.contains('open')")
+    assert tab.get_attribute("aria-expanded") == "false" and page.evaluate("document.activeElement === document.querySelector('[data-testid=drawer-tab]')")
+    tab.click()
+    tab.click()  # the tab closes it too
+    assert tab.get_attribute("aria-expanded") == "false"
+    tab.focus()
+    page.keyboard.press("Enter")  # it is a real button: keyboard operable
+    assert tab.get_attribute("aria-expanded") == "true"
+    page.keyboard.press("Escape")
+    assert page.errors == []
+
+
+def test_open_drawer_is_sized_to_its_content(page):
+    for route in ("attack", "defence"):
+        go(page, route, "2025-26")
+        open_drawer(page)
+        m = page.evaluate("""() => { const d = document.querySelector('[data-testid=drawer]'), kids = [...d.children], last = kids[kids.length - 1];
+            const db = d.getBoundingClientRect(), lb = last.getBoundingClientRect(), pad = parseFloat(getComputedStyle(d).paddingBottom);
+            return {scroll: d.scrollHeight - d.clientHeight, bandBelowContent: db.bottom - lb.bottom - pad, stage: document.querySelector('.stage').getBoundingClientRect().height, height: db.height}; }""")
+        assert m["scroll"] <= 1, (route, m)                 # no internal scrolling: the panel is as tall as its content
+        assert m["bandBelowContent"] < 4, (route, m)         # and no empty band under the last block
+        assert m["height"] <= m["stage"] + 1
+
+
+def test_threat_mix_appears_exactly_once_on_attack_and_inside_the_drawer(page):
+    go(page, "attack", "2025-26")
+    assert page.locator("[aria-label='Threat source mix']").count() == 1
+    assert page.locator(".mix").count() == 1 and page.locator("[data-testid=drawer] .mix").count() == 1
+    assert page.locator("section[aria-label='Threat source mix']").count() == 0  # no separate card any more
+    assert page.get_by_text("Threat source mix", exact=False).count() == 1
+    go(page, "defence", "2025-26")
+    assert page.locator("[data-testid=drawer] [aria-label='Open play vs set piece xGA']").count() == 1 and page.locator("[aria-label='Threat source mix']").count() == 0
+
+
+def test_legend_is_always_visible_bottom_left_of_the_stage(page):
+    for route in ("attack", "defence"):
+        go(page, route, "2025-26")
+        for opened in (False, True):
+            if opened:
+                open_drawer(page)
+            info = page.evaluate("""() => { const l = document.querySelector('[data-testid=map-legend]').getBoundingClientRect(), s = document.querySelector('.stage').getBoundingClientRect();
+                return {left: l.left - s.left, bottom: s.bottom - l.bottom, w: l.width, visible: getComputedStyle(document.querySelector('[data-testid=map-legend]')).visibility}; }""")
+            assert info["visible"] == "visible" and info["w"] > 100 and info["bottom"] < 40, (route, opened, info)
+            if not opened:
+                assert info["left"] < 40
+        assert "xG (expected)" in page.inner_text("[data-testid=map-legend]") and "Goal" in page.inner_text("[data-testid=map-legend]")
+
+
+def test_drawer_is_a_bottom_sheet_on_mobile(browser):
+    ctx, pg = _new_page(browser, 390, 844)
+    pg.goto(DIST.as_uri() + "#/attack?season=2025-26&era=all")
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    tab = pg.locator("[data-testid=drawer-tab]")
+    stage = pg.evaluate("document.querySelector('.stage').clientWidth")
+    tb = tab.bounding_box()
+    assert abs(tb["width"] - stage) < 2 and tb["height"] >= 44  # a full-width handle above the map
+    assert pg.evaluate("document.querySelector('[data-testid=drawer-tab]').getBoundingClientRect().bottom <= document.querySelector('[data-chart=attack] svg').getBoundingClientRect().top + 1")
+    assert not pg.locator("[data-testid=drawer]").is_visible()
+    tab.click()
+    pg.wait_for_timeout(350)
+    d = pg.evaluate("""() => { const e = document.querySelector('[data-testid=drawer]'), r = e.getBoundingClientRect(); return {pos: getComputedStyle(e).position, bottom: r.bottom, left: r.left, right: r.right, w: innerWidth, h: innerHeight, top: r.top}; }""")
+    assert d["pos"] == "fixed" and abs(d["bottom"] - d["h"]) < 2 and d["left"] == 0 and abs(d["right"] - d["w"]) < 2 and d["top"] > 0
+    pg.select_option("#f-sit", "Penalty")  # the filters work in the sheet and the count updates
+    assert int(pg.inner_text("[data-stat=shots]")) < 30
+    pg.keyboard.press("Escape")
+    pg.wait_for_timeout(300)
+    assert not pg.locator("[data-testid=drawer]").is_visible() and pg.errors == []
     ctx.close()
