@@ -1,0 +1,88 @@
+{
+  "_comment": "Style-of-play scoring config. Axis scores are proxies relative to each season's league; they are not CIES scores. sign +1 means a higher KPI value pushes toward the RIGHT-hand label. Formulas live in style.py (by KPI id); everything else is here.",
+  "transform": "normal_cdf",
+  "min_kpis": 2,
+  "min_clubs_external": 10,
+  "external_csv": "data/external/style_kpis.csv",
+  "tie_rule": "Competition ranking: clubs with identical (to 1e-12) axis values share the best rank of the group and the next rank is skipped; rank 1 is furthest toward the right-hand label.",
+  "central_rectangle": {
+    "x_min": 0.843,
+    "y_half_width": 0.13,
+    "description": "Shooter-perspective rectangle in front of goal: x >= 0.843 (the 16.5 m line of a 105 m pitch) and |y - 0.5| <= 0.13. A documented assumption, configurable here.",
+    "status": "defined, not computed: league-wide shot coordinates would need every match of every club (about 4,560 requests)"
+  },
+  "phases": {
+    "defence": {"label": "Defence", "index_id": "style_idx_pressure", "index_label": "Pressure index", "axes": ["style_def_line", "style_def_press", "style_def_tight"]},
+    "buildup": {"label": "Build-up", "index_id": "style_idx_control", "index_label": "Control index", "axes": ["style_bu_length", "style_bu_direction", "style_bu_complexity"]},
+    "attack": {"label": "Attack", "index_id": "style_idx_occupation", "index_label": "Occupation index", "axes": ["style_att_aerial", "style_att_tempo", "style_att_grouping"]}
+  },
+  "axes": {
+    "style_def_line": {
+      "phase": "defence", "left": "Low", "right": "High", "label": "Defensive line", "status": "proxy", "confidence": "low",
+      "kpis": ["def_deep_allowed_pm", "def_fast_conceded_share"], "external_kpis": [],
+      "description": "How high the team defends. Toward High: few deep completions allowed and a larger share of the shots conceded coming from fast attacks (a high line is exposed to quick breaks). A proxy from Understat team data."
+    },
+    "style_def_press": {
+      "phase": "defence", "left": "Passive", "right": "Active", "label": "Pressing", "status": "proxy", "confidence": "medium",
+      "kpis": ["def_ppda", "def_actions_pm"], "external_kpis": [],
+      "description": "How actively the team wins the ball high. Toward Active: lower PPDA (passes allowed per defensive action) and more defensive actions in the opposition's 40%. The two KPIs share a source and are correlated."
+    },
+    "style_def_tight": {
+      "phase": "defence", "left": "Lenient", "right": "Tight", "label": "Box protection", "status": "proxy", "confidence": "medium",
+      "kpis": ["def_inbox_shots_pm", "def_inbox_xga_pm"], "external_kpis": ["def_central_box_shots_pm"],
+      "description": "How little the team lets in near goal. Toward Tight: fewer shots and less xG conceded from inside the box. The central-rectangle KPI is not computed (needs league-wide shot coordinates)."
+    },
+    "style_bu_length": {
+      "phase": "buildup", "left": "Long", "right": "Short", "label": "Build-up length", "status": "unavailable", "confidence": "none",
+      "kpis": [], "external_kpis": [],
+      "unavailable_reason": "Pass length needs pass-level event data, which Understat does not provide. No honest proxy exists in shot data.",
+      "description": "How long or short the team's passes are when building from the back."
+    },
+    "style_bu_direction": {
+      "phase": "buildup", "left": "Vertical", "right": "Horizontal", "label": "Build-up direction", "status": "unavailable", "confidence": "none",
+      "kpis": [], "external_kpis": [],
+      "unavailable_reason": "Pass direction needs pass-level event data, which Understat does not provide. No honest proxy exists in shot data.",
+      "description": "Whether the team builds forward quickly or circulates the ball sideways."
+    },
+    "style_bu_complexity": {
+      "phase": "buildup", "left": "Simple", "right": "Elaborate", "label": "Build-up complexity", "status": "proxy", "confidence": "low",
+      "kpis": ["bu_slow_share_shots", "bu_buildup_share"], "external_kpis": [],
+      "description": "How elaborate the team's possession is. Toward Elaborate: a larger share of shots from slow attacks and a larger share of xGChain that comes from build-up (xGBuildup). A weak proxy: there is no pass data."
+    },
+    "style_att_aerial": {
+      "phase": "attack", "left": "Aerial", "right": "Grounded", "label": "Attack medium", "status": "unavailable", "confidence": "none",
+      "kpis": [], "external_kpis": ["att_header_share", "att_cross_share"],
+      "unavailable_reason": "Needs shot type and last action for every club's shots (headers, crosses). Understat only gives those per match or per player, about 4,560 requests league-wide. Supply att_header_share and att_cross_share in data/external/style_kpis.csv to enable it.",
+      "description": "Whether chances come through the air (headers, crosses) or on the ground."
+    },
+    "style_att_tempo": {
+      "phase": "attack", "left": "Rapid", "right": "Placed", "label": "Attack tempo", "status": "proxy", "confidence": "medium",
+      "kpis": ["att_fast_share_shots", "att_fast_share_xg"], "external_kpis": [],
+      "description": "Whether attacks are quick or patient. Toward Placed: a smaller share of shots and xG from fast attacks (Understat's own attack-speed classification)."
+    },
+    "style_att_grouping": {
+      "phase": "attack", "left": "Scattered", "right": "Grouped", "label": "Attack spacing", "status": "proxy", "confidence": "low",
+      "kpis": ["att_inbox_share", "att_deep_per_shot"], "external_kpis": ["att_central_lane_share", "att_y_dispersion"],
+      "description": "How concentrated the team's attacking is. Toward Grouped: a larger share of shots from inside the box and more deep completions per shot. Central-lane share and shot dispersion are not computed (need league-wide coordinates)."
+    }
+  },
+  "kpis": {
+    "def_deep_allowed_pm": {"label": "Deep completions allowed per match", "sign": -1, "unit": "rate", "format": ".1f", "per": "match", "available": true, "source": "Understat team history (deep_allowed)", "confidence": "medium"},
+    "def_fast_conceded_share": {"label": "Share of shots conceded from fast attacks", "sign": 1, "unit": "pct", "format": ".1%", "per": "share", "available": true, "source": "Understat team page (attackSpeed, against)", "confidence": "low"},
+    "def_ppda": {"label": "PPDA (passes allowed per defensive action)", "sign": -1, "unit": "rate", "format": ".1f", "per": "ratio", "available": true, "source": "Understat team history (ppda)", "confidence": "medium"},
+    "def_actions_pm": {"label": "Defensive actions in the opposition 40% per match", "sign": 1, "unit": "rate", "format": ".1f", "per": "match", "available": true, "source": "Understat team history (ppda.def)", "confidence": "medium"},
+    "def_inbox_shots_pm": {"label": "In-box shots conceded per match", "sign": -1, "unit": "rate", "format": ".1f", "per": "match", "available": true, "source": "Understat team page (shotZone, against)", "confidence": "medium"},
+    "def_inbox_xga_pm": {"label": "xGA from in-box shots per match", "sign": -1, "unit": "rate", "format": ".2f", "per": "match", "available": true, "source": "Understat team page (shotZone, against)", "confidence": "medium"},
+    "def_central_box_shots_pm": {"label": "Shots conceded from the central rectangle per match", "sign": -1, "unit": "rate", "format": ".1f", "per": "match", "available": false, "source": "external only: league-wide shot coordinates", "confidence": "medium"},
+    "bu_slow_share_shots": {"label": "Share of shots from slow attacks", "sign": 1, "unit": "pct", "format": ".1%", "per": "share", "available": true, "source": "Understat team page (attackSpeed)", "confidence": "low"},
+    "bu_buildup_share": {"label": "xGBuildup as a share of xGChain", "sign": 1, "unit": "pct", "format": ".1%", "per": "share", "available": true, "source": "Understat league player table (club totals)", "confidence": "low"},
+    "att_header_share": {"label": "Share of shots that are headers", "sign": -1, "unit": "pct", "format": ".1%", "per": "share", "available": false, "source": "external only: league-wide shot type", "confidence": "medium"},
+    "att_cross_share": {"label": "Share of open-play shots from a cross", "sign": -1, "unit": "pct", "format": ".1%", "per": "share", "available": false, "source": "external only: league-wide shot last action", "confidence": "medium"},
+    "att_fast_share_shots": {"label": "Share of shots from fast attacks", "sign": -1, "unit": "pct", "format": ".1%", "per": "share", "available": true, "source": "Understat team page (attackSpeed)", "confidence": "medium"},
+    "att_fast_share_xg": {"label": "Share of xG from fast attacks", "sign": -1, "unit": "pct", "format": ".1%", "per": "share", "available": true, "source": "Understat team page (attackSpeed)", "confidence": "medium"},
+    "att_inbox_share": {"label": "Share of shots taken inside the box", "sign": 1, "unit": "pct", "format": ".1%", "per": "share", "available": true, "source": "Understat team page (shotZone)", "confidence": "low"},
+    "att_deep_per_shot": {"label": "Deep completions per shot", "sign": 1, "unit": "rate", "format": ".2f", "per": "ratio", "available": true, "source": "Understat team history (deep) and shots", "confidence": "low"},
+    "att_central_lane_share": {"label": "Share of open-play shots from the central lane", "sign": 1, "unit": "pct", "format": ".1%", "per": "share", "available": false, "source": "external only: league-wide shot coordinates", "confidence": "low"},
+    "att_y_dispersion": {"label": "Horizontal dispersion of open-play shots", "sign": -1, "unit": "rate", "format": ".3f", "per": "ratio", "available": false, "source": "external only: league-wide shot coordinates", "confidence": "low"}
+  }
+}

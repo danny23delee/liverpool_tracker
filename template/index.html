@@ -414,6 +414,52 @@ table.data tr.best td { font-weight: 600; }
   table.data th, table.data td { padding: 8px 6px; font-size: 14px; }
   table.data thead th { font-size: 11px; }
 }
+/* ---- style of play: neutral styling only (no good/bad colours, no arrows); Liverpool red marks Liverpool, grey the league ---- */
+.style-card .idx { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.style-card .idx .num { font: 700 54px/1 var(--font-display); font-variant-numeric: tabular-nums; color: var(--ink); min-width: 1.4ch; }
+.idx-txt { display: grid; gap: 4px; min-width: 0; }
+.idx .nm { font: 600 16px/1.3 var(--font-display); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.idx .chg { font-size: 15px; color: var(--ink-2); } .idx .chg.na { color: var(--muted); max-width: 46ch; }
+.badge.sm { font-size: 12px; padding: 2px 10px; font-family: inherit; line-height: 1.5; }
+button.badge { cursor: help; min-height: 0; position: relative; } button.badge::after { content: ''; position: absolute; inset: -10px -4px; }   /* 44px touch target around the small pill */ button.badge:focus-visible, .pip:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.axes { display: flex; flex-direction: column; }
+.axis { flex: 1 1 auto; padding: 16px 0; border-top: 1px solid var(--line); display: grid; gap: 12px; align-content: center; min-width: 0; }
+.axis, .axis-aside { grid-template-columns: minmax(0, 1fr); } .axis-aside { min-width: 0; display: grid; }
+.axis-main { display: grid; gap: 10px; min-width: 0; align-content: center; }
+.axis-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.axis-name { font-weight: 600; font-size: 16px; }
+.axis-read { margin-left: auto; font-size: 15px; font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; } .axis-read b { color: var(--ink); font-weight: 700; }
+.axis-read.na { color: var(--muted); }
+.pip { all: unset; cursor: help; position: relative; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--ink-2); text-transform: capitalize; }
+.pip::after { content: ''; position: absolute; inset: -14px -6px; }
+.pip i { width: 6px; height: 12px; border-radius: 2px; background: var(--line-strong); } .pip i.on { background: var(--ink-2); } .pip span { margin-left: 2px; }
+.axis-body { display: grid; grid-template-columns: minmax(0, 1fr) 172px; gap: 20px; align-items: center; }
+.track { position: relative; height: 58px; padding: 0 12px; } .track .in { position: relative; height: 100%; }
+.rail { position: absolute; left: 0; right: 0; top: 20px; height: 4px; border-radius: 2px; background: var(--line-strong); }
+.tick50 { position: absolute; left: 50%; top: 10px; width: 2px; height: 24px; background: var(--ink-2); transform: translateX(-50%); border-radius: 1px; }
+.ends { position: absolute; left: -12px; right: -12px; top: 38px; display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2); line-height: 1.3; }
+.ends .avg { position: absolute; left: 50%; transform: translateX(-50%); color: var(--muted); font-size: 12px; }
+.dot { position: absolute; top: 22px; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--ink-2); opacity: .5; }
+.dot::after { content: ''; position: absolute; inset: -7px; }
+.dot.liv { width: 20px; height: 20px; margin: -10px 0 0 -10px; background: var(--red); opacity: 1; z-index: 2; box-shadow: 0 0 0 2px var(--surface); }
+.dot.liv::after { display: none; }
+.spark-wrap { min-width: 0; } .spark { display: block; width: 100%; height: 52px; border-radius: 6px; touch-action: pan-y; }
+.spark .band.b0 { fill: var(--surface-2); } .spark .band.b1 { fill: var(--line); opacity: .6; }
+.spark .mid { stroke: var(--line-strong); stroke-dasharray: 3 3; } .spark .ln { fill: none; stroke: var(--ink-2); stroke-width: 1.8; stroke-linejoin: round; }
+.spark .pt { fill: var(--ink-2); } .spark .pt.sel { fill: var(--red); stroke: var(--surface); stroke-width: 1.5; }
+.axis.off { opacity: .92; } .axis.off .axis-name { color: var(--ink-2); }
+.axis-na { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; } .axis-ends { margin: 0; color: var(--muted); font-size: 13px; }
+.axis-exp { all: unset; box-sizing: border-box; cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; gap: 8px; color: var(--red); font-size: 14px; }
+.axis-exp::before { content: '+'; width: 1em; text-align: center; font-weight: 700; } .axis-exp[aria-expanded="true"]::before { content: '−'; }
+.axis-exp:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; border-radius: 4px; }
+.axis-panel { margin-top: -4px; } .axis-panel[hidden] { display: none; }
+.kpi-tbl { max-height: none; overflow-x: auto; } .kpi-tbl table { width: 100%; font-size: 14px; }
+.kpi-tbl th.num, .kpi-tbl td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.k-name { display: block; } .k-dir { display: block; color: var(--muted); font-size: 12.5px; } .na-row td { color: var(--muted); }
+.tbl-pair { display: grid; }
+@media (min-width: 1101px) { .axis.beside { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); column-gap: 32px; align-items: center; } }
+.kpi-tbl td:first-child { min-width: 150px; } .kpi-tbl .na-row td:last-child { white-space: normal; min-width: 0; text-align: left; } .kpi-tbl th { font-size: 12px; white-space: nowrap; }
+@media (max-width: 600px) { .axis-body { grid-template-columns: minmax(0, 1fr); gap: 6px; } .axis-read { margin-left: 0; flex-basis: 100%; } .style-card .idx .num { font-size: 54px; } }
 @media print { .nav, .controls { display: none; } }
 </style>
 </head>
@@ -1059,6 +1105,109 @@ function trendCard(sel, cfg) {
 const vsTxt = m => `${m.h ? 'Home' : 'Away'} v ${esc(m.opp)}, ${dfmt(dparse(m.d))}`;
 const rollNote = 'Rolling average uses the latest 10 matches and needs at least 10 in the selection.';
 
+/* ================= Style of play (proxy scores, neutral styling: style is neither good nor bad) ================= */
+const ST = D.style, STC = ST.cfg;
+const ordinal = n => n + ((n % 100 >= 11 && n % 100 <= 13) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'));
+const CONF_LEVEL = { high: 3, medium: 2, low: 1 };
+const CONF_TXT = { high: 'High confidence: the KPIs measure this tactic fairly directly.', medium: 'Medium confidence: a reasonable proxy, but its KPIs are indirect or correlated.',
+  low: 'Low confidence: a weak proxy. Read it as a hint, not a measurement.' };
+function tipOn(node, html) {                              // the same open / close behaviour as the ⓘ buttons, for any focusable node
+  const open = () => { tipOwner = node; tipOpenedAt = performance.now(); const r = node.getBoundingClientRect(); showTip(html, r.left + r.width / 2 - 12, r.top); };
+  const canHover = matchMedia('(hover: hover)');
+  node.addEventListener('mouseenter', () => { if (canHover.matches) open(); });
+  node.addEventListener('focus', () => { if (node.matches(':focus-visible')) open(); });
+  node.addEventListener('pointerleave', leaveTip); node.addEventListener('blur', hideTip);
+  node.addEventListener('click', e => { e.stopPropagation(); const same = performance.now() - tipOpenedAt < 350; if (tip.classList.contains('on') && tipOwner === node && !same) hideTip(); else open(); });
+  return node;
+}
+function styleScope(s) {                                   // seasons the trend covers, and the season the scores are shown for
+  const en = eraName(s.era), seasons = D.seasons.filter(se => s.era === 'all' || D.selections[`${se}|${en}`]);
+  return { seasons, shown: s.season === 'all' ? seasons[seasons.length - 1] : s.season, latest: s.season === 'all' };
+}
+function sparkline(aid, scope, label) {
+  const W = 172, H = 52, mg = 6, n = scope.seasons.length, cell = n > 1 ? (W - 2 * mg) / (n - 1) : W - 2 * mg;
+  const xs = i => n > 1 ? mg + i * cell : W / 2, y = v => H - 6 - (H - 12) * v / 100;
+  const svg = d3.create('svg').attr('class', 'spark').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img');
+  const eraParts = se => { const parts = D.eras.map((e, k) => ({ k, m: e.manager, n: (D.selections[`${se}|${e.manager}`] || {}).n || 0 })).filter(p => p.n); return { parts, tot: parts.reduce((a, p) => a + p.n, 0) }; };
+  scope.seasons.forEach((se, i) => {                      // manager-era background bands, split inside a season that has two managers
+    const { parts, tot } = eraParts(se), left = Math.max(0, xs(i) - cell / 2), right = Math.min(W, xs(i) + cell / 2);
+    let x0 = left;
+    for (const p of parts) { const w = (right - left) * p.n / tot; svg.append('rect').attr('class', `band b${p.k % 2}`).attr('x', x0).attr('y', 0).attr('width', w).attr('height', H); x0 += w; }
+  });
+  svg.append('line').attr('class', 'mid').attr('x1', 0).attr('x2', W).attr('y1', y(50)).attr('y2', y(50));
+  const vals = scope.seasons.map(se => ST.series[aid][se]);
+  svg.append('path').attr('class', 'ln').attr('d', d3.line().defined(v => v != null).x((v, i) => xs(i)).y(v => y(v))(vals));   // a missing season is a gap
+  vals.forEach((v, i) => { if (v != null) svg.append('circle').attr('class', scope.seasons[i] === scope.shown ? 'pt sel' : 'pt').attr('cx', xs(i)).attr('cy', y(v)).attr('r', scope.seasons[i] === scope.shown ? 4.5 : 2); });
+  const node = svg.node();
+  node.setAttribute('aria-label', `${label}: Liverpool's score in each of ${n} ${n === 1 ? 'season' : 'seasons'}; the red dot marks the selected season.`);
+  const at = ev => { const r = node.getBoundingClientRect(), i = Math.max(0, Math.min(n - 1, Math.round(((ev.clientX - r.left) / r.width * W - mg) / cell))), se = scope.seasons[i], v = vals[i];
+    showTip(`<b>${esc(se)}</b><br>${label}: ${v == null ? 'N/A' : fmt(aid, v)}<br>${eraParts(se).parts.map(p => esc(p.m.split(' ').pop())).join(' then ')}`, ev.clientX, ev.clientY); };
+  node.addEventListener('pointermove', at); node.addEventListener('pointerdown', at); node.addEventListener('pointerleave', leaveTip);
+  return node;
+}
+function kpiTable(a, ax, S) {
+  const rows = ax.kpis.map(k => { const sg = STC.kpis[k.id].sign;
+    return el('tr', { 'data-kpi': k.id }, el('td', {}, el('span', { class: 'k-name' }, R[k.id].label, info(k.id)), el('span', { class: 'k-dir' }, sg > 0 ? `Higher pushes toward ${a.right}` : `Lower pushes toward ${a.right}`)),
+      el('td', { class: 'num' }, fmt(k.id, k.liv)), el('td', { class: 'num' }, fmt(k.id, k.mean)), el('td', { class: 'num' }, k.rank == null ? 'N/A' : `${ordinal(k.rank)} of ${k.n}`)); });
+  const missing = a.external_kpis.filter(k => !ax.kpis.some(x => x.id === k)).map(k => el('tr', { class: 'na-row', 'data-kpi': k }, el('td', {}, R[k].label, info(k)),
+    el('td', { colspan: 3 }, 'Not computed: needs shot-level data for every club.')));
+  return el('div', { class: 'tbl-scroll kpi-tbl' }, el('table', { class: 'data' }, el('thead', {}, el('tr', {}, el('th', {}, 'How this is measured'), el('th', { class: 'num' }, 'Liverpool'), el('th', { class: 'num' }, 'League avg'), el('th', { class: 'num', title: `Rank among the clubs, 1st = furthest toward ${a.right}` }, `Rank`))),
+    el('tbody', {}, rows, missing)));
+}
+function axisRow(aid, S, scope, mode) {
+  const a = STC.axes[aid], ax = S.axes[aid], row = el('div', { class: 'axis' + (mode === 'beside' ? ' beside' : ''), 'data-axis': aid, 'data-status': ax.status });
+  const name = el('span', { class: 'axis-name' }, a.label, info(aid));
+  if (ax.status !== 'computed') {
+    const why = tipOn(el('button', { class: 'info', type: 'button', 'aria-label': `Why ${a.label} is unavailable` }, 'ⓘ'), `<b>${esc(a.label)}: needs pass-level data</b><br>${esc(a.unavailable_reason || 'No data source for this axis.')}`);
+    row.classList.add('off');
+    row.append(el('div', { class: 'axis-main' }, el('div', { class: 'axis-head' }, name, el('span', { class: 'axis-na', 'data-testid': 'axis-unavailable' }, 'Needs pass-level data', why)),
+      el('p', { class: 'axis-ends' }, `${a.left} ◄► ${a.right}`)));
+    return row;
+  }
+  const origin = ax.origin === 'external' ? 'External data' : 'Proxy', conf = a.confidence, liv = ax.liv;
+  const badge = tipOn(el('button', { class: 'badge sm', type: 'button', 'data-testid': 'axis-origin', 'aria-label': `${origin}. ${ax.origin === 'external' ? 'Values supplied in an external file.' : 'A proxy built from Understat team data.'}` }, origin),
+    ax.origin === 'external' ? 'Some KPIs of this axis come from an external data file instead of Understat.' : 'Built from Understat team data, not from pass-level event data. Not a CIES score.');
+  const pip = tipOn(el('button', { class: 'pip', type: 'button', 'data-testid': 'axis-confidence', 'data-conf': conf, 'aria-label': CONF_TXT[conf] }, [1, 2, 3].map(i => el('i', { class: i <= CONF_LEVEL[conf] ? 'on' : '' })), el('span', {}, conf)), CONF_TXT[conf]);
+  const read = liv ? el('span', { class: 'axis-read', 'data-testid': 'axis-read', 'data-score': liv.score, 'data-rank': liv.rank }, el('b', {}, `${a.right} ${fmt(aid, liv.score)}`), ` · ${ordinal(liv.rank)} of ${ax.n}`)
+    : el('span', { class: 'axis-read na' }, 'N/A');
+  const inn = el('div', { class: 'in' }, el('div', { class: 'rail' }), el('div', { class: 'tick50', 'data-testid': 'axis-tick' }),
+    el('div', { class: 'ends' }, el('span', {}, a.left), el('span', { class: 'avg' }, 'league avg'), el('span', {}, a.right)));
+  S.clubs.forEach((c, i) => { const v = ax.scores[i]; if (v == null || c === STC.club) return;
+    inn.append(el('i', { class: 'dot', style: `left:${v}%`, 'data-club': c, onpointermove: ev => showTip(`<b>${esc(c)}</b><br>${fmt(aid, v)} · ${ordinal(ax.ranks[i])} of ${ax.n}`, ev.clientX, ev.clientY), onpointerleave: leaveTip })); });
+  if (liv) inn.append(el('i', { class: 'dot liv', style: `left:${liv.score}%`, 'data-testid': 'axis-liv' }));
+  const track = el('div', { class: 'track', role: 'img', 'aria-label': liv ? `${a.label}: Liverpool ${fmt(aid, liv.score)} out of 100 toward ${a.right}, ${ordinal(liv.rank)} of ${ax.n} clubs; 50 is the league average.` : `${a.label}: no score.` }, inn);
+  const main = el('div', { class: 'axis-main' }, el('div', { class: 'axis-head' }, name, badge, pip, read),
+    el('div', { class: 'axis-body' }, track, el('div', { class: 'spark-wrap' }, sparkline(aid, scope, a.label))));
+  row.append(main);
+  const tbl = kpiTable(a, ax, S);
+  if (mode === 'beside') { row.append(el('div', { class: 'axis-aside' }, tbl)); return row; }
+  const id = `kpi-${aid}`, btn = el('button', { class: 'axis-exp', type: 'button', 'aria-expanded': 'false', 'aria-controls': id }, 'How this is measured');
+  const panel = el('div', { class: 'axis-panel', id, hidden: true }, tbl);
+  btn.addEventListener('click', () => { const open = btn.getAttribute('aria-expanded') !== 'true'; btn.setAttribute('aria-expanded', open); panel.hidden = !open; });
+  main.append(btn); row.append(panel);
+  return row;
+}
+function styleCard(phase, s, mode, cls) {
+  const ph = STC.phases[phase], scope = styleScope(s), S = ST.seasons[scope.shown], ix = S.indices[ph.index_id];
+  const change = ix.score == null ? null : ix.change;
+  const idx = el('div', { class: 'idx', 'data-testid': 'style-index', 'data-index': ph.index_id },
+    el('span', { class: 'num', 'data-metric': ph.index_id }, ix.score == null ? 'N/A' : fmt(ph.index_id, ix.score)),
+    el('div', { class: 'idx-txt' }, el('div', { class: 'nm' }, R[ph.index_id].label, info(ph.index_id), ix.partial && el('span', { class: 'badge sm', 'data-testid': 'style-partial', title: `Mean of ${ix.n_axes} of 3 axes: the others need data we do not have.` }, 'partial')),
+      ix.score == null ? el('div', { class: 'chg na' }, `Needs pass-level data: only ${ix.n_axes} of 3 axes can be scored, and an index needs two.`)
+        : el('div', { class: 'chg', 'data-testid': 'style-change' }, change == null ? 'No previous season' : `${d3.format('+d')(change).replace('-', MINUS)} pts vs previous season`)));
+  const axes = el('div', { class: 'axes fill' }, ph.axes.map(a => axisRow(a, S, scope, mode)));
+  const note = el('p', { class: 'note-small', 'data-testid': 'style-note' },
+    scope.latest ? `Showing ${scope.shown}, the latest season in this selection; the trend lines cover every season in it. ` : `Scores compare Liverpool with the other ${S.n_clubs - 1} clubs in ${scope.shown}. `,
+    S.matches != null && S.matches < 38 ? `Based on the ${S.matches} matches played so far. ` : '',
+    'Scores are relative to each season\'s league, cover the whole season (not split by manager) and are proxies, not CIES scores. Style is neither good nor bad. Bands in the trend lines mark manager eras.');
+  const byClub = el('div', { 'data-ref-season': '' }, tableView('View as a table: Liverpool by season', ['Season', ...ph.axes.map(a => STC.axes[a].label), R[ph.index_id].label],
+    scope.seasons.map(se => [se, ...ph.axes.map(a => fmt(a, ST.series[a][se])), fmt(ph.index_id, ST.series[ph.index_id][se])])));
+  const clubs = tableView(`View as a table: every club in ${scope.shown}`, ['Club', ...ph.axes.map(a => STC.axes[a].label)],
+    S.clubs.map((c, i) => [c, ...ph.axes.map(a => { const ax = S.axes[a]; return ax.status === 'computed' && ax.scores[i] != null ? fmt(a, ax.scores[i]) : 'N/A'; })]));
+  return el('section', { class: `card style-card ${cls === undefined ? 'span-12' : cls}`, 'data-phase': phase, 'aria-label': R[`style_phase_${phase}`].label },
+    el('h2', {}, R[`style_phase_${phase}`].label, info(`style_phase_${phase}`), el('span', { class: 'tag' }, 'proxy')), idx, axes, note, el('div', { class: 'tbl-pair' }, byClub, clubs));
+}
+
 /* ================= Attack page ================= */
 function attack(s, d) {
   const sel = d.sel;
@@ -1072,7 +1221,8 @@ function attack(s, d) {
     head: ['Match', 'xG (expected)', 'Goals (actual)', '10-match avg xG'], tr: r => [`${r.m.h ? 'H' : 'A'} ${r.m.opp} ${dfmt(dparse(r.m.d))}`, r.v.toFixed(2), r.g, r.roll == null ? 'N/A' : r.roll.toFixed(2)],
     note: rollNote,
   });
-  const grid = el('div', { class: 'grid' }, kpi, map, el('div', { class: 'row r-half' }, fin, sc), trend);
+  const style = el('div', { class: 'row r-half style-row' }, styleCard('buildup', s, 'expander', ''), styleCard('attack', s, 'expander', ''));
+  const grid = el('div', { class: 'grid' }, kpi, map, style, el('div', { class: 'row r-half' }, fin, sc), trend);
   const cards = [map, fin, sc, trend];
   return { node: grid, after: () => cards.forEach(c => c._draw && c._draw()), redraw: cards.map(c => c._draw).filter(Boolean) };
 }
@@ -1114,7 +1264,7 @@ function defence(s, d) {
         el('div', { class: 'strip', 'data-strip': 'clean-sheets' }, sel.idx.map(mi => { const m = M(mi), c = m.ga === 0;
           return el('i', { class: c ? 'cs' : '', role: 'img', 'aria-label': `${c ? 'Clean sheet' : 'Conceded ' + m.ga}, ${vsTxt(m).replace(/&amp;/g, '&')}`, tabindex: '-1',
             onpointermove: ev => showTip(`<b>${vsTxt(m)}</b><br>${c ? 'Clean sheet' : 'Conceded ' + m.ga}`, ev.clientX, ev.clientY), onpointerleave: leaveTip }); })))));
-  const grid = el('div', { class: 'grid' }, kpi, map, xga, el('div', { class: 'row r-half' }, ppda, deep), cs);
+  const grid = el('div', { class: 'grid' }, kpi, map, styleCard('defence', s, 'beside'), xga, el('div', { class: 'row r-half' }, ppda, deep), cs);
   const cards = [map, xga, ppda, deep];
   return { node: grid, after: () => cards.forEach(c => c._draw && c._draw()), redraw: cards.map(c => c._draw).filter(Boolean) };
 }

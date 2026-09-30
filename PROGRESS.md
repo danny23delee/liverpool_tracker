@@ -191,3 +191,30 @@ The first CI run of the redesign failed two browser tests that pass on Windows: 
 - **Drawer sizing:** with wider text the drawer's content was 27px taller than the stage, so it scrolled internally, which is allowed by the design but the test demanded no scrolling. The test now applies the no-scroll/no-band rule only when the content fits in the stage (a capped panel scrolls by design).
 - **Regression guard:** new test `test_no_overflow_with_wide_fallback_fonts` forces a DejaVu/Verdana stack and checks every page × several seasons × both themes at 390 and 768px for anything outside a scroll container reaching past the screen. I also ran the dead-space checks under the wide font at 1920, 1440 and 390: no card is over the limit.
 - 138 tests pass locally with the cached D3 file hidden (as on CI).
+
+## Style of play: S0 recon (branch `style-of-play`, 2026-09-30)
+- Verified against the real data (details and the full axis matrix in DATA_NOTES.md, "Style of play feasibility"): the cached team pages carry `shotZone` and `attackSpeed` splits for all 260 club-seasons, consistent with the club's total shots in 100% of cases, so **no new requests and no new raw data are needed**. PPDA, deep completions and the league player xGChain/xGBuildup cover all seasons too.
+- **Axis status:** Defence: Low◄►High (proxy, low), Passive◄►Active (proxy, medium), Lenient◄►Tight (proxy, medium) → full Pressure index. Build-up: Long◄►Short and Vertical◄►Horizontal unavailable, Simple◄►Elaborate proxy (low) → no Control index. Attack: Aerial◄►Grounded unavailable (needs league-wide shot type / last action), Rapid◄►Placed (proxy, medium), Scattered◄►Grouped (proxy, low) → partial Occupation index.
+- **Dropped:** the central-rectangle KPI and any shot-coordinate or shot-type KPI, because league-wide they need every match of every club (about 4,560 requests, 76+ minutes, over the CI job limit). They stay in `config/style.json` as external-only KPIs that `data/external/style_kpis.csv` can fill.
+- Stop rule passed (Defence 3 computable axes, Attack 2), so work continues.
+
+### Style of play: S1 ETL (2026-09-30)
+- `etl.build_style_raw` adds `data/processed/style_raw.parquet` (260 club-seasons × raw zone/speed/PPDA/deep/xGChain aggregates, 80 KB) from the already-cached team pages, league history and league player table. **0 new requests, 0 new raw data.**
+- Tests (17 in `test_etl.py`, +3): 20 clubs per season and match counts equal the team-match table; zone and speed splits add up to total shots for and against in every club-season; league shots for = against; Liverpool's shots for and against equal the shot-level dataset exactly in all 13 seasons (own goals accounted for), and Understat's in-box counts agree with a geometric classification within 6%.
+
+### Style of play: S2 scoring, config, registry (2026-09-30)
+- `config/style.json` holds phases, axes, KPIs (sign, unit, source, confidence), transform, min KPIs, the central-rectangle assumption and the external CSV path. `style.py` holds the KPI formulas (keyed by KPI id), z-scores, re-standardisation, Φ or percentile transform, competition ranking, composite indices (partial flag, none below 2 axes), the optional external CSV hook and the dashboard payload.
+- `metrics.json` gains 49 entries (9 axes, 3 indices, 17 KPIs, plus section entries): unit `score100`, `higher_is_better: null`, `status` (proxy or external) and `confidence`. The glossary gets a "Style of play" group.
+- `tests/test_style.py` (hand-computed fixtures): z-score mean 0 and unit sd, sign handling for Active and Tight, single-KPI axis is null, scores in (0, 100) and a mean club at 50, tie rule, composite and partial flags, box and central-rectangle boundaries, Liverpool reconciliation, 20 clubs per season, external CSV override / enable / reject / absent.
+- All non-browser tests pass (88). Open: payload wiring and UI (S3 onward).
+
+### Style of play: S3 and S4 axis rows, Defence, Attack (2026-09-30)
+- Dashboard payload gains `style` (aggregates only: per season the 20 clubs' axis scores and ranks, Liverpool KPI tables, indices, per-axis series). Axis-row component: strip plot, Liverpool dot with score and rank, tick at 50, sparkline with manager-era bands and gaps, Proxy/External badge, confidence pip, KPI table (expander on Attack, beside each row on Defence), unavailable state "Needs pass-level data", two table alternatives. Neutral styling only.
+- Defence: one full-width Defence style card after the map. Attack: Build-up and Attack cards side by side (equal height, stacked under 1100px) between the shot map and the lower row.
+- New frontend tests (in test_frontend.py): sections per page, every score/rank/index/change equals the build JSON, badge and pip on every axis, tick at 50 and dot at the score, no good/bad colours or arrows in both themes, season/era updates, keyboard expanders, small-sample badge, table alternatives, screenshots in `artifacts/screenshots/style/`.
+- Existing tests: two selectors/counts updated (touch-target scan excludes the tiny tooltip buttons, which have 44px hit areas; glossary sub-section count 7 to 8). No assertion on a value changed. Full suite 174 passed.
+
+### Style of play: S5 Methodology, README, QA (2026-09-30)
+- Methodology gains a "Style of play (proxy scores)" section: CIES credit (borrowed vs changed), formula, tie rule, relative-to-season-league explanation, central-rectangle assumption, confidence, unavailable axes, and a proxy mapping table generated from `config/style.json`. README section and external CSV documentation added (the external-model README content overwritten in S2 is restored).
+- Tests: methodology section test; section-count assertion 12 to 13 (a new section is added). Screenshots for both themes at 1920, 1440 and 390 in `artifacts/screenshots/style/` were viewed; a mobile overflow in the Defence card and the Defence table layout were fixed.
+- Size: payload `style` 50 KB, `style_raw.parquet` 80 KB (not shipped), dist 1.72 MB. Full suite 175 passed. Not merged: awaiting approval.

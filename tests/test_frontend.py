@@ -835,7 +835,7 @@ def test_methodology_is_collapsible(page, data):
     go(page, "methodology", "2025-26")
     secs = page.locator("details.sec")
     n = secs.count()
-    assert n == 12
+    assert n == 13
     # only the first section starts open; every heading is visible as a summary
     assert [secs.nth(i).get_attribute("open") is not None for i in range(n)] == [True] + [False] * (n - 1)
     assert page.locator("details.sec > summary h2").all_text_contents()[0] == "What this dashboard is"
@@ -848,7 +848,7 @@ def test_methodology_is_collapsible(page, data):
     assert "arrow follows the sign" not in page.locator("[data-testid=methodology]").inner_text()
     # expand / collapse all (sections and glossary groups)
     page.click("[data-testid=expand-all]")
-    assert page.locator("details[open]").count() == page.locator("details").count() and page.locator("details.sub").count() == 7
+    assert page.locator("details[open]").count() == page.locator("details").count() and page.locator("details.sub").count() == 8
     assert "Brier score is the mean" in page.locator("[data-testid=methodology]").inner_text()
     page.click("[data-testid=collapse-all]")
     assert page.locator("details[open]").count() == 0
@@ -1000,7 +1000,7 @@ def test_touch_targets_are_large_enough_on_mobile(browser, data):
     small = []
     for route in PAGES:
         go(pg, route, data["default_season"])
-        for tag, box in pg.evaluate("""() => [...document.querySelectorAll('a.item, select, input, button:not(.info):not(.sortbtn):not(.pl), summary, .seg button')]
+        for tag, box in pg.evaluate("""() => [...document.querySelectorAll('a.item, select, input, button:not(.info):not(.sortbtn):not(.pl):not(.pip):not(button.badge), summary, .seg button')]
             .filter(e => e.offsetParent !== null && !e.closest('details:not([open]) > :not(summary)'))
             .map(e => { const r = e.getBoundingClientRect(); return [e.tagName + '.' + e.className + ' ' + (e.textContent || '').trim().slice(0, 20), [r.width, r.height]]; })"""):
             if box[1] < 32:
@@ -1378,3 +1378,175 @@ def test_no_overflow_with_wide_fallback_fonts(browser, data, width):
                     bad.append((theme, route, season, res[1]))
     assert bad == [], bad[:6]
     ctx.close()
+
+
+# ------------------------------------------------------------------ Style of play
+import math  # noqa: E402
+
+
+def _half_up(x):
+    return int(math.floor(x + 0.5))
+
+
+ROWS_JS = """() => [...document.querySelectorAll('.axis')].map(a => {
+    const read = a.querySelector('[data-testid=axis-read]'), conf = a.querySelector('[data-testid=axis-confidence]'), badge = a.querySelector('[data-testid=axis-origin]');
+    const pct = sel => { const t = a.querySelector(sel), i = a.querySelector('.in'); if (!t || !i) return null;
+      const tr = t.getBoundingClientRect(), ir = i.getBoundingClientRect(); return ((tr.left + tr.width / 2) - ir.left) / ir.width * 100; };
+    return { id: a.dataset.axis, status: a.dataset.status, hasTrack: !!a.querySelector('.track'), text: a.textContent,
+      score: read ? read.dataset.score : null, rank: read ? read.dataset.rank : null, read: read ? read.textContent : '',
+      badge: badge ? badge.textContent : null, pip: conf ? conf.dataset.conf : null,
+      tickPct: pct('[data-testid=axis-tick]'), livPct: pct('[data-testid=axis-liv]'), dots: a.querySelectorAll('.dot:not(.liv)').length };
+})"""
+
+
+def _rows(pg):
+    return pg.evaluate(ROWS_JS)
+
+
+@pytest.mark.parametrize("theme", THEMES)
+@pytest.mark.parametrize("width,height", [(1920, 1080), (1440, 900), (390, 844)])
+def test_style_sections_match_build_json(browser, data, theme, width, height):
+    ctx, pg = _new_page(browser, width, height, scheme=theme)
+    pg.goto(DIST.as_uri())
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    pg.evaluate("t => { document.documentElement.dataset.theme = t }", theme)
+    cfg = data["style"]["cfg"]
+    for season in ("2024-25", "2017-18", "2026-27"):
+        S = data["style"]["seasons"][season]
+        go(pg, "overview", season)
+        assert pg.locator(".style-card").count() == 0                                  # Overview is unchanged
+        go(pg, "attack", season)
+        assert [e.get_attribute("data-phase") for e in pg.locator(".style-card").all()] == ["buildup", "attack"]
+        go(pg, "defence", season)
+        assert [e.get_attribute("data-phase") for e in pg.locator(".style-card").all()] == ["defence"]
+        for route, phases in (("attack", ("buildup", "attack")), ("defence", ("defence",))):
+            go(pg, route, season)
+            rows = _rows(pg)
+            assert [r["id"] for r in rows] == [a for ph in phases for a in cfg["phases"][ph]["axes"]]
+            for r in rows:
+                ax, a = S["axes"][r["id"]], cfg["axes"][r["id"]]
+                if ax["status"] != "computed":
+                    assert not r["hasTrack"] and "Needs pass-level data" in r["text"], r["id"]
+                    continue
+                assert float(r["score"]) == ax["liv"]["score"] and int(r["rank"]) == ax["liv"]["rank"], r["id"]
+                assert r["read"].startswith(f'{a["right"]} {_half_up(ax["liv"]["score"])} · '), (r["id"], r["read"])
+                assert r["badge"] == ("External data" if ax["origin"] == "external" else "Proxy") and r["pip"] == a["confidence"], r["id"]
+                assert abs(r["tickPct"] - 50) < 0.6 and abs(r["livPct"] - ax["liv"]["score"]) < 0.6, (r["id"], r["tickPct"], r["livPct"])
+                assert r["dots"] == ax["n"] - 1, r["id"]
+            for ph in phases:
+                iid = cfg["phases"][ph]["index_id"]
+                ix = S["indices"][iid]
+                box = pg.locator(f"[data-index={iid}]")
+                assert box.locator(".num").inner_text() == ("N/A" if ix["score"] is None else str(_half_up(ix["score"])))
+                assert (box.locator("[data-testid=style-partial]").count() == 1) == ix["partial"]
+                if ix["score"] is not None and ix["change"] is not None:
+                    txt = box.locator("[data-testid=style-change]").inner_text().replace("−", "-")
+                    assert txt.startswith(f"{ix['change']:+d} pts"), txt
+    assert pg.errors == []
+    ctx.close()
+
+
+def test_style_components_use_no_good_bad_colours_or_arrows(browser):
+    for theme in THEMES:
+        ctx, pg = _new_page(browser, 1440, 900, scheme=theme)
+        pg.goto(DIST.as_uri())
+        pg.wait_for_function("window.__tracker && window.__tracker.ready")
+        pg.evaluate("t => { document.documentElement.dataset.theme = t }", theme)
+        for route in ("attack", "defence"):
+            go(pg, route, "2024-25")
+            pg.evaluate("document.querySelectorAll('.axis-exp').forEach(b => b.click())")
+            bad = pg.evaluate("""() => {
+              const tok = n => { const d = document.createElement('i'); d.style.color = `var(--${n})`; document.body.append(d); const c = getComputedStyle(d).color; d.remove(); return c; };
+              const banned = ['good', 'bad', 'pos', 'neg', 'teal', 'teal-text'].map(tok);
+              const hits = [];
+              for (const card of document.querySelectorAll('.style-card')) for (const e of card.querySelectorAll('*')) {
+                const cs = getComputedStyle(e);
+                for (const p of ['color', 'backgroundColor', 'borderTopColor', 'fill', 'stroke']) if (banned.includes(cs[p])) hits.push([String(e.className), p, cs[p]]);
+                const own = [...e.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('');
+                if (/[▲▼▬↑↓]/.test(own)) hits.push([String(e.className), 'arrow']);
+              }
+              if (document.querySelector('.style-card .delta, .style-card .good, .style-card .bad')) hits.push(['delta class']);
+              return hits;
+            }""")
+            assert bad == [], (theme, route, bad[:5])
+        ctx.close()
+
+
+def test_style_changes_with_season_and_era(page, data):
+    seen = set()
+    for season in ("2015-16", "2019-20", "2024-25"):
+        go(page, "defence", season)
+        row = [r for r in _rows(page) if r["id"] == "style_def_press"][0]
+        assert float(row["score"]) == data["style"]["seasons"][season]["axes"]["style_def_press"]["liv"]["score"]
+        seen.add((row["score"], round(row["livPct"], 1)))
+        assert page.locator("[data-axis=style_def_press] .spark .pt.sel").count() == 1
+        assert set(SEASON_RE.findall(visible_text(page))) <= {season}
+    assert len(seen) == 3
+    go(page, "defence", "all", era="slot")                # season 'all' shows the latest season of the era
+    assert "Showing 2025-26" in page.inner_text("[data-testid=style-note]")
+    go(page, "defence", "all", era="klopp")
+    assert "Showing 2023-24" in page.inner_text("[data-testid=style-note]")
+    n = len([s for s in data["seasons"] if f"{s}|Jürgen Klopp" in data["selections"]])
+    assert page.locator("[data-axis=style_def_press] .spark .pt").count() == n
+    assert page.locator(".spark .band").count() > 0 and page.errors == []
+
+
+def test_style_expanders_are_keyboard_buttons(page):
+    go(page, "attack", "2024-25")
+    btn = page.locator("[data-axis=style_att_tempo] .axis-exp")
+    assert btn.evaluate("e => e.tagName") == "BUTTON" and btn.get_attribute("aria-expanded") == "false"
+    assert btn.bounding_box()["height"] >= 44
+    panel = page.locator("#kpi-style_att_tempo")
+    assert not panel.is_visible()
+    btn.focus()
+    page.keyboard.press("Enter")
+    assert btn.get_attribute("aria-expanded") == "true" and panel.is_visible()
+    assert panel.locator("tbody tr").count() == 2
+    page.keyboard.press("Space")
+    assert btn.get_attribute("aria-expanded") == "false" and not panel.is_visible()
+
+
+def test_style_small_sample_badge_and_table_alternatives(page):
+    go(page, "attack", "2026-27")
+    assert page.locator("[data-testid=small-sample]").count() == 1
+    assert "matches played so far" in page.inner_text("[data-testid=style-note]")
+    go(page, "defence", "2024-25")
+    tbl = page.locator("[data-phase=defence] details.tbl").nth(1)
+    tbl.locator("summary").click()
+    rows = _table_rows(tbl.locator("tbody tr"))
+    assert len(rows) == 20 and any(r[0] == "Liverpool" for r in rows)
+
+
+def test_style_screenshots(browser):
+    out = SHOTS / "style"
+    out.mkdir(parents=True, exist_ok=True)
+    for theme in THEMES:
+        for w, h in ((1920, 1080), (1440, 900), (390, 844)):
+            ctx, pg = _new_page(browser, w, h, scheme=theme)
+            pg.goto(DIST.as_uri())
+            pg.wait_for_function("window.__tracker && window.__tracker.ready")
+            pg.evaluate("t => { document.documentElement.dataset.theme = t }", theme)
+            for route in ("attack", "defence"):
+                go(pg, route, "2024-25")
+                pg.wait_for_timeout(150)
+                pg.screenshot(path=str(out / f"{route}-{theme}-{w}.png"), full_page=True)
+            assert pg.errors == []
+            ctx.close()
+
+
+def test_methodology_style_section_credits_cies_and_lists_every_axis(page, data):
+    go(page, "methodology", "2024-25")
+    page.click("#toc-style-of-play-proxy-scores, [data-toc=style-of-play-proxy-scores]")
+    sec = page.locator("details.sec:has(#style-of-play-proxy-scores)")
+    assert sec.get_attribute("open") is not None
+    text = sec.inner_text()
+    assert "CIES Football Observatory" in text and "never a CIES score" in text and "neither good nor bad" in text
+    assert "Needs pass-level data" in text and "central rectangle" in text.lower()
+    rows = sec.locator("[data-table=style-mapping] tbody tr")
+    cfg = data["style"]["cfg"]
+    assert rows.count() == 9
+    for a, info in cfg["axes"].items():
+        r = sec.locator(f"tr[data-axis={a}]")
+        assert info["left"] in r.inner_text() and info["right"] in r.inner_text() and info["confidence"] in r.inner_text()
+        assert ("Unavailable" in r.inner_text()) == (info["status"] == "unavailable")
+    assert page.errors == []
