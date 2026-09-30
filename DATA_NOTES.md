@@ -56,3 +56,14 @@ Rodgers → Klopp (2015-10-08) and Iraola's appointment (2026-06-04, reported by
 
 ## Politeness
 `etl._get` enforces 1 request/second process-wide. Every response is cached under `data/raw/` and never re-fetched unless `refresh=True`; completed seasons are never refreshed.
+
+## Known source inconsistency: team xG vs shot xG (found in M1)
+Understat's team-level match xG (`dates.xG` = team `history.xG`, identical) is **lower than the sum of the same match's shot xG** in 158 of 922 Liverpool team-matches (both teams). It is never higher (min diff -5e-6), the gap is up to 0.88 xG, and it adds 0.4-2.5% to a season total. It is not a single shot type or a duplicate (ids are unique, and removing one shot explains only 47 of the 158 cases). The brief's ±0.02 test cannot hold on real data.
+Decision: `matches.xg` / `xga` = **sum of shot xG** (own goals excluded, xG 0). Every shot map, xG race chart and the xG simulation use shots, so the numbers on screen reconcile. Understat's figure is kept as `xg_reported` / `xga_reported`. `team_seasons` (league-wide, no shot data for other clubs' matches) uses the reported figures; league reference lines are therefore ~1-2% lower than Liverpool's shot-sum values, which the Methodology page will state. The ETL test asserts the shot sum is never below the reported value, within ±0.02 in ≥80% of team-matches, and within 3-4% per season.
+
+## Own goals (verified in M1)
+An own goal is a shot with `result = OwnGoal`, xG 0, `h_a` = side of the player who scored it. It is credited to the opposition: goals for a team = `Goal` shots by that team + `OwnGoal` shots by the other team. `shots.scoring_team` encodes this. Player-season `goals` never include own goals; roster `own_goals` counts them for the scorer.
+
+## Processed tables (`data/processed/*.parquet`)
+`matches` (Liverpool played matches, 461 rows: results, xG, PPDA/deep, odds sets, chosen closing price `mkt_*` + `mkt_source`), `fixtures` (all 494 Liverpool fixtures incl. unplayed), `team_matches` (all clubs, 9,220), `team_seasons` (260 team-seasons incl. shots by situation), `shots` (12,084, both teams in Liverpool matches), `rosters` (13,154 player-matches), `player_seasons` (Liverpool, 335, from rosters; npxG/npG from non-penalty shots).
+Market source actually used: Pinnacle close for 2014/15-2024/25 (all 38) and 21 of 38 in 2025/26; market-average close for 17 in 2025/26 and all 5 played in 2026/27. Betfair Exchange columns are stored (`bfe_open_*`, `bfe_close_*`, present 2024/25 onward) but not needed as a fallback so far.
