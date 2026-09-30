@@ -996,22 +996,34 @@ def test_touch_targets_are_large_enough_on_mobile(browser, data):
     ctx.close()
 
 
-def test_tooltips_work_on_touch(browser):
-    ctx = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True)
+@pytest.mark.parametrize("is_mobile", [True, False], ids=["mobile-no-hover", "touch-with-hover-media"])
+def test_tooltips_work_on_touch(browser, is_mobile):
+    """Tap opens, a later tap closes, tapping elsewhere dismisses. Run with and without mobile emulation:
+    without it the browser still matches (hover: hover) and fires mouseenter/focus during the tap, which
+    must not make the click that follows toggle the tooltip straight back off (this failed on CI)."""
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=is_mobile)
     pg = ctx.new_page()
     _stub_network(pg)
     pg.goto(DIST.as_uri() + "#/attack?season=2024-25&era=all")
     pg.wait_for_function("window.__tracker && window.__tracker.ready")
+
+    def tip_on():
+        return "on" in (pg.get_attribute("#tip", "class") or "").split()
+
     pg.locator("[data-chart=attack] circle.shot").first.scroll_into_view_if_needed()
     pg.tap("[data-chart=attack] circle.shot >> nth=5", force=True)
     pg.wait_for_timeout(150)
-    assert "on" in pg.get_attribute("#tip", "class") and "xG" in pg.inner_text("#tip")  # stays after the finger lifts
+    assert tip_on() and "xG" in pg.inner_text("#tip")  # stays after the finger lifts
     pg.tap("h1")
     pg.wait_for_timeout(100)
-    assert "on" not in (pg.get_attribute("#tip", "class") or "").split()
+    assert not tip_on()
     pg.tap("button.info >> nth=0")
+    pg.wait_for_timeout(150)
+    assert tip_on() and "Source:" in pg.inner_text("#tip")
+    pg.wait_for_timeout(500)
+    pg.tap("button.info >> nth=0")  # a deliberate second tap closes it
     pg.wait_for_timeout(100)
-    assert "on" in pg.get_attribute("#tip", "class")
+    assert not tip_on()
     ctx.close()
 
 
@@ -1043,3 +1055,29 @@ def test_performance_budgets(browser, data):
     assert pg.evaluate("performance.getEntriesByType('navigation')[0].domContentLoadedEventEnd") < 3000
     print("render ms:", {f"{k[0]}/{k[1]}": v for k, v in worst.items()})
     ctx.close()
+
+
+def test_info_tooltip_survives_event_orderings_seen_on_other_browsers(page):
+    """Browsers differ in which events fire around a tap (mouseenter, focus, pointerleave). The tooltip must
+    end up open after a tap however they interleave, and a mouse leaving must still close it."""
+    go(page, "attack", "2024-25")
+    on = lambda: "on" in (page.get_attribute("#tip", "class") or "").split()
+    page.evaluate("""() => { const b = document.querySelector('button.info');
+        b.dispatchEvent(new MouseEvent('mouseenter'));            // opened by hover during the tap...
+        b.click(); }""")  # ...then the click arrives in the same gesture
+    assert on(), "a click straight after a hover-open must not close the tooltip"
+    page.evaluate("document.querySelector('button.info').dispatchEvent(new PointerEvent('pointerleave', {pointerType: 'touch'}))")
+    assert on(), "a lifted finger is not a dismissal"
+    page.evaluate("document.querySelector('button.info').dispatchEvent(new PointerEvent('pointerleave', {pointerType: 'mouse'}))")
+    assert not on(), "a mouse leaving closes it"
+    page.wait_for_timeout(400)
+    page.evaluate("document.querySelector('button.info').click()")   # a deliberate click opens ...
+    assert on()
+    page.wait_for_timeout(400)
+    page.evaluate("document.querySelector('button.info').click()")   # ... and the next one closes it
+    assert not on()
+    # another ⓘ's tooltip is replaced, not toggled off
+    page.evaluate("document.querySelectorAll('button.info')[0].click()")
+    page.wait_for_timeout(400)
+    page.evaluate("document.querySelectorAll('button.info')[1].click()")
+    assert on() and page.inner_text("#tip") != ""

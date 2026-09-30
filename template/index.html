@@ -396,16 +396,21 @@ function showTip(html, x, y) {
   tip.style.top = Math.max(8, Math.min(innerHeight - h - 8, y - h - 12 < 8 ? y + 16 : y - h - 12)) + 'px';
 }
 function hideTip() { tip.classList.remove('on'); }
+let tipOwner = null, tipOpenedAt = 0;                   // which ⓘ opened the tooltip, and when
 const leaveTip = ev => { if (!ev || ev.pointerType !== 'touch') hideTip(); };   // a lifted finger 'leaves' the mark: keep the tip until the next tap
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function info(id) {                         // ⓘ tooltip text comes from the registry, nowhere else
   const m = R[id];
   const b = el('button', { class: 'info', type: 'button', 'aria-label': `About ${m.label}`, 'data-info': id }, 'ⓘ');
-  const open = () => { const r = b.getBoundingClientRect(); showTip(`<b>${esc(m.label)}</b><br>${esc(m.description)}<span class="src">Source: ${esc(m.source)}</span>`, r.left + r.width / 2 - 12, r.top); };
+  const open = () => { tipOwner = b; tipOpenedAt = performance.now(); const r = b.getBoundingClientRect(); showTip(`<b>${esc(m.label)}</b><br>${esc(m.description)}<span class="src">Source: ${esc(m.source)}</span>`, r.left + r.width / 2 - 12, r.top); };
   const canHover = matchMedia('(hover: hover)');        // on touch screens a tap toggles instead (mouseenter and focus fire on tap too)
   b.addEventListener('mouseenter', () => { if (canHover.matches) open(); }); b.addEventListener('focus', () => { if (b.matches(':focus-visible')) open(); });
-  b.addEventListener('mouseleave', hideTip); b.addEventListener('blur', hideTip);
-  b.addEventListener('click', e => { e.stopPropagation(); tip.classList.contains('on') ? hideTip() : open(); });
+  b.addEventListener('pointerleave', leaveTip); b.addEventListener('blur', hideTip);   // a touch pointer 'leaves' when the finger lifts: not a dismissal
+  b.addEventListener('click', e => {                    // toggle, but a click that follows an open from the same gesture (hover, focus) keeps it open
+    e.stopPropagation();
+    const sameGesture = performance.now() - tipOpenedAt < 350;
+    if (tip.classList.contains('on') && tipOwner === b && !sameGesture) hideTip(); else open();
+  });
   return b;
 }
 document.addEventListener('click', ev => { if (!ev.target.closest('svg, .mixbar, .strip')) hideTip(); });
