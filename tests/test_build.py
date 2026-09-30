@@ -214,3 +214,23 @@ def test_supplied_crest_has_a_transparent_background():
     im = Image.open(build.CREST).convert("RGBA")
     corners = [im.getpixel(xy)[3] for xy in ((0, 0), (im.width - 1, 0), (0, im.height - 1), (im.width - 1, im.height - 1))]
     assert corners == [0, 0, 0, 0], "the crest has an opaque background: tell the owner rather than cutting it out"
+
+
+# ------------------------------------------------------------------ champion flag (drives the gold trim on the Overview record card)
+def _league_inputs(rows):
+    """rows: (season, team, matches, points). Just enough columns for league_payload."""
+    ts = pd.DataFrame([{"season": s, "team": t, "matches": m, "pts": p, "shots_shotlevel": 500, "xg_shotlevel": 55.0} for s, t, m, p in rows])
+    tm = pd.DataFrame({"season": ts.season.unique(), "ppda_att": 300.0, "ppda_def": 30.0, "deep": 6.0})
+    return ts, tm
+
+
+def test_champion_is_the_strict_points_leader_of_a_completed_season():
+    ts, tm = _league_inputs([("2024-25", "Liverpool", 38, 84), ("2024-25", "Arsenal", 38, 74), ("2024-25", "Everton", 38, 48)])
+    assert build.league_payload(ts, tm)["2024-25"]["champion"] == "Liverpool"
+
+
+def test_no_champion_while_a_season_is_unfinished_or_when_points_are_tied():
+    ts, tm = _league_inputs([("2025-26", "Liverpool", 20, 47), ("2025-26", "Arsenal", 20, 45), ("2025-26", "Everton", 20, 30)])
+    assert build.league_payload(ts, tm)["2025-26"]["champion"] is None                 # not everyone has played 38
+    ts, tm = _league_inputs([("2010-11", "Liverpool", 38, 80), ("2010-11", "Arsenal", 38, 80), ("2010-11", "Everton", 38, 48)])
+    assert build.league_payload(ts, tm)["2010-11"]["champion"] is None                 # a tie is never called
