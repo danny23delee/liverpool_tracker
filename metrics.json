@@ -246,6 +246,17 @@
   "signed": true
  },
  {
+  "id": "xgd_roll10",
+  "label": "Rolling 10-match xG difference",
+  "description": "Average xG difference (xG minus xGA) per match over the latest 10 matches, current match included. Expected, not actual. Needs at least 10 matches in the selection.",
+  "unit": "rate",
+  "higher_is_better": true,
+  "format": "+.2f",
+  "min_sample": 10,
+  "source": "Understat shots",
+  "signed": true
+ },
+ {
   "id": "npxg_pm",
   "label": "npxG per match (expected)",
   "description": "Mean non-penalty expected goals per match.",
