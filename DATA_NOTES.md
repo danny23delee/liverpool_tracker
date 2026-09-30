@@ -79,3 +79,53 @@ For Liverpool 2023/24 the same season has three xG totals: 94.79 (team match his
 
 ## Shot map conventions (M4)
 Understat X/Y are 0-1 from the shooter's view, X→1 = the goal being attacked. Attack map: (105·X, 68·Y) on a 105×68 m pitch, attacking left to right, drawn from x = 36 m. Defence map: opposition shots are rotated 180° ((105·(1−X), 68·(1−Y))) so Liverpool always attack left to right and defend the left goal, drawn up to x = 69 m. Shots outside the drawn area (long shots) are not plotted but are counted in the totals, and the page says how many.
+
+
+## Style of play feasibility (S0, 2026-09-30)
+
+Goal: proxy "style of play" scores (3 phases × 3 tactical axes) for every club, relative to that season's league. The CIES Football Observatory method uses Impect event data (pressure locations, pass lengths, reception heights, possession phases), which is not freely available, so everything here is a **proxy**, never the CIES index.
+
+### What was verified in the real data
+- **Team page splits exist for all 260 club-seasons** (20 clubs × 13 seasons, 2014/15 to 2026/27) in the already-cached `getTeamData` payloads, so **no new requests are needed** (style adds 0 requests and 0 MB of raw data). Fields of `statistics`:
+  - `shotZone`: `shotSixYardBox`, `shotPenaltyArea`, `shotOboxTotal`, `ownGoals`, each with `shots / goals / xG` for the club and `against` for opponents. Sums of the four buckets equal the club's total shots in 100% of club-seasons, for and against.
+  - `attackSpeed`: `Fast`, `Normal`, `Standard`, `Slow`, same layout; sums equal total shots in 100% of club-seasons. (Own-goal pseudo-shots are included in the totals, in an unknown bucket: at most 1 shot in ~600, negligible for shares.)
+  - `situation`, `gameState`, `timing`, `formation`, `result`: present but not used for style.
+- **Team match history** (`getLeagueData`): `ppda{att,def}`, `deep`, `deep_allowed` per match, all seasons.
+- **League player table** (`getLeagueData`): `xGChain`, `xGBuildup` per player, all seasons; summed per club (12 of 562 players in 2024 list two clubs and are skipped for the club sums).
+- **Zone definitions differ slightly from a geometric box.** Liverpool 2024/25 against: Understat penalty area 214 / six-yard 31 / outside 141; from coordinates (penalty area 16.5 × 40.32 m, six-yard 5.5 × 18.32 m) 204 / 30 / 152 of 386 opposition shots. Totals reconcile exactly; zone counts agree within about 5%. Understat's own zone counts are used, because they are available for every club.
+- **Not available league-wide:** shot type (headers), shot last action (crosses) and shot coordinates exist only in match or player payloads. League-wide they would need every match of every club (about 4,560 requests, ~76 minutes at 1 request/second, more than the CI job limit), so the **central rectangle of the own box** (defined in `config/style.json`: shooter-perspective x ≥ 0.843 and |y − 0.5| ≤ 0.13), the header share, the cross share, the central-lane share and the shot-dispersion KPIs are **not computed**. They are declared in the config as `external-only`, so real values can be supplied through `data/external/style_kpis.csv` without code changes.
+
+### Axis status matrix
+Sign: +1 means a higher KPI value pushes toward the right-hand label. "Computable" needs at least 2 verified KPIs.
+
+| Phase | Axis (left ◄► right) | KPI | Source field | Verified | Seasons | Sign | Axis status | Confidence |
+|---|---|---|---|---|---|---|---|---|
+| Defence | Low ◄► High | deep completions allowed per match | history `deep_allowed` | yes | all 13 | −1 | **proxy** | low |
+| | | share of shots conceded from fast attacks | `attackSpeed.Fast.against.shots` ÷ total | yes | all 13 | +1 | | |
+| Defence | Passive ◄► Active | PPDA (passes allowed per defensive action) | history `ppda.att ÷ ppda.def` | yes | all 13 | −1 | **proxy** | medium |
+| | | defensive actions in the opposition 40% per match | history `ppda.def` | yes | all 13 | +1 | | (the two share a source and are correlated) |
+| Defence | Lenient ◄► Tight | in-box shots conceded per match | `shotZone` penalty area + six-yard `.against.shots` | yes | all 13 | −1 | **proxy** | medium |
+| | | xGA from in-box shots per match | same zones `.against.xG` | yes | all 13 | −1 | | |
+| | | shots conceded from the central rectangle | shot coordinates, league-wide | **no** (see above) | none | −1 | dropped | |
+| Build-up | Long ◄► Short | none | | no honest proxy | | | **unavailable** | |
+| Build-up | Vertical ◄► Horizontal | none | | no honest proxy | | | **unavailable** | |
+| Build-up | Simple ◄► Elaborate | share of shots from slow attacks | `attackSpeed.Slow.shots` ÷ total | yes | all 13 | +1 | **proxy** | low |
+| | | xGBuildup as a share of xGChain (club totals) | league players `xGBuildup ÷ xGChain` | yes | all 13 | +1 | | |
+| Attack | Aerial ◄► Grounded | share of shots that are headers; share of open-play shots from a cross | shot type / last action, league-wide | **no** | none | −1, −1 | **unavailable** (external-only KPIs) | |
+| Attack | Rapid ◄► Placed | share of shots from fast attacks | `attackSpeed.Fast.shots` ÷ total | yes | all 13 | −1 | **proxy** | medium |
+| | | share of xG from fast attacks | `attackSpeed.Fast.xG` ÷ total xG | yes | all 13 | −1 | | |
+| Attack | Scattered ◄► Grouped | share of shots taken inside the box | `shotZone` penalty area + six-yard ÷ non-own-goal shots | yes | all 13 | +1 | **proxy** | low |
+| | | deep completions per shot | history `deep` ÷ shots | yes | all 13 | +1 | | |
+| | | central-lane share; y dispersion of open-play shots | shot coordinates, league-wide | **no** | none | +1, −1 | dropped (external-only) | |
+
+### Composite indices
+- **Pressure index** (Defence): all three axes computable.
+- **Occupation index** (Attack): 2 of 3 axes (Aerial missing), shown as **partial**.
+- **Control index** (Build-up): only 1 of 3 axes computable, below the 2-axis minimum, so **no index**; the card says "Needs pass-level data".
+
+Result of the S0 stop rule: Defence has 3 computable axes and Attack has 2, so the feature continues.
+
+### Deviations from STYLE_OF_PLAY.md
+- The Passive ◄► Active axis is given two KPIs (PPDA and defensive actions per match) instead of one, to respect the "at least 2 KPIs" rule. They are correlated (PPDA is the opponent's passes divided by the actions), so the confidence is capped at medium.
+- The Lenient ◄► Tight axis uses two in-box KPIs; the central-rectangle KPI is dropped (needs league-wide coordinates).
+- The Grouped axis replaces the two coordinate-based KPIs with in-box shot share.
