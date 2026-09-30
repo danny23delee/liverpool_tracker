@@ -240,7 +240,7 @@ def test_no_horizontal_page_overflow_on_mobile(browser, data):
     ctx.close()
 
 
-@pytest.mark.parametrize("width,height", [(1440, 900), (390, 844)])
+@pytest.mark.parametrize("width,height", [(1440, 900), (768, 1024), (390, 844)])
 def test_screenshots(browser, data, width, height):
     SHOTS.mkdir(parents=True, exist_ok=True)
     ctx, pg = _new_page(browser, width, height)
@@ -254,9 +254,13 @@ def test_screenshots(browser, data, width, height):
     pg.screenshot(path=str(SHOTS / f"overview_small-sample_{width}.png"), full_page=True)
     go(pg, "overview", "all")
     pg.screenshot(path=str(SHOTS / f"overview_all_{width}.png"), full_page=True)
+    for route in ("attack", "market", "match"):  # the heaviest pages with every season
+        go(pg, route, "all")
+        pg.screenshot(path=str(SHOTS / f"{route}_all_{width}.png"), full_page=True)
     pg.evaluate("document.documentElement.dataset.theme = 'dark'")
-    go(pg, "overview", data["default_season"])
-    pg.screenshot(path=str(SHOTS / f"overview_dark_{width}.png"), full_page=True)
+    for route in PAGES:
+        go(pg, route, data["default_season"])
+        pg.screenshot(path=str(SHOTS / f"{route}_dark_{width}.png"), full_page=True)
     assert pg.errors == []
     ctx.close()
 
@@ -450,7 +454,9 @@ def test_squad_table_matches_data_and_filters(page):
     assert page.locator("table[data-table=squad] tbody tr").count() == 1
     assert page.inner_text("table[data-table=squad] tbody tr td") == "Mohamed Salah"
     page.fill("#p-search", "zzzz")
-    assert page.locator("table[data-table=squad] tbody tr").count() == 0
+    assert page.locator("table[data-table=squad] tbody tr[data-pid]").count() == 0
+    assert page.locator("[data-testid=no-players]").count() == 1 and "No players match" in page.inner_text("[data-testid=no-players]")
+    assert "No players above the filter" in page.inner_text("[data-role=Creator]")
     page.fill("#p-search", "")
     # sorting: default minutes descending, click flips it
     page.select_option("#p-min", "450")
@@ -750,6 +756,7 @@ def test_methodology_generated_from_registry_and_data(page, data):
     import pandas as pd
     import metrics as MT
     go(page, "methodology", "2025-26")
+    page.click("[data-testid=expand-all]")
     reg = data["registry"]
     rows = page.locator("table.glossary tbody tr")
     assert rows.count() == len(reg)
@@ -780,6 +787,7 @@ def test_methodology_worked_examples_are_correct(page):
     import numpy as np
     import metrics as MT
     go(page, "methodology", "2025-26")
+    page.click("[data-testid=expand-all]")
     rows = _table_rows(page.locator("table[data-table=devig-example] tbody tr"))
     odds = [float(r[1]) for r in rows]
     prop, shin, z = MT.devig_proportional(odds), MT.devig_shin(odds), MT.shin_z(odds)
@@ -807,3 +815,226 @@ def test_methodology_navigation_does_not_break_routing(page):
     page.click("a[data-jump='#accuracy']")
     assert page.evaluate("location.hash").startswith("#/methodology")
     assert page.errors == []
+
+
+def test_methodology_is_collapsible(page, data):
+    go(page, "methodology", "2025-26")
+    secs = page.locator("details.sec")
+    n = secs.count()
+    assert n == 12
+    # only the first section starts open; every heading is visible as a summary
+    assert [secs.nth(i).get_attribute("open") is not None for i in range(n)] == [True] + [False] * (n - 1)
+    assert page.locator("details.sec > summary h2").all_inner_texts()[0] == "What this dashboard is"
+    hidden = page.locator("[data-testid=methodology]").inner_text()
+    assert "Two rules run through everything" in hidden and "Politeness and reproducibility" not in hidden  # collapsed text is not rendered
+    # clicking a summary toggles it
+    page.locator("details.sec > summary", has_text="Baselines and change").click()
+    assert "arrow follows the sign" in page.locator("[data-testid=methodology]").inner_text()
+    page.locator("details.sec > summary", has_text="Baselines and change").click()
+    assert "arrow follows the sign" not in page.locator("[data-testid=methodology]").inner_text()
+    # expand / collapse all (sections and glossary groups)
+    page.click("[data-testid=expand-all]")
+    assert page.locator("details[open]").count() == page.locator("details").count() and page.locator("details.sub").count() == 7
+    assert "Brier score is the mean" in page.locator("[data-testid=methodology]").inner_text()
+    page.click("[data-testid=collapse-all]")
+    assert page.locator("details[open]").count() == 0
+    # the contents jump opens a collapsed section and scrolls to it; hash routing is untouched
+    page.click("[data-toc='baselines-and-change']")
+    page.wait_for_function("document.querySelector('details.sec:has(#baselines-and-change)').open")
+    page.wait_for_function("document.getElementById('baselines-and-change').getBoundingClientRect().top < 500", timeout=8000)
+    assert page.evaluate("location.hash").startswith("#/methodology?season=2025-26")
+    # the glossary groups have counts that add up to the registry
+    page.click("[data-testid=expand-all]")
+    counts = page.locator("details.sub summary .cnt").all_inner_texts()
+    assert sum(int(c.strip("()")) for c in counts) == len(data["registry"])
+    assert page.errors == []
+
+
+# ------------------------------------------------------------------ M7: polish, resilience, performance
+def _css_tokens():
+    import re
+    css = (ROOT / "template" / "index.html").read_text(encoding="utf-8")
+
+    def block(start):
+        i = css.index(start)
+        return css[i:css.index("}", i)]
+
+    def toks(b):
+        return dict(re.findall(r"--([\w-]+):\s*(#[0-9a-fA-F]{6})", b))
+    return {"light": toks(block(":root {\n  color-scheme: light")), "dark": toks(block(':root[data-theme="dark"] {'))}
+
+
+def _lum(h):
+    h = h.lstrip("#")
+    c = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+    c = [x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4 for x in c]
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+
+
+def _contrast(a, b):
+    la, lb = _lum(a), _lum(b)
+    return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+
+
+def test_text_colours_meet_wcag_aa_in_both_themes():
+    for theme, t in _css_tokens().items():
+        for fg in ("ink", "ink-2", "muted", "neutral", "good", "bad", "accent"):
+            for bg in ("bg", "surface", "surface-2"):
+                assert _contrast(t[fg], t[bg]) >= 4.5, (theme, fg, bg, round(_contrast(t[fg], t[bg]), 2))
+        assert _contrast(t["accent-ink"], t["accent"]) >= 4.5, theme  # text on the red buttons and pressed toggles
+
+
+def test_dark_theme_defines_every_token_of_the_light_theme():
+    t = _css_tokens()
+    assert set(t["light"]) <= set(t["dark"]) | {"good-bg", "bad-bg"}, set(t["light"]) - set(t["dark"])
+
+
+def test_page_shell_shows_loading_state_before_scripts_run(browser):
+    ctx = browser.new_context(java_script_enabled=False)
+    pg = ctx.new_page()
+    pg.goto(DIST.as_uri())
+    assert "Loading the dashboard" in pg.inner_text("#view") and "needs JavaScript" in pg.text_content("noscript")
+    assert pg.inner_text("h1") != "" and pg.locator("footer").count() == 1
+    ctx.close()
+
+
+def test_page_degrades_gracefully_when_d3_cannot_load(browser):
+    ctx = browser.new_context()
+    pg = ctx.new_page()
+    errors = []
+    pg.on("pageerror", lambda e: errors.append(str(e)))
+    pg.route("https://cdnjs.cloudflare.com/**", lambda r: r.abort())
+    pg.route("https://fonts.googleapis.com/**", lambda r: r.fulfill(status=200, content_type="text/css", body=""))
+    pg.goto(DIST.as_uri())
+    pg.wait_for_selector("[data-testid=d3-missing]")
+    assert "charts library could not be loaded" in pg.inner_text("#view") and errors == []
+    ctx.close()
+
+
+def test_render_failure_shows_message_and_keeps_navigation(browser, data, tmp_path):
+    import build
+    broken = json.loads(json.dumps(data))
+    del broken["selections"]["2025-26|all"]["cal"]  # a page that needs this will throw while drawing
+    out = tmp_path / "broken.html"
+    out.write_text(build.render(broken), encoding="utf-8")
+    ctx, pg = _new_page(browser)
+    pg.goto(out.as_uri())
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    go(pg, "market", "2025-26")
+    assert pg.locator("[data-testid=render-error]").count() == 1 and pg.locator("nav.nav a.item").count() == 7
+    go(pg, "overview", "2025-26")  # the rest of the site still works
+    assert pg.locator("[data-metric=wins]").count() == 1 and pg.locator("[data-testid=render-error]").count() == 0
+    assert any("pageerror" in e or "console.error" in e for e in pg.errors)  # the failure is still reported, not swallowed
+    ctx.close()
+
+
+def test_empty_filter_results_are_explained(page):
+    go(page, "attack", "2025-26")
+    page.select_option("#f-player", label="Virgil van Dijk")
+    page.select_option("#f-sit", "Penalty")
+    assert page.inner_text("[data-stat=shots]") == "0" and page.locator("[data-chart=attack] .empty-note").count() == 1
+    assert page.inner_text("[data-stat=xgps]") == "N/A"  # never a divide-by-zero figure
+    page.select_option("#f-sit", "all")
+    assert page.locator("[data-chart=attack] .empty-note").count() == 0
+    go(page, "defence", "2025-26")
+    page.select_option("#f-opp", label="Arsenal")
+    page.select_option("#f-res", "ShotOnPost")
+    page.select_option("#f-typ", "OtherBodyPart")
+    assert page.inner_text("[data-stat=shots]") == "0" and page.locator("[data-chart=defence] .empty-note").count() == 1
+
+
+def test_changing_page_scrolls_to_top_and_keeps_focus_management(page):
+    go(page, "players", "2024-25")
+    page.evaluate("window.scrollTo(0, 1200)")
+    assert page.evaluate("scrollY") > 500
+    page.click("nav.nav a.item:has-text('Attack')")
+    page.wait_for_function("document.querySelector('#title').textContent.startsWith('Attack')")
+    assert page.evaluate("scrollY") == 0
+    # switching season on the same page must not jump to the top
+    page.evaluate("window.scrollTo(0, 600)")
+    page.select_option("#sel-season", "2023-24")
+    page.wait_for_function("document.querySelector('#title').textContent.includes('2023-24')")
+    assert page.evaluate("scrollY") > 300
+
+
+def test_mobile_nav_keeps_current_page_visible(browser):
+    ctx, pg = _new_page(browser, 390, 844)
+    pg.goto(DIST.as_uri() + "#/methodology?season=2025-26&era=all")
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    box = pg.evaluate("""() => { const n = document.querySelector('.nav').getBoundingClientRect(), c = document.querySelector('.nav a[aria-current]').getBoundingClientRect();
+        return [n.left, n.right, c.left, c.right, document.querySelector('.nav').scrollLeft]; }""")
+    assert box[4] > 0 and box[2] >= box[0] - 1 and box[3] <= box[1] + 1
+    ctx.close()
+
+
+def test_touch_targets_are_large_enough_on_mobile(browser, data):
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True)
+    pg = ctx.new_page()
+    pg.route("https://cdnjs.cloudflare.com/**", lambda r: r.fulfill(status=200, content_type="application/javascript", body=D3_LOCAL.read_bytes()))
+    pg.route("https://fonts.googleapis.com/**", lambda r: r.fulfill(status=200, content_type="text/css", body=""))
+    pg.goto(DIST.as_uri())
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    small = []
+    for route in PAGES:
+        go(pg, route, data["default_season"])
+        for tag, box in pg.evaluate("""() => [...document.querySelectorAll('a.item, select, input, button:not(.info):not(.sortbtn):not(.pl), summary, .seg button')]
+            .filter(e => e.offsetParent !== null && !e.closest('details:not([open]) > :not(summary)'))
+            .map(e => { const r = e.getBoundingClientRect(); return [e.tagName + '.' + e.className + ' ' + (e.textContent || '').trim().slice(0, 20), [r.width, r.height]]; })"""):
+            if box[1] < 32:
+                small.append((route, tag, [round(x) for x in box]))
+        # the tiny ⓘ glyph has a larger invisible hit area: points 13px either side still hit the button
+        ok = pg.evaluate("""() => { const b = document.querySelector('button.info'); if (!b) return true; const r = b.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+            return [[-13, 0], [13, 0], [0, -13], [0, 13]].every(([dx, dy]) => document.elementFromPoint(cx + dx, cy + dy) === b); }""")
+        assert ok, route
+    assert small == [], small
+    ctx.close()
+
+
+def test_tooltips_work_on_touch(browser):
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True)
+    pg = ctx.new_page()
+    pg.route("https://cdnjs.cloudflare.com/**", lambda r: r.fulfill(status=200, content_type="application/javascript", body=D3_LOCAL.read_bytes()))
+    pg.route("https://fonts.googleapis.com/**", lambda r: r.fulfill(status=200, content_type="text/css", body=""))
+    pg.goto(DIST.as_uri() + "#/attack?season=2024-25&era=all")
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    pg.locator("[data-chart=attack] circle.shot").first.scroll_into_view_if_needed()
+    pg.tap("[data-chart=attack] circle.shot >> nth=5", force=True)
+    pg.wait_for_timeout(150)
+    assert "on" in pg.get_attribute("#tip", "class") and "xG" in pg.inner_text("#tip")  # stays after the finger lifts
+    pg.tap("h1")
+    pg.wait_for_timeout(100)
+    assert "on" not in (pg.get_attribute("#tip", "class") or "").split()
+    pg.tap("button.info >> nth=0")
+    pg.wait_for_timeout(100)
+    assert "on" in pg.get_attribute("#tip", "class")
+    ctx.close()
+
+
+@pytest.mark.parametrize("width,height", [(768, 1024), (1024, 768), (1280, 720)])
+def test_no_horizontal_overflow_at_tablet_and_laptop_widths(browser, data, width, height):
+    ctx, pg = _new_page(browser, width, height)
+    pg.goto(DIST.as_uri())
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    for route in PAGES:
+        for season in (data["default_season"], "all"):
+            go(pg, route, season)
+            assert pg.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), (route, season, width)
+    assert pg.errors == []
+    ctx.close()
+
+
+def test_performance_budgets(browser, data):
+    """Local budgets (generous for CI): boot, and the slowest realistic renders. Numbers are recorded in PROGRESS.md."""
+    ctx, pg = _new_page(browser)
+    pg.goto(DIST.as_uri())
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    assert pg.evaluate("window.__tracker.boot") < 1500
+    worst = {}
+    for route in PAGES:
+        for season in ("all", data["default_season"]):
+            go(pg, route, season)
+            worst[(route, season)] = pg.evaluate("window.__tracker.lastRender")
+    assert max(worst.values()) < 2500, worst
+    assert pg.evaluate("performance.getEntriesByType('navigation')[0].domContentLoadedEventEnd") < 3000
+    print("render ms:", {f"{k[0]}/{k[1]}": v for k, v in worst.items()})
+    ctx.close()
