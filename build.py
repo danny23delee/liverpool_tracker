@@ -20,6 +20,8 @@ import metrics as M
 ROOT = Path(__file__).parent
 PROCESSED = ROOT / "data" / "processed"
 TEMPLATE = ROOT / "template" / "index.html"
+CREST = ROOT / "assets" / "crest.png"
+CREST_MAX_HEIGHT = 192  # px; the sidebar shows it at about 46 x 54 px
 DIST = ROOT / "dist" / "index.html"
 MAX_BYTES = 5 * 1024 * 1024
 
@@ -425,8 +427,34 @@ def load_tables() -> dict:
 
 
 # ------------------------------------------------------------------ render
-def render(data: dict) -> str:
+def crest_html(path: Path = CREST) -> str:
+    """The sidebar crest: the supplied PNG resized (Pillow, aspect ratio kept, at most 192 px tall), optimised and
+    inlined as a base64 data URI so the deploy stays one file. If the file is missing, a red bar. The image is
+    used in this one place only (never as favicon, background or share image)."""
+    fallback = '<span class="brand-mark" aria-hidden="true"></span>'
+    if not Path(path).exists():
+        return fallback
+    import base64
+    import io
+
+    from PIL import Image
+
+    im = Image.open(path).convert("RGBA")
+    corners = [im.getpixel(xy)[3] for xy in ((0, 0), (im.width - 1, 0), (0, im.height - 1), (im.width - 1, im.height - 1))]
+    if min(corners) > 0:
+        print(f"WARNING: {path} has an opaque background (corner alpha {corners}); it is used as supplied, please check it")
+    if im.height > CREST_MAX_HEIGHT:
+        im = im.resize((round(im.width * CREST_MAX_HEIGHT / im.height), CREST_MAX_HEIGHT), Image.LANCZOS)
+    buf = io.BytesIO()
+    im.save(buf, "PNG", optimize=True)
+    uri = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+    return f'<img class="crest" src="{uri}" alt="Liverpool FC crest" width="46" height="54">'
+
+
+def render(data: dict, crest_path: Path = CREST) -> str:
     html = TEMPLATE.read_text(encoding="utf-8")
+    assert "__CREST__" in html
+    html = html.replace("__CREST__", crest_html(crest_path))
     blob = json.dumps(clean(data), allow_nan=False, separators=(",", ":"), ensure_ascii=False)
     blob = blob.replace("</", "<\\/").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
     assert "__DATA_JSON__" in html

@@ -1317,3 +1317,36 @@ def test_drawer_is_a_bottom_sheet_on_mobile(browser):
     pg.wait_for_timeout(300)
     assert not pg.locator("[data-testid=drawer]").is_visible() and pg.errors == []
     ctx.close()
+
+
+# ------------------------------------------------------------------ Redesign: crest and sidebar
+def test_crest_renders_at_sidebar_size_and_is_used_once(page):
+    info = page.evaluate("""() => { const i = document.querySelector('.brand img.crest'), r = i.getBoundingClientRect(), cs = getComputedStyle(i);
+        return {alt: i.alt, w: r.width, h: r.height, natural: [i.naturalWidth, i.naturalHeight], src: i.src.slice(0, 22), fit: cs.objectFit, images: document.images.length,
+                favicon: document.querySelector('link[rel=icon]').href.slice(0, 40), bg: getComputedStyle(document.body).backgroundImage}; }""")
+    assert info["alt"] == "Liverpool FC crest" and info["src"] == "data:image/png;base64," and info["fit"] == "contain"
+    assert abs(info["w"] - 46) < 1.5 and abs(info["h"] - 54) < 1.5  # the sidebar slot: about 46 x 54 px
+    assert info["natural"][1] <= 192 and info["natural"][0] > 0  # resized to at most 192 px tall
+    assert info["images"] == 1 and info["bg"] == "none"          # nowhere else on the page, not a background
+    assert "svg" in info["favicon"]                               # and never the favicon
+    assert page.locator(".brand-mark").count() == 0
+    # the brand text stays inside the sidebar next to the crest
+    fit = page.evaluate("""() => { const t = document.querySelector('.brand-text').getBoundingClientRect(), n = document.querySelector('.nav').getBoundingClientRect(); return n.right - t.right; }""")
+    assert fit >= 6
+    assert "not affiliated with or endorsed by Liverpool FC or the Premier League" in page.text_content("footer")
+
+
+def test_crest_falls_back_to_a_red_bar_without_errors(browser, data, tmp_path):
+    import build
+    out = tmp_path / "nocrest.html"
+    out.write_text(build.render(data, crest_path=tmp_path / "missing.png"), encoding="utf-8")
+    ctx, pg = _new_page(browser)
+    pg.goto(out.as_uri())
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    box = pg.evaluate("""() => { const m = document.querySelector('.brand-mark'), r = m.getBoundingClientRect();
+        return {w: r.width, h: r.height, bg: getComputedStyle(m).backgroundColor, images: document.images.length}; }""")
+    assert abs(box["w"] - 6) < 0.5 and abs(box["h"] - 46) < 0.5 and box["bg"] == "rgb(200, 16, 46)" and box["images"] == 0
+    for route in PAGES:
+        go(pg, route, "2025-26")
+    assert pg.errors == []
+    ctx.close()

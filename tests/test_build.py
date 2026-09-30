@@ -184,3 +184,33 @@ def test_methodology_payload_is_complete(payload, tables):
 def _re_findall(pattern, text):
     import re
     return re.findall(pattern, text)
+
+
+# ------------------------------------------------------------------ Redesign: crest inlining
+def test_crest_is_resized_optimised_and_inlined(tmp_path):
+    import base64
+    import io
+
+    from PIL import Image
+    src = tmp_path / "crest.png"
+    im = Image.new("RGBA", (340, 588), (0, 0, 0, 0))
+    for x in range(100, 240):
+        for y in range(100, 500):
+            im.putpixel((x, y), (200, 16, 46, 255))
+    im.save(src)
+    html = build.crest_html(src)
+    assert html.startswith('<img class="crest" src="data:image/png;base64,') and 'alt="Liverpool FC crest"' in html
+    out = Image.open(io.BytesIO(base64.b64decode(html.split("base64,")[1].split('"')[0])))
+    assert out.height == 192 and abs(out.width - round(340 * 192 / 588)) <= 1 and out.mode == "RGBA"  # aspect ratio kept
+    assert out.getpixel((0, 0))[3] == 0                                                              # transparency kept
+    assert len(html) < src.stat().st_size * 4 / 3 + 500                                              # smaller than the original
+    assert build.crest_html(tmp_path / "missing.png") == '<span class="brand-mark" aria-hidden="true"></span>'
+
+
+def test_supplied_crest_has_a_transparent_background():
+    from PIL import Image
+    if not build.CREST.exists():
+        pytest.skip("no crest supplied")
+    im = Image.open(build.CREST).convert("RGBA")
+    corners = [im.getpixel(xy)[3] for xy in ((0, 0), (im.width - 1, 0), (0, im.height - 1), (im.width - 1, im.height - 1))]
+    assert corners == [0, 0, 0, 0], "the crest has an opaque background: tell the owner rather than cutting it out"
