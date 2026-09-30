@@ -315,6 +315,24 @@ def external_hook_html() -> str:
             'calibration table and reliability plot.</p>')
 
 
+def style_mapping_html() -> str:
+    """The proxy mapping table, generated from config/style.json (and the registry labels), so it cannot drift."""
+    cfg = style.load_config()
+    rows = []
+    for ph in cfg["phases"].values():
+        for aid in ph["axes"]:
+            a = cfg["axes"][aid]
+            ks = [f'{esc(M.REGISTRY[k]["label"])} ({"higher" if cfg["kpis"][k]["sign"] > 0 else "lower"} pushes toward {esc(a["right"])})' for k in a["kpis"]]
+            ext = [esc(M.REGISTRY[k]["label"]) for k in a["external_kpis"]]
+            kp = "<br>".join(ks) if ks else "none"
+            if ext:
+                kp += "<br><em>Not computed (needs shot-level data for every club): " + "; ".join(ext) + "</em>"
+            status = "Proxy" if a["status"] == "proxy" else "Unavailable: needs pass-level data"
+            rows.append(f'<tr data-axis="{aid}"><td>{esc(ph["label"])}</td><td>{esc(a["left"])} ◄► {esc(a["right"])}</td><td>{kp}</td><td>{status}</td><td>{a["confidence"]}</td></tr>')
+    return ('<div class="tbl-x"><table class="data" data-table="style-mapping"><thead><tr><th>Phase</th><th>Axis</th><th>KPIs (Understat team data)</th><th>Status</th><th>Confidence</th></tr></thead>'
+            f'<tbody>{"".join(rows)}</tbody></table></div>')
+
+
 def _inline(t: str) -> str:
     t = esc(t)
     t = _re.sub(r"`([^`]+)`", r"<code>\1</code>", t)
@@ -380,12 +398,13 @@ def md_to_html(md: str) -> tuple[str, list[dict]]:
 def methodology_payload(e: pd.DataFrame, shots: pd.DataFrame) -> dict:
     src = (ROOT / "template" / "methodology.md").read_text(encoding="utf-8")
     d = pd.concat([e.xg - e.xg_reported, e.xga - e.xga_reported])
-    inline = {"xg_gap_share": f"{(d > 0.02).mean() * 100:.0f}%", "xg_gap_max": f"{d.max():.1f}"}
+    rect = style.load_config()["central_rectangle"]
+    inline = {"xg_gap_share": f"{(d > 0.02).mean() * 100:.0f}%", "xg_gap_max": f"{d.max():.1f}", "rect_x": f"{rect['x_min']}", "rect_y": f"{rect['y_half_width']}"}
     for k, v in inline.items():
         src = src.replace("{{" + k + "}}", v)
     html, toc = md_to_html(src)
     gen = {"coverage": coverage_html(e, shots), "registry_glossary": glossary_html(), "sim_example": sim_example_html(),
-           "devig_example": devig_example_html(e), "takeaway_rules": takeaway_rules_html(), "external_hook": external_hook_html()}
+           "devig_example": devig_example_html(e), "takeaway_rules": takeaway_rules_html(), "external_hook": external_hook_html(), "style_mapping": style_mapping_html()}
     for k, v in gen.items():
         token = f'<div data-gen="{k}"></div>'
         assert token in html, f"placeholder {k} missing from methodology.md"
