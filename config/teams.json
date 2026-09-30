@@ -1,0 +1,13 @@
+{
+  "_comment": "Canonical name = Understat title. football_data_to_canonical maps football-data.co.uk names; names identical in both sources need no entry.",
+  "football_data_to_canonical": {
+    "Man City": "Manchester City",
+    "Man United": "Manchester United",
+    "Newcastle": "Newcastle United",
+    "Nott'm Forest": "Nottingham Forest",
+    "QPR": "Queens Park Rangers",
+    "West Brom": "West Bromwich Albion",
+    "Wolves": "Wolverhampton Wanderers"
+  },
+  "liverpool": {"understat_id": "87", "canonical": "Liverpool"}
+}
