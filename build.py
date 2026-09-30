@@ -107,7 +107,10 @@ def league_payload(ts: pd.DataFrame, tm: pd.DataFrame) -> dict:
         teams = [{"team": r.team, "shots_pm": r4(r.shots_shotlevel / r.matches), "xgps": r4(r.xg_shotlevel / r.shots_shotlevel),
                   "xg_pm": r4(r.xg_shotlevel / r.matches), "n": int(r.matches)} for r in g.itertuples()]
         t = tm[tm.season == season]
-        out[season] = {"teams": teams, "avg": {
+        top = g.sort_values("pts", ascending=False)
+        # champion: only when every club has played a full 38 and the leader is strictly ahead on points (a tie leaves it unset)
+        champion = top.team.iat[0] if (g.matches >= 38).all() and len(top) > 1 and top.pts.iat[0] > top.pts.iat[1] else None
+        out[season] = {"champion": champion, "teams": teams, "avg": {
             "shots_pm": r4(g.shots_shotlevel.sum() / g.matches.sum()), "xgps": r4(g.xg_shotlevel.sum() / g.shots_shotlevel.sum()),
             "xg_pm": r4(g.xg_shotlevel.sum() / g.matches.sum()), "ppda": r4(t.ppda.mean()), "deep_pm": r4(t.deep.mean())}}
     return out
