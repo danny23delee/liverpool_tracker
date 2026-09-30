@@ -154,3 +154,6 @@
 - **Docs:** `README.md` written as a portfolio write-up (problem and how each reference-dashboard failure is guarded, pages with screenshots, sources, methodology highlights, data quirks found, the 113-test table, architecture, local run, deployment, external-model hook, limitations, attribution). Screenshots in `docs/screenshots/`. Also `requirements.txt`, `LICENSE` (MIT, a choice for the owner to confirm), `data/external/` with README and an example CSV.
 - **Verified:** 113 tests pass locally (14 ETL, 34 metrics, 12 build, 53 frontend).
 - **Open / not verifiable from here:** the first CI run on GitHub, Pages enablement (Settings → Pages → Source: GitHub Actions), Python 3.11 (developed on 3.10), and Understat's behaviour toward GitHub-hosted runner IPs.
+
+### CI fix (2026-09-30)
+First CI run: ETL and 51 of 53 browser tests passed on the runner; two touch tests failed because they read the locally cached D3 file (`data/raw/vendor/d3.min.js`, absent on a fresh runner). All network stubbing now goes through one helper that serves the cached copy when it exists and otherwise uses the real CDN (the page's SRI hash still applies). Verified by running the full 113-test suite with the cached file hidden.
