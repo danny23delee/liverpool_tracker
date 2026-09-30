@@ -114,7 +114,7 @@ def test_every_page_every_season_renders_without_console_errors(page, data):
     for route in PAGES:
         for season in ["all"] + data["seasons"]:
             go(page, route, season)
-            assert page.inner_text("#title"), (route, season)
+            assert page.text_content("#title"), (route, season)
             txt = page.inner_text("#main")
             assert not BAD_TEXT.search(txt), (route, season, BAD_TEXT.search(txt).group(0))
     assert page.errors == []
@@ -202,7 +202,7 @@ def test_routing_is_shareable_and_state_syncs(browser, data):
     pg.goto(DIST.as_uri() + "#/overview?season=2022-23&era=klopp")
     pg.wait_for_function("window.__tracker && window.__tracker.ready")
     assert pg.input_value("#sel-season") == "2022-23" and pg.input_value("#sel-era") == "klopp"
-    assert "2022-23" in pg.inner_text("#title") and "Jürgen Klopp era" in pg.inner_text("#subtitle")
+    assert "2022-23" in pg.text_content("#title") and "Jürgen Klopp era" in pg.inner_text("#subtitle")
     pg.select_option("#sel-season", "2023-24")
     pg.wait_for_function("location.hash.includes('season=2023-24')")
     assert "era=klopp" in pg.evaluate("location.hash")
@@ -215,12 +215,12 @@ def test_routing_is_shareable_and_state_syncs(browser, data):
 
 def test_titles_generated_from_selection(page, data):
     go(page, "overview", "2025-26")
-    assert page.inner_text("#title") == "Overview: 2025-26"
+    assert page.text_content("#title") == "Overview: 2025-26"
     assert "2025-26 season" in page.inner_text("#subtitle") and "38 matches" in page.inner_text("#subtitle")
     go(page, "overview", "2026-27")
     assert "5 of 38 matches played" in page.inner_text("#subtitle")
     go(page, "attack", "all")
-    assert page.inner_text("#title") == "Attack: all seasons"
+    assert page.text_content("#title") == "Attack: all seasons"
 
 
 def test_theme_toggle_and_dark_mode_render(browser):
@@ -494,7 +494,7 @@ def test_player_profile_and_comparison(page, data):
     go(page, "players", "2024-25")
     page.locator("table[data-table=squad] tbody tr", has_text="Mohamed Salah").first.click()
     assert "player=1250" in page.evaluate("location.hash")
-    assert page.inner_text("[data-profile] h3") == "Mohamed Salah"
+    assert page.text_content("[data-profile] h3") == "Mohamed Salah"
     ps = pd.read_parquet(ROOT / "data" / "processed" / "player_seasons.parquet")
     sal = ps[(ps.player_id == 1250) & (ps.minutes > 0)].sort_values("season")
     prof = page.locator("section[aria-label='Player profile']")
@@ -547,7 +547,7 @@ def test_every_match_explorer_page_reconciles_with_data(page, data):
         hg, ag = (r.gf, r.ga) if r.is_home else (r.ga, r.gf)
         assert page.inner_text("[data-testid=scoreline]").split("\n")[0] == f"{hg}–{ag}", mid
         home, away = ("Liverpool", r.opponent) if r.is_home else (r.opponent, "Liverpool")
-        assert page.inner_text("#title") == f"Match Explorer: {home} {hg}–{ag} {away}", mid
+        assert page.text_content("#title") == f"Match Explorer: {home} {hg}–{ag} {away}", mid
         # xG of both teams = sum of that team's shots
         lx, ox = sh[sh.team == "Liverpool"].xg.sum(), sh[sh.team != "Liverpool"].xg.sum()
         assert page.text_content("[data-race-final=lfc]").split()[0] == f"{lx:.2f}", mid
@@ -772,7 +772,7 @@ def test_methodology_generated_from_registry_and_data(page, data):
     for mid, label, desc in seen:
         assert label == reg[mid]["label"] and desc == reg[mid]["description"], mid
     assert page.locator("[data-gen]").count() == 0  # every placeholder was resolved
-    txt = page.inner_text("[data-testid=methodology]")
+    txt = page.text_content("[data-testid=methodology]")  # DOM text: the headings are upper-cased by CSS
     for heading in ("Data sources", "Baselines and change", "Expected goals and the exact simulation", "Turning odds into probabilities", "Known limitations", "How accuracy is enforced"):
         assert heading in txt, heading
     # coverage numbers come from the data
@@ -831,7 +831,7 @@ def test_methodology_is_collapsible(page, data):
     assert n == 12
     # only the first section starts open; every heading is visible as a summary
     assert [secs.nth(i).get_attribute("open") is not None for i in range(n)] == [True] + [False] * (n - 1)
-    assert page.locator("details.sec > summary h2").all_inner_texts()[0] == "What this dashboard is"
+    assert page.locator("details.sec > summary h2").all_text_contents()[0] == "What this dashboard is"
     hidden = page.locator("[data-testid=methodology]").inner_text()
     assert "Two rules run through everything" in hidden and "Politeness and reproducibility" not in hidden  # collapsed text is not rendered
     # clicking a summary toggles it
@@ -884,11 +884,19 @@ def _contrast(a, b):
 
 
 def test_text_colours_meet_wcag_aa_in_both_themes():
+    """Every text token against every background token, both themes, 4.5:1 (so also comfortably above the
+    3:1 needed for text of 24px and up). The brand red is a fill (white text on it is tested below); small
+    text and series in Liverpool red use the separate `red` token."""
     for theme, t in _css_tokens().items():
-        for fg in ("ink", "ink-2", "muted", "neutral", "good", "bad", "accent"):
-            for bg in ("bg", "surface", "surface-2"):
+        for fg in ("ink", "ink-2", "muted", "neutral", "red", "good", "bad", "teal-text"):
+            for bg in ("bg", "sidebar", "surface", "surface-2"):
                 assert _contrast(t[fg], t[bg]) >= 4.5, (theme, fg, bg, round(_contrast(t[fg], t[bg]), 2))
-        assert _contrast(t["accent-ink"], t["accent"]) >= 4.5, theme  # text on the red buttons and pressed toggles
+        assert _contrast(t["accent-ink"], t["accent"]) >= 4.5, theme  # text on the red buttons, nav pill and pressed toggles
+        assert t["accent"].lower() == "#c8102e"
+        # the brand red must never be the "bad" colour, and bad/good are never the brand red
+        assert t["bad"].lower() != t["accent"].lower() and t["good"].lower() != t["accent"].lower()
+        # a goal is told apart from a miss by fill (solid vs hollow), and the goal marker is legible on the stage
+        assert _contrast(t["goal"], t["stage"]) >= 3.0, theme
 
 
 def test_dark_theme_defines_every_token_of_the_light_theme():
@@ -989,7 +997,7 @@ def test_touch_targets_are_large_enough_on_mobile(browser, data):
             if box[1] < 32:
                 small.append((route, tag, [round(x) for x in box]))
         # the tiny ⓘ glyph has a larger invisible hit area: points 13px either side still hit the button
-        ok = pg.evaluate("""() => { const b = document.querySelector('button.info'); if (!b) return true; const r = b.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        ok = pg.evaluate("""() => { const b = document.querySelector('button.info'); if (!b) return true; b.scrollIntoView({block: 'center'}); const r = b.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
             return [[-13, 0], [13, 0], [0, -13], [0, 13]].every(([dx, dy]) => document.elementFromPoint(cx + dx, cy + dy) === b); }""")
         assert ok, route
     assert small == [], small
@@ -1081,3 +1089,68 @@ def test_info_tooltip_survives_event_orderings_seen_on_other_browsers(page):
     page.wait_for_timeout(400)
     page.evaluate("document.querySelectorAll('button.info')[1].click()")
     assert on() and page.inner_text("#tip") != ""
+
+
+# ------------------------------------------------------------------ Redesign: layout rules
+DEADSPACE_JS = """() => [...document.querySelectorAll('.card')].filter(c => c.offsetParent !== null).map(c => {
+    const kids = [...c.children].filter(k => getComputedStyle(k).display !== 'none' && getComputedStyle(k).position !== 'absolute' && k.getBoundingClientRect().height > 0);
+    const last = kids[kids.length - 1], cb = c.getBoundingClientRect().bottom;
+    const label = c.getAttribute('aria-label') || (c.querySelector('h2') || {}).textContent || c.className;
+    return [label, last ? cb - last.getBoundingClientRect().bottom : 0];
+}).filter(([, gap]) => gap !== null)"""
+THEMES = ("light", "dark")
+
+
+@pytest.mark.parametrize("width,height,limit", [(1920, 1080, 48), (1440, 900, 48), (390, 844, 32)])
+def test_no_card_has_dead_space_at_its_bottom(browser, data, width, height, limit):
+    """Empty space at the bottom of a card (card bottom minus the bottom of its last child, padding included)
+    stays under the limit on every page, season and theme."""
+    ctx, pg = _new_page(browser, width, height)
+    pg.goto(DIST.as_uri())
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    bad = []
+    for theme in THEMES:
+        pg.evaluate("t => { document.documentElement.dataset.theme = t }", theme)
+        for route in PAGES:
+            for season in ["all"] + data["seasons"]:
+                go(pg, route, season)
+                if route == "methodology" and season != "all":
+                    continue  # the page does not depend on the season
+                for label, gap in pg.evaluate(DEADSPACE_JS):
+                    if gap >= limit:
+                        bad.append((width, theme, route, season, label.strip()[:40], round(gap)))
+    assert bad == [], bad[:20]
+    assert pg.errors == []
+    ctx.close()
+
+
+@pytest.mark.parametrize("width", [1920, 1440, 1024, 800, 390])
+def test_takeaway_grid_has_no_orphan_gaps(browser, width):
+    """0-8 tiles: rows are full, and an incomplete last row's tile spans the remaining columns."""
+    ctx, pg = _new_page(browser, width, 900)
+    pg.goto(DIST.as_uri())
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    base = {"tag": "GOALS VS XG", "headline": "-6.8", "direction": "down", "good": False, "sentiment": "negative", "text": "Finishing 6.8 goals below xG (61 goals from 67.8 xG)",
+            "bars": [{"label": "Goals", "value": 61}, {"label": "xG", "value": 67.8}]}
+    cols = 4 if width >= 1400 else 3 if width >= 900 else 2 if width >= 600 else 1
+    for n in (0, 1, 4, 5, 6, 8):
+        pg.evaluate("(list) => window.__tracker.mountTakeaways(list)", [dict(base, id=f"t{i}") for i in range(n)])
+        pg.wait_for_timeout(30)
+        if n == 0:
+            assert pg.locator("[data-testid=take-grid]").count() == 0 and pg.locator(".card").count() == 0  # nothing fired: no card
+            continue
+        info = pg.evaluate("""() => { const g = document.querySelector('[data-testid=take-grid]'), gr = g.getBoundingClientRect();
+            return {grid: [gr.left, gr.right], cols: getComputedStyle(g).gridTemplateColumns.split(' ').length,
+                    tiles: [...g.children].map(t => { const r = t.getBoundingClientRect(); return [r.left, r.right, r.top, r.bottom]; })}; }""")
+        assert info["cols"] == cols, (width, n, info["cols"])
+        rows = {}
+        for left, right, top, bottom in info["tiles"]:
+            rows.setdefault(round(top), []).append((left, right))
+        assert len(rows) == -(-n // cols), (width, n)  # ceil(n / cols) rows: no empty rows or stray wraps
+        for top, tiles in rows.items():
+            tiles.sort()
+            assert abs(tiles[0][0] - info["grid"][0]) < 1.5 and abs(tiles[-1][1] - info["grid"][1]) < 1.5, (width, n, top, "row does not span the grid")
+            for a, b in zip(tiles, tiles[1:]):
+                assert 0 < b[0] - a[1] < 40, (width, n, "gap between tiles")  # only the 20px gutter, no hole
+    assert pg.errors == []
+    ctx.close()

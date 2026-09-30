@@ -358,6 +358,48 @@ def test_no_rule_fires_gives_empty_list(enriched):
         assert M.takeaways(d) == []
 
 
+def test_takeaway_tile_fields_match_the_sentence(enriched):
+    """The tile fields (tag, headline, direction, good, bars) present the same numbers as the sentence."""
+    import re
+    st = M.season_table(enriched)
+    checked, ids = 0, set()
+    for season, era, sel in _selections(enriched):
+        base, label = M.baseline_for(enriched, season)
+        for tk in M.takeaways(sel, base, label, st, season if era == "all" and season != "all" else None):
+            checked += 1
+            i, f, text = tk["id"], tk["facts"], tk["text"]
+            ids.add(i.split("_")[0])
+            assert {"tag", "headline", "direction", "good", "bars"} <= set(tk)
+            assert tk["good"] == (tk["sentiment"] == "positive") and tk["direction"] in ("up", "down")
+            assert len(tk["bars"]) == 2 and all(isinstance(b["value"], (int, float)) and b["label"] for b in tk["bars"])
+            nums = set(re.findall(r"\d+(?:\.\d+)?", text))
+            head = re.sub(r"[^\d.]", "", tk["headline"])  # magnitude of the big number
+            signed = tk["headline"][0] in "+−"
+            up = tk["direction"] == "up"
+            v = [b["value"] for b in tk["bars"]]
+            if i == "form":
+                assert head == str(f["points_last"]) and head in nums and v == [f["points_last"], 3 * f["n"]]
+                assert up == ("Strong" in text)
+            elif i in ("finishing", "market", "xpts"):
+                assert signed and (tk["headline"][0] == "+") == up and head == f"{f['diff']:.1f}" and head in nums
+                word = {"finishing": "above", "market": "ahead of", "xpts": "above"}[i]
+                assert (word in text) == up
+                keys = {"finishing": ("goals", "xg"), "market": ("points", "market_points"), "xpts": ("points", "xpts")}[i]
+                assert v == [f[keys[0]], f[keys[1]]]
+                assert str(f[keys[0]]) in nums and f"{f[keys[1]]:.1f}" in nums
+            elif i.startswith("baseline_"):
+                assert tk["headline"].endswith("%") and signed and head == str(f["pct"]) and head in nums
+                assert (tk["headline"][0] == "+") == up == ("higher" in text)
+                assert v == [f["value"], f["baseline"]] and f"{f['value']:.2f}" in nums and f"{f['baseline']:.2f}" in nums
+            else:  # extreme_*: headline is the value; the comparison is read from the season table
+                assert not signed and head == f"{f['value']:.2f}" and head in nums and v[0] == f["value"]
+                mid = "xga_pm" if "xga" in i else "xg_pm"
+                prior = st[st.index < season]
+                exp = float(st.loc[f["since"], mid]) if f["since"] else float(prior[mid].max() if i.endswith("highest") else prior[mid].min())
+                assert v[1] == round(exp, 2) and up == i.endswith("highest")
+    assert checked > 50 and {"form", "finishing", "market", "xpts", "baseline", "extreme"} <= ids
+
+
 def test_rate_panel_null_for_first_season_and_no_zero_percent(enriched):
     sel = M.select(enriched, "2014-15")
     base, _ = M.baseline_for(enriched, "2014-15")
