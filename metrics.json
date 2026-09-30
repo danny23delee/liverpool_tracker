@@ -1,0 +1,641 @@
+[
+ {
+  "id": "matches",
+  "label": "Matches",
+  "description": "Premier League matches played in the selection.",
+  "unit": "count",
+  "higher_is_better": null,
+  "format": ",d",
+  "min_sample": 10,
+  "source": "Understat results"
+ },
+ {
+  "id": "wins",
+  "label": "Wins",
+  "description": "Matches won. Actual result, not expected.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": ",d",
+  "min_sample": 10,
+  "source": "Understat results"
+ },
+ {
+  "id": "draws",
+  "label": "Draws",
+  "description": "Matches drawn. Actual result.",
+  "unit": "count",
+  "higher_is_better": null,
+  "format": ",d",
+  "min_sample": 10,
+  "source": "Understat results"
+ },
+ {
+  "id": "losses",
+  "label": "Losses",
+  "description": "Matches lost. Actual result.",
+  "unit": "count",
+  "higher_is_better": false,
+  "format": ",d",
+  "min_sample": 10,
+  "source": "Understat results"
+ },
+ {
+  "id": "points",
+  "label": "Points",
+  "description": "Actual league points: 3 per win + 1 per draw.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": ",d",
+  "min_sample": 10,
+  "source": "Understat results"
+ },
+ {
+  "id": "goals_for",
+  "label": "Goals for",
+  "description": "Goals scored, including opposition own goals. Actual, always a whole number.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": ",d",
+  "min_sample": 10,
+  "source": "Understat results"
+ },
+ {
+  "id": "goals_against",
+  "label": "Goals against",
+  "description": "Goals conceded, including own goals by Liverpool players. Actual.",
+  "unit": "count",
+  "higher_is_better": false,
+  "format": ",d",
+  "min_sample": 10,
+  "source": "Understat results"
+ },
+ {
+  "id": "goal_diff",
+  "label": "Goal difference",
+  "description": "Goals for minus goals against. Actual.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": "+,d",
+  "min_sample": 10,
+  "source": "Understat results",
+  "signed": true
+ },
+ {
+  "id": "clean_sheets",
+  "label": "Clean sheets",
+  "description": "Matches in which Liverpool conceded no goals. Actual.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": ",d",
+  "min_sample": 10,
+  "source": "Understat results"
+ },
+ {
+  "id": "xg",
+  "label": "xG (expected)",
+  "description": "Expected goals: the sum of the xG of every shot Liverpool took. Expected, not actual goals. Shot-level Understat model.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": ",.1f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xga",
+  "label": "xGA (expected)",
+  "description": "Expected goals against: the sum of the xG of every shot Liverpool conceded. Lower is better.",
+  "unit": "count",
+  "higher_is_better": false,
+  "format": ",.1f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xgd",
+  "label": "xG difference (expected)",
+  "description": "xG minus xGA. Expected, not actual.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": "+,.1f",
+  "min_sample": 10,
+  "source": "Understat shots",
+  "signed": true
+ },
+ {
+  "id": "npxg",
+  "label": "npxG (expected)",
+  "description": "Expected goals excluding penalties.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": ",.1f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xpts_sim",
+  "label": "xPts (xG simulation)",
+  "description": "Expected points from the shot-level xG simulation: each shot is an independent Bernoulli trial with p = its xG, goal totals are convolved exactly and P(win), P(draw) give 3P(W) + P(D). Expected, not actual.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": ",.1f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xpts_market",
+  "label": "Market-expected points",
+  "description": "Expected points from de-vigged closing betting odds: 3 x P(win) + 1 x P(draw). Expected, not actual.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": ",.1f",
+  "min_sample": 10,
+  "source": "football-data.co.uk"
+ },
+ {
+  "id": "goals_minus_xg",
+  "label": "Goals minus xG",
+  "description": "Actual goals scored by Liverpool players (own goals excluded) minus expected goals. Positive means finishing above expectation.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": "+,.1f",
+  "min_sample": 10,
+  "source": "Understat shots",
+  "signed": true
+ },
+ {
+  "id": "points_minus_xpts",
+  "label": "Points minus xPts",
+  "description": "Actual points minus xG-simulated expected points.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": "+,.1f",
+  "min_sample": 10,
+  "source": "Understat shots",
+  "signed": true
+ },
+ {
+  "id": "points_minus_market",
+  "label": "Points minus market expectation",
+  "description": "Actual points minus market-expected points. Positive means results beat the market.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": "+,.1f",
+  "min_sample": 10,
+  "source": "football-data.co.uk",
+  "signed": true
+ },
+ {
+  "id": "points_pm",
+  "label": "Points per match",
+  "description": "Actual points divided by matches played.",
+  "unit": "rate",
+  "higher_is_better": true,
+  "format": ".2f",
+  "min_sample": 10,
+  "source": "Understat results"
+ },
+ {
+  "id": "goals_pm",
+  "label": "Goals per match",
+  "description": "Actual goals scored per match.",
+  "unit": "rate",
+  "higher_is_better": true,
+  "format": ".2f",
+  "min_sample": 10,
+  "source": "Understat results"
+ },
+ {
+  "id": "goals_against_pm",
+  "label": "Goals against per match",
+  "description": "Actual goals conceded per match.",
+  "unit": "rate",
+  "higher_is_better": false,
+  "format": ".2f",
+  "min_sample": 10,
+  "source": "Understat results"
+ },
+ {
+  "id": "xg_pm",
+  "label": "xG per match (expected)",
+  "description": "Mean expected goals for per match.",
+  "unit": "rate",
+  "higher_is_better": true,
+  "format": ".2f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xga_pm",
+  "label": "xGA per match (expected)",
+  "description": "Mean expected goals against per match. Lower is better.",
+  "unit": "rate",
+  "higher_is_better": false,
+  "format": ".2f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xgd_pm",
+  "label": "xG difference per match (expected)",
+  "description": "Mean of xG minus xGA per match.",
+  "unit": "rate",
+  "higher_is_better": true,
+  "format": "+.2f",
+  "min_sample": 10,
+  "source": "Understat shots",
+  "signed": true
+ },
+ {
+  "id": "npxg_pm",
+  "label": "npxG per match (expected)",
+  "description": "Mean non-penalty expected goals per match.",
+  "unit": "rate",
+  "higher_is_better": true,
+  "format": ".2f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "shots_pm",
+  "label": "Shots per match",
+  "description": "Mean shots taken per match (own goals excluded).",
+  "unit": "rate",
+  "higher_is_better": true,
+  "format": ".1f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "shots_against_pm",
+  "label": "Shots conceded per match",
+  "description": "Mean shots faced per match. Lower is better.",
+  "unit": "rate",
+  "higher_is_better": false,
+  "format": ".1f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xg_per_shot",
+  "label": "xG per shot",
+  "description": "Mean of per-match xG divided by shots: average shot quality.",
+  "unit": "rate",
+  "higher_is_better": true,
+  "format": ".3f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "ppda",
+  "label": "PPDA",
+  "description": "Passes allowed per defensive action in the opposition 40% of the pitch. Lower means a more intense press, so lower is treated as better.",
+  "unit": "rate",
+  "higher_is_better": false,
+  "format": ".1f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "deep_pm",
+  "label": "Deep completions per match",
+  "description": "Passes completed within roughly 20 yards of the opposition goal (excluding crosses), per match.",
+  "unit": "rate",
+  "higher_is_better": true,
+  "format": ".1f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "deep_allowed_pm",
+  "label": "Deep completions allowed per match",
+  "description": "Opposition deep completions per match. Lower is better.",
+  "unit": "rate",
+  "higher_is_better": false,
+  "format": ".1f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xg_openplay_pm",
+  "label": "Open-play xG per match",
+  "description": "xG from open-play shots per match (excludes set pieces, corners, free kicks and penalties).",
+  "unit": "rate",
+  "higher_is_better": true,
+  "format": ".2f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xga_openplay_pm",
+  "label": "Open-play xGA per match",
+  "description": "xG conceded from open-play shots per match.",
+  "unit": "rate",
+  "higher_is_better": false,
+  "format": ".2f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xga_setpiece_pm",
+  "label": "Set-piece xGA per match",
+  "description": "xG conceded from corners, indirect and direct free kicks and set pieces per match (penalties excluded).",
+  "unit": "rate",
+  "higher_is_better": false,
+  "format": ".2f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "win_rate",
+  "label": "Win rate",
+  "description": "Share of matches won.",
+  "unit": "pct",
+  "higher_is_better": true,
+  "format": ".0%",
+  "min_sample": 10,
+  "source": "Understat results"
+ },
+ {
+  "id": "clean_sheet_rate",
+  "label": "Clean-sheet rate",
+  "description": "Share of matches without conceding.",
+  "unit": "pct",
+  "higher_is_better": true,
+  "format": ".0%",
+  "min_sample": 10,
+  "source": "Understat results"
+ },
+ {
+  "id": "p_win_market",
+  "label": "Market P(win)",
+  "description": "Liverpool win probability from closing odds with the overround removed.",
+  "unit": "prob",
+  "higher_is_better": true,
+  "format": ".1%",
+  "min_sample": 10,
+  "source": "football-data.co.uk"
+ },
+ {
+  "id": "p_win_sim",
+  "label": "xG-sim P(win)",
+  "description": "Liverpool win probability from the exact xG simulation.",
+  "unit": "prob",
+  "higher_is_better": true,
+  "format": ".1%",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "overround",
+  "label": "Bookmaker margin",
+  "description": "Sum of inverse odds minus 1 on the closing 1X2 market.",
+  "unit": "pct",
+  "higher_is_better": null,
+  "format": ".1%",
+  "min_sample": 10,
+  "source": "football-data.co.uk"
+ },
+ {
+  "id": "brier_market",
+  "label": "Brier score (market)",
+  "description": "Mean over matches of the sum of squared errors of the three outcome probabilities. Lower is better; a fixed 1/3 forecast scores 0.667.",
+  "unit": "prob",
+  "higher_is_better": false,
+  "format": ".3f",
+  "min_sample": 10,
+  "source": "football-data.co.uk"
+ },
+ {
+  "id": "brier_sim",
+  "label": "Brier score (xG sim)",
+  "description": "Brier score of the xG-simulated probabilities.",
+  "unit": "prob",
+  "higher_is_better": false,
+  "format": ".3f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "logloss_market",
+  "label": "Log loss (market)",
+  "description": "Mean negative log probability assigned to the actual result. Lower is better; a fixed 1/3 forecast scores 1.099.",
+  "unit": "prob",
+  "higher_is_better": false,
+  "format": ".3f",
+  "min_sample": 10,
+  "source": "football-data.co.uk"
+ },
+ {
+  "id": "logloss_sim",
+  "label": "Log loss (xG sim)",
+  "description": "Log loss of the xG-simulated probabilities.",
+  "unit": "prob",
+  "higher_is_better": false,
+  "format": ".3f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "brier_model",
+  "label": "Brier score (external model)",
+  "description": "Brier score of an optional external model supplied by CSV (see README).",
+  "unit": "prob",
+  "higher_is_better": false,
+  "format": ".3f",
+  "min_sample": 10,
+  "source": "external CSV"
+ },
+ {
+  "id": "logloss_model",
+  "label": "Log loss (external model)",
+  "description": "Log loss of an optional external model supplied by CSV.",
+  "unit": "prob",
+  "higher_is_better": false,
+  "format": ".3f",
+  "min_sample": 10,
+  "source": "external CSV"
+ },
+ {
+  "id": "pnl",
+  "label": "Flat-stake P&L (units)",
+  "description": "Retrospective profit of a hypothetical 1-unit stake on Liverpool to win every match at the closing odds. Analysis only, not a strategy.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": "+,.2f",
+  "min_sample": 10,
+  "source": "football-data.co.uk",
+  "signed": true
+ },
+ {
+  "id": "roi",
+  "label": "Flat-stake ROI",
+  "description": "P&L divided by units staked (one per match). Retrospective analysis, not a strategy.",
+  "unit": "pct",
+  "higher_is_better": true,
+  "format": "+.1%",
+  "min_sample": 10,
+  "source": "football-data.co.uk",
+  "signed": true
+ },
+ {
+  "id": "odds_win",
+  "label": "Closing odds (Liverpool win)",
+  "description": "Decimal closing price on a Liverpool win: Pinnacle where available, else market average.",
+  "unit": "odds",
+  "higher_is_better": null,
+  "format": ".2f",
+  "min_sample": 10,
+  "source": "football-data.co.uk"
+ },
+ {
+  "id": "minutes",
+  "label": "Minutes",
+  "description": "Minutes played in Premier League matches.",
+  "unit": "count",
+  "higher_is_better": null,
+  "format": ",d",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "player_goals",
+  "label": "Goals",
+  "description": "Goals scored (no own goals). Actual.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": ",d",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "npg",
+  "label": "Non-penalty goals",
+  "description": "Goals scored excluding penalties. Actual.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": ",d",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "assists",
+  "label": "Assists",
+  "description": "Assists. Actual.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": ",d",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xg_player",
+  "label": "xG (expected)",
+  "description": "Sum of xG of the player shots. Expected.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": ",.1f",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "npxg_player",
+  "label": "npxG (expected)",
+  "description": "Sum of non-penalty xG of the player shots. Expected.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": ",.1f",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xa",
+  "label": "xA (expected)",
+  "description": "Expected assists: the xG of shots the player passes created. Expected.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": ",.1f",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "npg_minus_npxg",
+  "label": "npG minus npxG",
+  "description": "Non-penalty goals minus non-penalty xG. Positive means finishing above expectation (Finisher role).",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": "+,.1f",
+  "min_sample": 450,
+  "source": "Understat shots",
+  "signed": true
+ },
+ {
+  "id": "xg_p90",
+  "label": "xG per 90",
+  "description": "xG per 90 minutes played.",
+  "unit": "per90",
+  "higher_is_better": true,
+  "format": ".2f",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "npxg_p90",
+  "label": "npxG per 90",
+  "description": "Non-penalty xG per 90 minutes (Shot Threat role).",
+  "unit": "per90",
+  "higher_is_better": true,
+  "format": ".2f",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xa_p90",
+  "label": "xA per 90",
+  "description": "Expected assists per 90 minutes (Creator role).",
+  "unit": "per90",
+  "higher_is_better": true,
+  "format": ".2f",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xgbuildup_p90",
+  "label": "xGBuildup per 90",
+  "description": "xG of possessions the player was involved in, excluding shots and key passes, per 90 (Build-up role).",
+  "unit": "per90",
+  "higher_is_better": true,
+  "format": ".2f",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xgchain_p90",
+  "label": "xGChain per 90",
+  "description": "xG of every possession the player was involved in, per 90 (Involvement role).",
+  "unit": "per90",
+  "higher_is_better": true,
+  "format": ".2f",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "shots_p90",
+  "label": "Shots per 90",
+  "description": "Shots per 90 minutes.",
+  "unit": "per90",
+  "higher_is_better": true,
+  "format": ".2f",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "key_passes_p90",
+  "label": "Key passes per 90",
+  "description": "Passes leading directly to a shot, per 90 minutes.",
+  "unit": "per90",
+  "higher_is_better": true,
+  "format": ".2f",
+  "min_sample": 450,
+  "source": "Understat shots"
+ }
+]

@@ -1,0 +1,20 @@
+{
+ "devig_method": "proportional",
+ "baseline_seasons": 2,
+ "min_sample": 10,
+ "form_matches": 5,
+ "takeaway_thresholds": {
+  "finishing_goals": 3.0,
+  "market_points": 3.0,
+  "xpts_points": 3.0,
+  "baseline_pct": 0.1,
+  "form_strong_points": 10,
+  "form_poor_points": 3,
+  "lowest_since_min_prior_seasons": 3
+ },
+ "mispriced": {
+  "window": 10,
+  "threshold_points": 4.0
+ },
+ "external_model_csv": "data/external/model_probs.csv"
+}
