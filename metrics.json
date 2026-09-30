@@ -1259,6 +1259,36 @@
   "higher_is_better": null,
   "format": ",d",
   "min_sample": 10,
-  "source": "football-data.co.uk"
+  "source": "Understat team data (proxy)"
+ },
+ {
+  "id": "style_phase_defence",
+  "label": "Defence style",
+  "description": "How Liverpool defend, relative to every club in the same season: Defensive line, Pressing and Box protection, combined into the Pressure index. Proxy scores from Understat team data, not CIES scores. Style is neither good nor bad.",
+  "unit": "count",
+  "higher_is_better": null,
+  "format": ",d",
+  "min_sample": 10,
+  "source": "Understat team data (proxy)"
+ },
+ {
+  "id": "style_phase_buildup",
+  "label": "Build-up style",
+  "description": "How Liverpool build up, relative to every club in the same season. Understat has no pass data, so only Build-up complexity is a (weak) proxy; length and direction need pass-level data. Style is neither good nor bad.",
+  "unit": "count",
+  "higher_is_better": null,
+  "format": ",d",
+  "min_sample": 10,
+  "source": "Understat team data (proxy)"
+ },
+ {
+  "id": "style_phase_attack",
+  "label": "Attack style",
+  "description": "How Liverpool attack, relative to every club in the same season: Attack tempo and Attack spacing (Attack medium needs shot-type data for every club), combined into the Occupation index. Proxy scores, not CIES scores. Style is neither good nor bad.",
+  "unit": "count",
+  "higher_is_better": null,
+  "format": ",d",
+  "min_sample": 10,
+  "source": "Understat team data (proxy)"
  }
 ]
