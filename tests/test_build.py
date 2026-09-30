@@ -122,3 +122,65 @@ def test_match_market_payload_matches_metrics(payload, tables):
             assert abs(sum(m["mktp"][name]) - 1) < 1e-5
         assert abs(sum(m["sim"]) - 1) < 1e-5 and abs(m["ovr"] - (sum(1 / o for o in odds) - 1)) < 1e-4
         assert m["o"] == [round(o, 4) for o in odds]
+
+
+# ------------------------------------------------------------------ M6: market payload and methodology generation
+def test_market_payload_matches_independent_calculation(payload, tables):
+    import numpy as np
+    for key in ("2024-25|all", "all|all", "2019-20|all", "all|Arne Slot"):
+        sel = payload["selections"][key]
+        season, era = key.split("|")
+        e = tables["enriched"]
+        d = e[(e.season == season) if season != "all" else slice(None)]
+        if era != "all":
+            d = d[d.era == era]
+        inv = 1 / d[["mkt_h", "mkt_d", "mkt_a"]].values
+        prop = inv / inv.sum(axis=1, keepdims=True)
+        P = np.where(d.is_home.values[:, None], prop, prop[:, ::-1])
+        o = d.result.map({"W": 0, "D": 1, "L": 2}).values
+        assert sel["cal"]["market"]["brier"] == pytest.approx(float(((P - np.eye(3)[o]) ** 2).sum(axis=1).mean()), abs=1e-9)
+        assert sel["cal"]["market"]["log_loss"] == pytest.approx(float(-np.log(P[np.arange(len(o)), o]).mean()), abs=1e-9)
+        assert sel["cal"]["market"]["n"] == len(d) == sel["cal"]["n"]
+        assert sel["cum_market"][-1] == pytest.approx(float(d.pts.sum() - d.xpts_market.sum()), abs=2e-3)
+        assert sel["cum_xpts"][-1] == pytest.approx(float(d.pts.sum() - d.xpts_sim.sum()), abs=2e-3)
+        assert sel["cum_pnl"][-1] == pytest.approx(sel["record"]["pnl"], abs=2e-3)
+        won = d.result == "W"
+        assert sel["record"]["pnl"] == pytest.approx(float((d.odds_win[won] - 1).sum() - (~won).sum()), abs=1e-9)
+        assert len(sel["cum_market"]) == len(sel["cum_pnl"]) == sel["n"]
+        for r in sel["runs"]:
+            assert 0 <= r["start_idx"] < r["end_idx"] < sel["n"] and r["n"] == r["end_idx"] - r["start_idx"] + 1
+            assert abs(r["diff"]) >= 4.0 - 1e-9 or r["n"] > 10  # merged runs can be longer, single windows meet the threshold
+        rel = sel["cal"]["market"]["reliability"]
+        assert sum(b["n"] for b in rel) == 3 * len(d)
+        assert all(0 <= b["observed"] <= 1 and 0 <= b["mean_p"] <= 1 for b in rel)
+
+
+def test_calibration_reference_constants_in_registry_text():
+    import math
+    desc = {k: v["description"] for k, v in build.M.REGISTRY.items()}
+    assert f"{2 / 3:.3f}" in desc["brier_market"] and f"{math.log(3):.3f}" in desc["logloss_market"]
+
+
+def test_markdown_converter():
+    html, toc = build.md_to_html("## Title {#my-id}\n\nSome **bold**, *italic*, `code` and [a link](https://x.org/a?b=1) with <b>tags</b>.\n\n- one\n- two\n\n{{thing}}\n\n### Sub\n\n```\nx < y\n```\n")
+    assert '<h2 id="my-id">Title</h2>' in html and toc == [{"id": "my-id", "title": "Title"}]
+    assert "<strong>bold</strong>" in html and "<em>italic</em>" in html and "<code>code</code>" in html
+    assert '<a href="https://x.org/a?b=1" rel="noopener">a link</a>' in html
+    assert "&lt;b&gt;tags&lt;/b&gt;" in html and "<b>" not in html  # raw HTML is escaped
+    assert "<ul><li>one</li><li>two</li></ul>" in html and '<div data-gen="thing"></div>' in html
+    assert "<h3 id=\"sub\">Sub</h3>" in html and "<pre><code>x &lt; y</code></pre>" in html
+
+
+def test_methodology_payload_is_complete(payload, tables):
+    meth = payload["methodology"]
+    assert 'data-gen="' not in meth["html"] and "{{" not in meth["html"]
+    ids = _re_findall(r'data-metric-id="([^"]+)"', meth["html"])
+    assert sorted(ids) == sorted(build.M.REGISTRY)  # every registry metric appears exactly once
+    assert [t["id"] for t in meth["toc"]][-1] == "accuracy" and len(meth["toc"]) >= 10
+    # the worked de-vig example uses a real Pinnacle-priced match and its rows sum to 100%
+    assert 'data-example="devig"' in meth["html"] and "100.00%" in meth["html"]
+
+
+def _re_findall(pattern, text):
+    import re
+    return re.findall(pattern, text)

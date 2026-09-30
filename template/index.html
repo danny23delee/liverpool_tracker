@@ -236,6 +236,34 @@ table.compact thead th { font-size: 10.5px; letter-spacing: .02em; }
 @media (max-width: 860px) { .minis { grid-template-columns: minmax(0, 1fr); } .score-card { grid-template-columns: minmax(0, 1fr); text-align: left; } .score-card .tm.away { text-align: left; } .score-card .tm.away ul { text-align: left; } .score-card .sc { text-align: left; } }
 @media (max-width: 480px) { .roles { grid-template-columns: minmax(0, 1fr); } }
 
+/* ---------- market lens / methodology ---------- */
+.retro { border-color: var(--accent); color: var(--ink); background: var(--accent-soft); }
+.tiles.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.chip.beat { color: var(--pos); border-color: var(--pos); } .chip.lagged { color: var(--neg); border-color: var(--neg); }
+table.data td.num, table.data th.num { text-align: right; }
+table.data tr.best td { font-weight: 600; }
+.mkt-note { font-size: 12.5px; color: var(--ink-2); margin: 10px 0 0; }
+.prose { padding: clamp(18px, 3vw, 32px); }
+.prose h2 { font: 700 22px/1.25 var(--font-display); letter-spacing: -.01em; margin: 32px 0 10px; text-transform: none; color: var(--ink); scroll-margin-top: 16px; display: block; }
+.prose h2:first-child { margin-top: 0; }
+.prose h3 { font: 600 15px/1.3 var(--font-body); margin: 22px 0 8px; color: var(--ink); }
+.prose p, .prose li { max-width: 78ch; line-height: 1.65; color: var(--ink); }
+.prose li { margin: 4px 0; } .prose ul { padding-left: 20px; }
+.prose a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.prose code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: .92em; }
+.prose pre { background: var(--surface-2); padding: 12px 14px; border-radius: 8px; overflow-x: auto; }
+.prose .tbl-x { margin: 10px 0 14px; border: 1px solid var(--line); border-radius: 8px; }
+.prose table.data th, .prose table.data td { white-space: normal; text-align: left; vertical-align: top; }
+.prose table.data td:first-child { font-weight: 600; min-width: 130px; }
+.prose table.glossary td:nth-child(2) { min-width: 300px; }
+.prose .example { background: var(--surface-2); border-radius: 10px; padding: 4px 16px 10px; margin: 14px 0; }
+.prose .example table.data td, .prose .example table.data th { text-align: right; } .prose .example table.data td:first-child, .prose .example table.data th:first-child { text-align: left; }
+.toc { position: sticky; top: 16px; align-self: start; }
+.toc h2 { margin-bottom: 8px; } .toc ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13.5px; }
+.toc a { color: var(--ink-2); text-decoration: none; } .toc a:hover { color: var(--accent); text-decoration: underline; }
+.span-3 { grid-column: span 3; } .span-9 { grid-column: span 9; }
+@media (max-width: 1100px) { .span-3, .span-9 { grid-column: span 12; } .toc { position: static; } }
+
 /* ---------- responsive ---------- */
 @media (max-width: 1100px) { .span-8, .span-7, .span-6, .span-5, .span-4 { grid-column: span 12; } }
 @media (max-width: 860px) {
@@ -1124,14 +1152,206 @@ function matchPage(s, d) {
   return { node: grid, after: () => show(cur), redraw: () => redraws.forEach(f => f()) };
 }
 
-/* ================= placeholder pages (later milestones) ================= */
-function stub(title, milestone) {
-  return () => ({ node: el('div', { class: 'card stub' }, el('h2', {}, title), el('p', {}, `This page is planned for milestone ${milestone} and is not built yet.`)) });
+/* ================= Market Lens ================= */
+const RES_NAME = { W: 'Win', D: 'Draw', L: 'Loss' };
+const RES_FILL = { W: 'var(--good)', D: 'var(--line-strong)', L: 'var(--bad)' };
+const ERA_KEY = s => eraName(s.era) || 'all';
+function seasonRows(s) {                                   // one row per season for the current manager-era filter
+  return D.seasons.map(se => { const sl = D.selections[`${se}|${ERA_KEY(s)}`]; return sl ? { se, n: sl.n, ...sl.record, sel: se === s.season } : null; }).filter(Boolean);
 }
-const RENDERERS = {
-  overview, attack, defence, players: playersPage,
-  match: matchPage, market: stub('Market Lens', 'M6'), methodology: stub('Methodology', 'M6'),
-};
+function axisStyle(a) { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); }
+function seasonPointsChart(host, rows) {
+  host.innerHTML = '';
+  const data = rows.filter(r => r.n >= MIN), n = data.length;
+  const W = Math.max(host.clientWidth || 640, 60 + n * 64), H = 300, mg = { t: 12, r: 12, b: 30, l: 44 };
+  const x0 = d3.scaleBand().domain(data.map(r => r.se)).range([mg.l, W - mg.r]).paddingInner(0.18);
+  const ser = [['points', 'Actual points', 'var(--ink)'], ['xpts_sim', 'xPts (xG simulation)', 'var(--s1)'], ['xpts_market', 'Market-expected points', 'var(--s2)']];
+  const x1 = d3.scaleBand().domain(ser.map(d => d[0])).range([0, x0.bandwidth()]).padding(0.08);
+  const y = d3.scaleLinear().domain([0, d3.max(data, r => Math.max(r.points, r.xpts_sim, r.xpts_market)) * 1.08 || 10]).nice().range([H - mg.b, mg.t]);
+  const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Actual points, xG-simulated points and market-expected points by season');
+  svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
+  svg.append('g').selectAll('rect').data(data.filter(r => r.sel)).join('rect').attr('x', r => x0(r.se) - 3).attr('width', x0.bandwidth() + 6).attr('y', mg.t).attr('height', H - mg.t - mg.b).style('fill', 'var(--accent)').attr('fill-opacity', 0.09);
+  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8)).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x0).tickSize(4).tickFormat(se => se.slice(2))).call(axisStyle);
+  const g = svg.append('g').selectAll('g').data(data).join('g').attr('transform', r => `translate(${x0(r.se)},0)`).attr('data-season', r => r.se);
+  g.selectAll('rect').data(r => ser.map(([k, name, c]) => ({ k, name, c, v: r[k], r }))).join('rect').attr('class', 'sbar').attr('data-series', d => d.k)
+    .attr('x', d => x1(d.k)).attr('width', x1.bandwidth()).attr('y', d => y(d.v)).attr('height', d => y(0) - y(d.v)).attr('rx', 2).style('fill', d => d.c);
+  svg.append('g').selectAll('rect').data(data).join('rect').attr('x', r => x0(r.se)).attr('width', x0.bandwidth()).attr('y', mg.t).attr('height', H - mg.t - mg.b).attr('fill', 'transparent')
+    .on('pointermove', (ev, r) => showTip(`<b>${r.se}</b> (${r.n} matches)<br>Actual points ${r.points}<br>xPts (xG simulation) ${r.xpts_sim.toFixed(1)}<br>Market-expected points ${r.xpts_market.toFixed(1)}<br>Actual − market ${(r.points_minus_market >= 0 ? '+' : MINUS) + Math.abs(r.points_minus_market).toFixed(1)}`, ev.clientX, ev.clientY)).on('pointerleave', hideTip);
+}
+function seasonPointsCard(s) {
+  const rows = seasonRows(s), host = el('div', { class: 'chart-wrap', 'data-chart': 'season-points' });
+  const f1 = v => (v >= 0 ? '+' : MINUS) + Math.abs(v).toFixed(1);
+  const card = pageCard('span-12', 'season_points', 'actual · expected',
+    legend([{ color: 'var(--ink)', text: 'Actual points' }, { color: 'var(--s1)', text: 'xPts (xG simulation, expected)' }, { color: 'var(--s2)', text: 'Market-expected points' }]), host,
+    el('p', { class: 'note-small' }, `Every season${s.era !== 'all' ? ` under ${eraName(s.era)}` : ''}; the selected season is shaded. Seasons with fewer than ${MIN} matches are omitted from the chart but listed in the table.`),
+    tableView('View as a table', ['Season', 'Matches', 'Actual points', 'xPts (xG sim)', 'Market xPts', 'Actual − market', 'Actual − xPts', 'Flat-stake P&L', 'ROI'],
+      rows.map(r => [r.se, r.n, r.points, r.xpts_sim.toFixed(1), r.xpts_market.toFixed(1), f1(r.points_minus_market), f1(r.points_minus_xpts), (r.pnl >= 0 ? '+' : MINUS) + Math.abs(r.pnl).toFixed(2), fmt('roi', r.roi).replace('-', MINUS)])));
+  card.setAttribute('data-ref-season', ''); card._draw = () => seasonPointsChart(host, rows); return card;
+}
+function cumChart(host, sel, vals, o) {
+  host.innerHTML = '';
+  const n = vals.length, W = Math.max(host.clientWidth || 640, 320), H = 280, mg = { t: 16, r: 18, b: 34, l: 50 };
+  const x = d3.scaleLinear().domain([0, n - 1 || 1]).range([mg.l, W - mg.r]);
+  const ext = d3.extent(vals.concat(0)), pad = (ext[1] - ext[0]) * 0.12 || 1;
+  const y = d3.scaleLinear().domain([ext[0] - pad, ext[1] + pad]).nice().range([H - mg.b, mg.t]);
+  const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', o.label);
+  svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
+  (o.runs || []).forEach(r => { svg.append('rect').attr('class', 'run-band').attr('data-dir', r.direction).attr('x', x(r.start_idx)).attr('width', Math.max(2, x(r.end_idx) - x(r.start_idx))).attr('y', mg.t).attr('height', H - mg.t - mg.b)
+    .style('fill', r.direction === 'beat' ? 'var(--pos)' : 'var(--neg)').attr('fill-opacity', 0.13);
+    svg.append('text').attr('x', x(r.start_idx) + 4).attr('y', mg.t + 12).style('fill', 'var(--ink-2)').style('font-size', '11px').style('font-weight', 600).text(r.direction === 'beat' ? 'beat' : 'lagged'); });
+  svg.append('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y(0)).attr('y2', y(0)).style('stroke', 'var(--ink-2)').attr('stroke-dasharray', '4 3');
+  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d => d === 0 ? '0' : d3.format(o.yfmt)(d).replace('-', MINUS))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  const tf = n <= 40 ? d3.timeFormat('%-d %b') : d3.timeFormat("%b '%y"), k = Math.max(1, Math.ceil(n / Math.max(2, Math.floor((W - mg.l - mg.r) / 96))));
+  svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).tickValues(d3.range(0, n, k)).tickSize(4).tickFormat(i => tf(dparse(M(sel.idx[i]).d)))).call(axisStyle);
+  const pts = vals.map((v, i) => [i, v]);
+  svg.append('path').datum(pts).attr('d', d3.area().x(p => x(p[0])).y0(y(0)).y1(p => y(p[1]))).style('fill', 'var(--accent)').attr('fill-opacity', 0.08);
+  svg.append('path').datum(pts).attr('d', d3.line().x(p => x(p[0])).y(p => y(p[1]))).attr('fill', 'none').style('stroke', 'var(--accent)').attr('stroke-width', 2.25).attr('stroke-linejoin', 'round');
+  const cross = svg.append('g').style('display', 'none');
+  cross.append('line').attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--ink-2)'); const dot = cross.append('circle').attr('r', 5).style('fill', 'var(--accent)').style('stroke', 'var(--surface)').attr('stroke-width', 2);
+  svg.append('rect').attr('x', mg.l).attr('y', mg.t).attr('width', W - mg.l - mg.r).attr('height', H - mg.t - mg.b).attr('fill', 'transparent').style('touch-action', 'pan-y')
+    .on('pointermove', ev => { const i = Math.max(0, Math.min(n - 1, Math.round(x.invert(d3.pointer(ev)[0])))), m = M(sel.idx[i]);
+      cross.style('display', null); cross.select('line').attr('x1', x(i)).attr('x2', x(i)); dot.attr('cx', x(i)).attr('cy', y(vals[i]));
+      showTip(`<b>${o.tip(vals[i])}</b><br>after ${m.h ? 'home' : 'away'} v ${esc(m.opp)}, ${dfmt(dparse(m.d))} (${RES_NAME[m.r]})`, ev.clientX, ev.clientY); })
+    .on('pointerleave', () => { cross.style('display', 'none'); hideTip(); });
+}
+function runsCard(sel) {
+  const runs = sel.runs, host = el('div', { class: 'chart-wrap', 'data-chart': 'cum-market' }), W = D.settings.mispriced;
+  const f1 = v => (v >= 0 ? '+' : MINUS) + Math.abs(v).toFixed(1);
+  const list = sel.n < W.window ? el('div', { class: 'empty' }, `Mispriced runs need at least ${W.window} matches; this selection has ${sel.n}.`)
+    : !runs.length ? el('div', { class: 'empty', 'data-testid': 'no-runs' }, `No ${W.window}-match stretch beat or lagged the market by ${W.threshold_points} points or more.`)
+      : el('div', { class: 'tbl-x' }, el('table', { class: 'data compact', 'data-table': 'runs' }, el('thead', {}, el('tr', {}, ['Run', 'From', 'To', 'Games', 'Pts', 'Mkt xPts', 'Diff'].map(h => el('th', {}, h)))),
+        el('tbody', {}, runs.map(r => el('tr', { 'data-run': r.direction }, el('td', {}, el('span', { class: 'chip ' + r.direction }, r.direction === 'beat' ? 'Beat' : 'Lagged')), el('td', {}, dfmt(dparse(r.from))), el('td', {}, dfmt(dparse(r.to))),
+          el('td', {}, r.n), el('td', {}, r.points), el('td', {}, r.market_points.toFixed(1)), el('td', {}, f1(r.diff)))))));
+  const chartCard = pageCard('span-7', 'cum_market', 'actual − expected', host,
+    el('p', { class: 'note-small' }, 'Running total of actual points minus market-expected points. Shaded: mispriced runs.'));
+  const vals = sel.cum_market;
+  chartCard._draw = () => cumChart(host, sel, vals, { label: 'Cumulative actual points minus market-expected points', yfmt: '+.1f', runs, tip: v => `${f1(v)} points vs the market` });
+  const listCard = pageCard('span-5', 'mispriced_runs', 'actual − expected', list,
+    el('p', { class: 'note-small' }, `A run is any ${W.window} consecutive matches returning at least ${W.threshold_points.toFixed(1)} points more (beat) or fewer (lagged) than the closing odds implied; overlapping windows are merged.`));
+  return [chartCard, listCard];
+}
+function reliabilityChart(host, cal) {
+  host.innerHTML = '';
+  const W = Math.min(Math.max(host.clientWidth || 420, 280), 520), H = W, mg = { t: 12, r: 14, b: 42, l: 46 };
+  const x = d3.scaleLinear().domain([0, 1]).range([mg.l, W - mg.r]), y = d3.scaleLinear().domain([0, 1]).range([H - mg.b, mg.t]);
+  const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Reliability plot: forecast probability against observed frequency');
+  svg.append('g').selectAll('line').data(d3.range(0, 1.01, 0.2)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
+  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format('.0%'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).ticks(5).tickSize(4).tickFormat(d3.format('.0%'))).call(axisStyle);
+  svg.append('text').attr('x', (mg.l + W - mg.r) / 2).attr('y', H - 6).attr('text-anchor', 'middle').style('fill', 'var(--ink-2)').style('font-size', '12px').text('Forecast probability');
+  svg.append('text').attr('transform', `translate(12,${(mg.t + H - mg.b) / 2}) rotate(-90)`).attr('text-anchor', 'middle').style('fill', 'var(--ink-2)').style('font-size', '12px').text('Observed frequency');
+  svg.append('line').attr('x1', x(0)).attr('y1', y(0)).attr('x2', x(1)).attr('y2', y(1)).style('stroke', 'var(--ink-2)').attr('stroke-dasharray', '5 4');
+  const series = [['market', 'Market', 'var(--s1)', d3.symbolCircle], ['sim', 'xG simulation', 'var(--s2)', d3.symbolDiamond], ['model', 'External model', 'var(--s3)', d3.symbolTriangle]].filter(([k]) => cal[k]);
+  const maxN = d3.max(series.flatMap(([k]) => cal[k].reliability), b => b.n) || 1;
+  series.forEach(([k, name, col, sym]) => {
+    const bins = cal[k].reliability;
+    svg.append('path').datum(bins).attr('d', d3.line().x(b => x(b.mean_p)).y(b => y(b.observed))).attr('fill', 'none').style('stroke', col).attr('stroke-width', 1.2).attr('stroke-opacity', 0.6);
+    svg.append('g').selectAll('path').data(bins).join('path').attr('class', 'rel-pt').attr('data-series', k).attr('transform', b => `translate(${x(b.mean_p)},${y(b.observed)})`)
+      .attr('d', b => d3.symbol().type(sym).size(60 + 220 * (b.n / maxN))()).style('fill', col).style('stroke', 'var(--surface)').attr('stroke-width', 1.5)
+      .on('pointermove', (ev, b) => showTip(`<b>${name}</b><br>forecast ${d3.format('.1%')(b.mean_p)} → happened ${d3.format('.1%')(b.observed)}<br>${b.n} outcomes in the ${d3.format('.0%')(b.lo)}–${d3.format('.0%')(b.hi)} bin`, ev.clientX, ev.clientY)).on('pointerleave', hideTip);
+  });
+  return series;
+}
+function calibrationCards(sel) {
+  const cal = sel.cal, rows = [['market', 'Market (closing odds, de-vigged)'], ['sim', 'xG simulation (post-match chances)'], ['model', 'External model']].filter(([k]) => cal[k]);
+  const best = k => Math.min(...rows.map(([r]) => cal[r][k]));
+  const table = el('div', { class: 'tbl-x' }, el('table', { class: 'data', 'data-table': 'calibration' }, el('thead', {}, el('tr', {}, [el('th', {}, 'Forecast'), el('th', { class: 'num' }, 'Brier score'), el('th', { class: 'num' }, 'Log loss'), el('th', { class: 'num' }, 'Matches')])),
+    el('tbody', {}, rows.map(([k, name]) => el('tr', { 'data-cal': k }, el('td', {}, name), el('td', { class: 'num' + (cal[k].brier === best('brier') ? ' best' : ''), 'data-v': 'brier' }, cal[k].brier.toFixed(3)),
+      el('td', { class: 'num', 'data-v': 'log_loss' }, cal[k].log_loss.toFixed(3)), el('td', { class: 'num' }, cal[k].n))),
+      el('tr', { 'data-cal': 'naive' }, el('td', {}, 'Naive: always the selection’s own W/D/L rates'), el('td', { class: 'num', 'data-v': 'brier' }, cal.naive.brier.toFixed(3)), el('td', { class: 'num', 'data-v': 'log_loss' }, cal.naive.log_loss.toFixed(3)), el('td', { class: 'num' }, cal.n)))));
+  const host = el('div', { class: 'chart-wrap', 'data-chart': 'reliability' });
+  const c1 = pageCard('span-5', 'calibration', 'lower is better', table,
+    el('p', { class: 'mkt-note' }, 'A fixed one-third forecast scores 0.667 (Brier) and 1.099 (log loss). The xG simulation is built from the match’s own shots, so it explains the result rather than predicting it: expect it to score better than the market.'),
+    !cal.model && el('p', { class: 'mkt-note', 'data-testid': 'no-model' }, 'No external model is loaded. See “Plugging in your own model” on the Methodology page.'));
+  const c2 = pageCard('span-7', 'reliability', 'observed vs forecast', legend([{ cls: 'dot', color: 'var(--s1)', text: 'Market' }, { cls: '', color: 'var(--s2)', text: 'xG simulation' }, ...(cal.model ? [{ cls: '', color: 'var(--s3)', text: 'External model' }] : []), { cls: 'dash', text: 'Perfect calibration' }]), host,
+    el('p', { class: 'note-small' }, 'Each match adds three points (win, draw, loss) to its probability bin; marker size shows how many outcomes fall in the bin.'),
+    tableView('View as a table', ['Forecast', 'Bin', 'Mean forecast', 'Observed', 'Outcomes'], rows.flatMap(([k, name]) => cal[k].reliability.map(b => [name, `${d3.format('.0%')(b.lo)}–${d3.format('.0%')(b.hi)}`, d3.format('.1%')(b.mean_p), d3.format('.1%')(b.observed), b.n]))));
+  c2._draw = () => reliabilityChart(host, cal);
+  return [c1, c2];
+}
+function stripChart(host, sel) {
+  host.innerHTML = '';
+  const n = sel.n, bw = 7, mg = { t: 24, r: 14, b: 34, l: 44 }, H = 300, W = Math.max(host.clientWidth || 640, mg.l + mg.r + n * bw);
+  const x = d3.scaleBand().domain(d3.range(n)).range([mg.l, W - mg.r]).paddingInner(0.15), y = d3.scaleLinear().domain([0, 1]).range([H - mg.b, mg.t + 10]);
+  const rows = sel.idx.map(i => M(i));
+  const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Market and xG-simulated win probability for every match, with actual results');
+  svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
+  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format('.0%'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  const tf = n <= 40 ? d3.timeFormat('%-d %b') : d3.timeFormat("%b '%y"), k = Math.max(1, Math.ceil(n / Math.max(2, Math.floor((W - mg.l - mg.r) / 96))));
+  svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).tickValues(d3.range(0, n, k)).tickSize(4).tickFormat(i => tf(dparse(rows[i].d)))).call(axisStyle);
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('class', 'res-strip').attr('data-r', m => m.r).attr('x', (m, i) => x(i)).attr('width', x.bandwidth()).attr('y', mg.t - 16).attr('height', 9).attr('rx', 2).style('fill', m => RES_FILL[m.r]);
+  svg.append('g').selectAll('circle').data(rows).join('circle').attr('class', 'p-mkt').attr('cx', (m, i) => x(i) + x.bandwidth() / 2).attr('cy', m => y(m.mkt[0])).attr('r', 3).style('fill', 'var(--s1)');
+  svg.append('g').selectAll('path').data(rows).join('path').attr('class', 'p-sim').attr('transform', (m, i) => `translate(${x(i) + x.bandwidth() / 2},${y(m.sim[0])})`).attr('d', d3.symbol().type(d3.symbolDiamond).size(34)()).style('fill', 'var(--s2)');
+  svg.append('rect').attr('x', mg.l).attr('y', mg.t - 16).attr('width', W - mg.l - mg.r).attr('height', H - mg.b - mg.t + 16).attr('fill', 'transparent')
+    .on('pointermove', ev => { const i = Math.max(0, Math.min(n - 1, Math.floor((d3.pointer(ev)[0] - mg.l) / x.step()))), m = rows[i];
+      showTip(`<b>${m.h ? 'Home' : 'Away'} v ${esc(m.opp)}, ${dfmt(dparse(m.d))}</b><br>Result: ${RES_NAME[m.r]} (${m.h ? m.gf + '–' + m.ga : m.ga + '–' + m.gf})<br>Market P(win) ${fpct(m.mkt[0])}<br>xG-sim P(win) ${fpct(m.sim[0])}`, ev.clientX, ev.clientY); })
+    .on('pointerleave', hideTip);
+}
+function stripCard(sel) {
+  const host = el('div', { class: 'chart-wrap', 'data-chart': 'strip' }), rows = sel.idx.map(i => M(i));
+  const card = pageCard('span-12', 'match_strip', 'expected · result actual',
+    legend([{ color: 'var(--s1)', cls: 'dot', text: 'Market P(win)' }, { color: 'var(--s2)', text: 'xG-simulation P(win)' }, { color: 'var(--good)', text: 'Win' }, { color: 'var(--line-strong)', text: 'Draw' }, { color: 'var(--bad)', text: 'Loss' }]), host,
+    el('p', { class: 'note-small' }, 'Top row: the actual result of each match (win, draw, loss). Dots: the two win probabilities. The xG simulation uses the match’s own shots.'),
+    tableView('View every match as a table', ['Match', 'Result', 'Market W', 'Market D', 'Market L', 'xG-sim W', 'xG-sim D', 'xG-sim L'],
+      rows.map(m => [`${m.h ? 'H' : 'A'} ${m.opp} ${dfmt(dparse(m.d))}`, `${RES_NAME[m.r]} ${m.h ? m.gf + '–' + m.ga : m.ga + '–' + m.gf}`, ...m.mkt.map(fpct), ...m.sim.map(fpct)])));
+  card._draw = () => stripChart(host, sel); return card;
+}
+function stakingCards(s, sel) {
+  const r = sel.record, f2 = v => (v >= 0 ? '+' : MINUS) + Math.abs(v).toFixed(2);
+  const host = el('div', { class: 'chart-wrap', 'data-chart': 'pnl' }), rhost = el('div', { class: 'chart-wrap', 'data-chart': 'roi' });
+  const rows = seasonRows(s).filter(x => x.n >= MIN);
+  const c1 = pageCard('span-7', 'pnl_cum', 'retrospective', el('span', { class: 'badge retro', 'data-testid': 'retro-badge' }, 'Retrospective analysis, not a strategy'),
+    el('div', { class: 'tiles c3', style: 'margin:12px 0' }, el('div', { class: 'tile' }, el('div', { class: 'lbl' }, 'Stakes (1 unit each)'), el('div', { class: 'val', 'data-metric': 'stakes' }, sel.n)),
+      tile('pnl', el('span', { class: r.pnl >= 0 ? 'good' : 'bad' }, f2(r.pnl))), tile('roi', el('span', { class: r.pnl >= 0 ? 'good' : 'bad' }, fmt('roi', r.roi).replace('-', MINUS)))),
+    host, el('p', { class: 'note-small' }, 'A 1-unit stake on a Liverpool win in every match at the closing odds (Pinnacle where available, else the market average). Profit is odds − 1 on a win, −1 otherwise.'));
+  c1._draw = () => cumChart(host, sel, sel.cum_pnl, { label: 'Cumulative flat-stake profit in units', yfmt: '+.1f', tip: v => `${f2(v)} units` });
+  const c2 = pageCard('span-5', 'roi_season', 'retrospective', rhost, el('p', { class: 'note-small' }, `Each season is about 38 bets, so ROI is mostly luck. Seasons with fewer than ${MIN} matches are omitted.`),
+    tableView('View as a table', ['Season', 'Stakes', 'Profit (units)', 'ROI'], rows.map(x => [x.se, x.n, f2(x.pnl), fmt('roi', x.roi).replace('-', MINUS)])));
+  c2.setAttribute('data-ref-season', '');
+  c2._draw = () => {
+    rhost.innerHTML = '';
+    const W = Math.max(rhost.clientWidth || 320, 300), H = 250, mg = { t: 12, r: 12, b: 30, l: 50 };
+    const x = d3.scaleBand().domain(rows.map(r2 => r2.se)).range([mg.l, W - mg.r]).padding(0.25);
+    const ext = d3.extent(rows.map(r2 => r2.roi).concat(0)), y = d3.scaleLinear().domain([ext[0] - 0.05, ext[1] + 0.05]).nice().range([H - mg.b, mg.t]);
+    const svg = d3.select(rhost).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Flat-stake ROI by season');
+    svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
+    svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d => d3.format('+.0%')(d).replace('-', MINUS).replace('+0%', '0%'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+    svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).tickSize(0).tickPadding(6).tickValues(rows.filter((_, i) => i % (W < 520 ? 2 : 1) === 0).map(r2 => r2.se)).tickFormat(se => se.slice(2))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '11px'); });
+    svg.append('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y(0)).attr('y2', y(0)).style('stroke', 'var(--ink-2)');
+    svg.append('g').selectAll('rect').data(rows).join('rect').attr('class', 'roi-bar').attr('data-season', r2 => r2.se).attr('x', r2 => x(r2.se)).attr('width', x.bandwidth()).attr('y', r2 => Math.min(y(0), y(r2.roi))).attr('height', r2 => Math.max(1, Math.abs(y(r2.roi) - y(0)))).attr('rx', 2)
+      .style('fill', r2 => r2.roi >= 0 ? 'var(--pos)' : 'var(--neg)').attr('stroke', r2 => r2.sel ? 'var(--ink)' : 'none').attr('stroke-width', 2)
+      .on('pointermove', (ev, r2) => showTip(`<b>${r2.se}</b><br>${f2(r2.pnl)} units from ${r2.n} stakes<br>ROI ${fmt('roi', r2.roi).replace('-', MINUS)}`, ev.clientX, ev.clientY)).on('pointerleave', hideTip);
+  };
+  return [c1, c2];
+}
+function marketPage(s, d) {
+  const sel = d.sel, r = sel.record, grid = el('div', { class: 'grid' });
+  const kpi = el('section', { class: 'card span-12', 'aria-label': 'Market lens summary' }, el('h2', {}, 'Actual vs expected points', el('span', { class: 'tag' }, 'actual · expected')),
+    el('div', { class: 'tiles' }, tile('points', fmt('points', r.points)), tile('xpts_sim', fmt('xpts_sim', r.xpts_sim), { exp: true }), tile('xpts_market', fmt('xpts_market', r.xpts_market), { exp: true }),
+      el('div', { class: 'tile' }, mlabel('points_minus_market'), el('div', { class: 'val', 'data-metric': 'points_minus_market' }, signedNode('points_minus_market', r.points_minus_market)))),
+    el('p', { class: 'mkt-note' }, 'Market-expected points come from de-vigged closing odds; xPts from the exact xG simulation. Everything on this page is retrospective analysis.'));
+  const season = seasonPointsCard(s), runs = runsCard(sel), cal = calibrationCards(sel), strip = stripCard(sel), stake = stakingCards(s, sel);
+  const hook = el('section', { class: 'card span-12', 'aria-label': 'External model' }, el('h2', {}, R.model_hook.label, info('model_hook')),
+    el('p', { class: 'mkt-note', 'data-testid': 'hook-status' }, sel.cal.model ? `An external model is loaded and scored on ${sel.cal.model.n} of ${sel.n} matches in this selection.` : 'No external model loaded.'),
+    el('p', { class: 'mkt-note' }, 'To score your own model, add data/external/model_probs.csv (match key plus home, draw and away probabilities) and rebuild. The Methodology page has the exact format.'));
+  const cards = [season, ...runs, ...cal, strip, ...stake];
+  grid.append(kpi, season, ...runs, ...cal, strip, ...stake, hook);
+  return { node: grid, after: () => cards.forEach(c => c._draw && c._draw()), redraw: cards.map(c => c._draw).filter(Boolean) };
+}
+
+/* ================= Methodology ================= */
+function methodologyPage() {
+  const meth = D.methodology;
+  const jump = id => { const t = document.getElementById(id); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  const article = el('article', { class: 'card prose span-9', 'data-ref-season': '', 'data-testid': 'methodology', html: meth.html });
+  article.querySelectorAll('a[data-jump]').forEach(a => { a.href = location.hash; a.addEventListener('click', ev => { ev.preventDefault(); jump(a.dataset.jump.slice(1)); }); });
+  const toc = el('nav', { class: 'card toc span-3', 'aria-label': 'On this page' }, el('h2', {}, 'On this page'),
+    el('ol', {}, meth.toc.map(t => el('li', {}, el('a', { href: location.hash, 'data-toc': t.id, onclick: ev => { ev.preventDefault(); jump(t.id); } }, t.title)))));
+  return { node: el('div', { class: 'grid' }, toc, article) };
+}
+
+const RENDERERS = { overview, attack, defence, players: playersPage, match: matchPage, market: marketPage, methodology: methodologyPage };
 const TITLES = { overview: 'Overview', attack: 'Attack', defence: 'Defence', players: 'Players', match: 'Match Explorer', market: 'Market Lens', methodology: 'Methodology' };
 
 /* ================= render ================= */

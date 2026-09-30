@@ -6,8 +6,10 @@ so there is exactly one implementation of each calculation.
 from __future__ import annotations
 
 import datetime as dt
+import html as _html
 import json
 import math
+import re as _re
 from pathlib import Path
 
 import numpy as np
@@ -175,10 +177,203 @@ def selection_payload(e: pd.DataFrame, sel: pd.DataFrame, season: str, era: str,
         "players": player_rows(rosters, shots, set(sel.match_id)),
         "mix": mix_payload(sel, shots, season),
         "lfc_points": lfc_points(sel, season),
+        **market_payload(sel),
         "last5": [int(i) for i in sel.sort_values("kickoff_utc").tail(M.SETTINGS["form_matches"]).index],
         "season_played": int(len(season_all)),
     }
     return out
+
+
+def market_payload(sel: pd.DataFrame) -> dict:
+    """Calibration, mispriced runs and cumulative series for the Market Lens page."""
+    cal = M.calibration(sel)
+    o = M.outcome_index(sel.result)
+    freq = np.bincount(o, minlength=3) / len(o)
+    naive = np.tile(freq, (len(o), 1))
+    cal["naive"] = {"brier": M.brier(naive, o), "log_loss": M.log_loss(naive, o), "rates": [float(x) for x in freq]}
+    runs = [{**r, "from": r["from"].strftime("%Y-%m-%d"), "to": r["to"].strftime("%Y-%m-%d")} for r in M.mispriced_runs(sel)]
+    return {
+        "cal": cal, "runs": runs,
+        "cum_market": [r4(v) for v in (sel.pts - sel.xpts_market).cumsum()],
+        "cum_xpts": [r4(v) for v in (sel.pts - sel.xpts_sim).cumsum()],
+        "cum_pnl": [r4(v) for v in sel.pnl.cumsum()],
+    }
+
+
+# ---------------------------------------------------------------- methodology page (generated)
+GLOSSARY_GROUPS = [
+    ("Results (actual, whole numbers)", ["matches", "wins", "draws", "losses", "points", "goals_for", "goals_against", "goal_diff", "clean_sheets"]),
+    ("Expected values", ["xg", "xga", "xgd", "npxg", "xpts_sim", "xpts_market", "goals_minus_xg", "points_minus_xpts", "points_minus_market"]),
+    ("Per-match rates", ["points_pm", "goals_pm", "goals_against_pm", "xg_pm", "xga_pm", "xgd_pm", "xgd_roll10", "npxg_pm", "shots_pm", "shots_against_pm",
+                         "xg_per_shot", "xg_per_shot_pooled", "ppda", "deep_pm", "deep_allowed_pm", "xg_openplay_pm", "xga_openplay_pm", "xga_setpiece_pm"]),
+    ("Percentages and probabilities", ["win_rate", "clean_sheet_rate", "p_win_market", "p_win_sim", "overround", "odds_win"]),
+    ("Market lens", ["brier_market", "brier_sim", "logloss_market", "logloss_sim", "brier_model", "logloss_model", "pnl", "roi", "season_points", "cum_market",
+                     "mispriced_runs", "calibration", "reliability", "match_strip", "pnl_cum", "roi_season", "model_hook"]),
+    ("Players", ["apps", "minutes", "player_goals", "npg", "assists", "xg_player", "npxg_player", "xa", "npg_minus_npxg", "xg_p90", "npxg_p90", "xa_p90",
+                 "xgbuildup_p90", "xgchain_p90", "shots_p90", "key_passes_p90", "squad_table", "role_leaders", "player_trends", "player_compare"]),
+    ("Charts and maps", ["shot_map", "shots_conceded_map", "vol_vs_quality", "xg_mix", "xga_mix", "xg_trend", "xga_trend", "xg_race", "match_shots", "match_probs"]),
+]
+
+
+def dmy(ts, month_fmt: str = "%b") -> str:
+    """'5 Jan 2026' without the platform-specific %-d directive."""
+    return f"{ts.day} {ts.strftime(month_fmt + ' %Y')}"
+
+
+def esc(t) -> str:
+    return _html.escape(str(t), quote=True)
+
+
+def glossary_html() -> str:
+    seen, parts = set(), []
+    groups = [(t, [i for i in ids if i in M.REGISTRY]) for t, ids in GLOSSARY_GROUPS]
+    for _, ids in groups:
+        seen.update(ids)
+    rest = [i for i in M.REGISTRY if i not in seen]
+    if rest:
+        groups.append(("Other", rest))
+    better = {True: "higher", False: "lower", None: "no judgement"}
+    for title, ids in groups:
+        rows = "".join(
+            f'<tr data-metric-id="{esc(i)}"><td>{esc(M.REGISTRY[i]["label"])}</td><td>{esc(M.REGISTRY[i]["description"])}</td>'
+            f'<td>{esc(M.REGISTRY[i]["unit"])}</td><td>{better[M.REGISTRY[i]["higher_is_better"]]}</td>'
+            f'<td>{M.REGISTRY[i]["min_sample"]}</td><td>{esc(M.REGISTRY[i]["source"])}</td></tr>' for i in ids)
+        parts.append(f'<h3>{esc(title)}</h3><div class="tbl-x"><table class="data glossary"><thead><tr><th>Metric</th><th>Definition</th><th>Unit</th>'
+                     f'<th>Better when</th><th>Minimum sample</th><th>Source</th></tr></thead><tbody>{rows}</tbody></table></div>')
+    return "".join(parts)
+
+
+def sim_example_html() -> str:
+    liv, opp = [0.30, 0.50], [0.20]
+    dl, do = M.goal_dist(liv), M.goal_dist(opp)
+    w, d, l = M.outcome_probs(liv, opp)
+    rows = "".join(f"<tr><td>{k}</td><td>{dl[k] * 100:.1f}%</td><td>{(do[k] * 100 if k < len(do) else 0):.1f}%</td></tr>" for k in range(len(dl)))
+    return ('<div class="example" data-example="sim"><p><strong>Worked example.</strong> Liverpool have two shots (xG 0.30 and 0.50) and the opposition one (xG 0.20). '
+            'The probability of each goal count is:</p><div class="tbl-x"><table class="data"><thead><tr><th>Goals</th><th>Liverpool</th><th>Opposition</th></tr></thead>'
+            f'<tbody>{rows}</tbody></table></div><p>Combining the two gives P(win) = {w * 100:.1f}%, P(draw) = {d * 100:.1f}%, P(loss) = {l * 100:.1f}%, '
+            f'so xPts = 3 × {w:.4f} + {d:.4f} = <strong>{M.xpts(w, d):.2f}</strong>.</p></div>')
+
+
+def devig_example_html(e: pd.DataFrame) -> str:
+    ex = e[e.mkt_source == "pinnacle_close"].iloc[-1]
+    odds = [ex.mkt_h, ex.mkt_d, ex.mkt_a]
+    raw = [1 / o for o in odds]
+    prop, shin, z = M.devig_proportional(odds), M.devig_shin(odds), M.shin_z(odds)
+    home, away = (M.LIV, ex.opponent) if ex.is_home else (ex.opponent, M.LIV)
+    names = [f"{home} win", "Draw", f"{away} win"]
+    rows = "".join(f"<tr><td>{esc(n)}</td><td>{o:.2f}</td><td>{r * 100:.2f}%</td><td>{p * 100:.2f}%</td><td>{sh * 100:.2f}%</td></tr>"
+                   for n, o, r, p, sh in zip(names, odds, raw, prop, shin))
+    return (f'<div class="example" data-example="devig"><p><strong>Worked example</strong>: {esc(home)} v {esc(away)}, {dmy(ex.fd_date, "%b")} '
+            f'(Pinnacle closing odds). The implied probabilities add up to {sum(raw) * 100:.2f}%, a margin of {(sum(raw) - 1) * 100:.2f}%.</p>'
+            '<div class="tbl-x"><table class="data" data-table="devig-example"><thead><tr><th>Outcome</th><th>Decimal odds</th><th>Implied (1 ÷ odds)</th><th>Proportional</th><th>Shin</th></tr></thead>'
+            f'<tbody>{rows}</tbody><tfoot><tr><td>Sum</td><td></td><td>{sum(raw) * 100:.2f}%</td><td>{prop.sum() * 100:.2f}%</td><td>{shin.sum() * 100:.2f}%</td></tr></tfoot></table></div>'
+            f'<p>Shin insider share z = {z:.4f}.</p></div>')
+
+
+def coverage_html(e: pd.DataFrame, shots: pd.DataFrame) -> str:
+    src = e.mkt_source.value_counts().to_dict()
+    label = {"pinnacle_close": "Pinnacle closing odds", "market_avg_close": "market-average closing odds", "betfair_exchange_close": "Betfair Exchange closing odds"}
+    items = [
+        f"<li><strong>Understat</strong> (Premier League, 2014/15 onwards): shot-level data with x/y coordinates, situation, shot type and xG for every shot; team match xG, xGA, PPDA and deep completions; player match statistics (minutes, goals, xA, key passes, xGChain, xGBuildup).</li>",
+        f"<li><strong>football-data.co.uk</strong>: results and betting odds (Pinnacle open and close, market average and maximum, Betfair Exchange where present).</li>",
+        f"<li><strong>Coverage</strong>: {len(e)} Liverpool matches across {e.season.nunique()} seasons ({e.season.iloc[0]} to {e.season.iloc[-1]}), {len(shots):,} shots including the opposition's, "
+        f"data through {dmy(e.fd_date.max(), '%B')}. The current season is partial and is flagged wherever it has fewer than {M.SETTINGS['min_sample']} matches.</li>",
+        "<li><strong>Price used for each match</strong>: " + "; ".join(f"{label.get(k, k)} for {v} matches" for k, v in src.items()) + ".</li>",
+    ]
+    return '<ul data-gen-list="coverage">' + "".join(items) + "</ul>"
+
+
+def takeaway_rules_html() -> str:
+    T = M.SETTINGS["takeaway_thresholds"]
+    k = M.SETTINGS["form_matches"]
+    rows = [
+        ("Form", f"points from the last {k} matches are {T['form_strong_points']} or more (strong) or {T['form_poor_points']} or fewer (poor). Between those, nothing is said. A positive claim needs at least 7 points.", "any sample"),
+        ("Finishing", f"goals scored by players minus xG is at least {T['finishing_goals']} goals in either direction.", f"{M.SETTINGS['min_sample']}+ matches"),
+        ("Results vs market", f"actual points differ from market-expected points by at least {T['market_points']}.", f"{M.SETTINGS['min_sample']}+ matches"),
+        ("Points vs xPts", f"actual points differ from xG-simulated points by at least {T['xpts_points']}.", f"{M.SETTINGS['min_sample']}+ matches"),
+        ("Versus baseline", f"xG or xGA per match differs from the baseline by at least {T['baseline_pct'] * 100:.0f}%.", f"{M.SETTINGS['min_sample']}+ matches and a baseline"),
+        ("Best since / worst on record", f"a season's xGA per match is the lowest (or xG the highest) since an earlier season, or its xGA is the highest in the data.", f"{T['lowest_since_min_prior_seasons']}+ earlier seasons"),
+    ]
+    body = "".join(f"<tr><td>{esc(a)}</td><td>{esc(b)}</td><td>{esc(c)}</td></tr>" for a, b, c in rows)
+    return f'<div class="tbl-x"><table class="data" data-table="takeaway-rules"><thead><tr><th>Rule</th><th>Fires when</th><th>Needs</th></tr></thead><tbody>{body}</tbody></table></div>'
+
+
+def external_hook_html() -> str:
+    p = M.SETTINGS["external_model_csv"]
+    return ('<p>To score an external model next to the market and the xG simulation, save a CSV at '
+            f'<code>{esc(p)}</code> and rebuild. Columns: <code>match_id</code> (the Understat id) <em>or</em> <code>date</code> (yyyy-mm-dd, the local match date) with '
+            '<code>home_team</code> and <code>away_team</code> (Understat club names), plus <code>p_home</code>, <code>p_draw</code> and <code>p_away</code>. Each probability must be in [0, 1] '
+            'and each row must sum to 1 (within 0.001); anything else stops the build. Matches without a row are simply not scored. The Market Lens page then adds the model to the '
+            'calibration table and reliability plot.</p>')
+
+
+def _inline(t: str) -> str:
+    t = esc(t)
+    t = _re.sub(r"`([^`]+)`", r"<code>\1</code>", t)
+    t = _re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", t)
+    t = _re.sub(r"(?<![\w*])\*([^*]+)\*(?![\w*])", r"<em>\1</em>", t)
+    t = _re.sub(r"\[([^\]]+)\]\((#[\w-]+)\)", r'<a href="\2" data-jump="\2">\1</a>', t)
+    t = _re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", r'<a href="\2" rel="noopener">\1</a>', t)
+    return t
+
+
+def md_to_html(md: str) -> tuple[str, list[dict]]:
+    """A deliberately small markdown converter: ## / ### headings ({#id} optional), paragraphs, lists,
+    pipe tables, fenced code, **bold**, *italic*, `code`, links, and {{name}} block placeholders."""
+    out, toc, i, lines = [], [], 0, md.splitlines()
+    para: list[str] = []
+
+    def flush():
+        if para:
+            out.append("<p>" + _inline(" ".join(para)) + "</p>")
+            para.clear()
+
+    while i < len(lines):
+        ln = lines[i]
+        if not ln.strip():
+            flush(); i += 1; continue
+        m = _re.match(r"(#{2,3}) (.+?)(?: \{#([\w-]+)\})?$", ln)
+        if m:
+            flush()
+            title, hid = m.group(2), m.group(3) or _re.sub(r"[^a-z0-9]+", "-", m.group(2).lower()).strip("-")
+            level = len(m.group(1))
+            out.append(f'<h{level} id="{hid}">{_inline(title)}</h{level}>')
+            if level == 2:
+                toc.append({"id": hid, "title": title})
+            i += 1; continue
+        if ln.strip().startswith("```"):
+            flush(); j = i + 1; buf = []
+            while j < len(lines) and not lines[j].strip().startswith("```"):
+                buf.append(lines[j]); j += 1
+            out.append("<pre><code>" + esc("\n".join(buf)) + "</code></pre>"); i = j + 1; continue
+        m = _re.fullmatch(r"\{\{(\w+)\}\}", ln.strip())
+        if m:
+            flush(); out.append(f'<div data-gen="{m.group(1)}"></div>'); i += 1; continue
+        if ln.lstrip().startswith("- "):
+            flush(); items = []
+            while i < len(lines) and lines[i].lstrip().startswith("- "):
+                items.append(lines[i].lstrip()[2:]); i += 1
+            out.append("<ul>" + "".join(f"<li>{_inline(x)}</li>" for x in items) + "</ul>"); continue
+        para.append(ln.strip()); i += 1
+    flush()
+    return "\n".join(out), toc
+
+
+def methodology_payload(e: pd.DataFrame, shots: pd.DataFrame) -> dict:
+    src = (ROOT / "template" / "methodology.md").read_text(encoding="utf-8")
+    d = pd.concat([e.xg - e.xg_reported, e.xga - e.xga_reported])
+    inline = {"xg_gap_share": f"{(d > 0.02).mean() * 100:.0f}%", "xg_gap_max": f"{d.max():.1f}"}
+    for k, v in inline.items():
+        src = src.replace("{{" + k + "}}", v)
+    html, toc = md_to_html(src)
+    gen = {"coverage": coverage_html(e, shots), "registry_glossary": glossary_html(), "sim_example": sim_example_html(),
+           "devig_example": devig_example_html(e), "takeaway_rules": takeaway_rules_html(), "external_hook": external_hook_html()}
+    for k, v in gen.items():
+        token = f'<div data-gen="{k}"></div>'
+        assert token in html, f"placeholder {k} missing from methodology.md"
+        html = html.replace(token, v)
+    assert 'data-gen="' not in html, "unresolved placeholder in methodology.md"
+    return {"html": html, "toc": toc}
 
 
 def dashboard(e: pd.DataFrame, fixtures: pd.DataFrame, shots: pd.DataFrame, rosters: pd.DataFrame,
@@ -200,10 +395,11 @@ def dashboard(e: pd.DataFrame, fixtures: pd.DataFrame, shots: pd.DataFrame, rost
         "data_through": e.fd_date.max().strftime("%Y-%m-%d"),
         "seasons": seasons, "default_season": default, "scheduled": scheduled,
         "eras": [x for x in M.ERAS if x["manager"] in eras],
-        "settings": {"min_sample": M.SETTINGS["min_sample"], "baseline_seasons": M.SETTINGS["baseline_seasons"],
+        "settings": {"mispriced": M.SETTINGS["mispriced"], "min_sample": M.SETTINGS["min_sample"], "baseline_seasons": M.SETTINGS["baseline_seasons"],
                      "devig_method": M.SETTINGS["devig_method"], "form_matches": M.SETTINGS["form_matches"]},
         "registry": M.REGISTRY,
         "matches": match_rows(e),
+        "methodology": methodology_payload(e, shots),
         "shots": shots_payload(e, shots),
         "league": league_payload(ts, tm),
         "selections": selections,

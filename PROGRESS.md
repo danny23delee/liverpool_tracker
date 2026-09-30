@@ -90,3 +90,29 @@
   - New payload tests cover the per-90 fields and market payload.
 - **Screenshots reviewed** (desktop and 390px). Fixed: the probability and shot tables were clipped in narrow cards (now compact and widened), and the shot list mislabelled the team for own goals.
 - **Open:** Market Lens and Methodology are still placeholders. The all-matches reconciliation test takes about 90 s.
+
+## M6 Market Lens + Methodology: done (2026-09-30)
+- **Market Lens page:** all six panels from the brief.
+  - Actual vs xPts vs market-expected points per season (era-filterable).
+  - Cumulative results vs market with shaded mispriced runs, plus a runs table.
+  - Calibration: Brier and log loss for market vs xG simulation (plus an external model when present) next to a naive benchmark, and a reliability plot.
+  - A per-match strip of market and simulated win probabilities against actual results.
+  - Flat 1-unit stake: cumulative P&L, ROI by season and a "Retrospective analysis, not a strategy" badge.
+  - A documented external-model hook.
+- **Methodology page:** generated at build time from `template/methodology.md` plus generated blocks.
+  - Generated blocks: the metric glossary from `metrics.json` (every metric once), live data-coverage counts, worked de-vig and xG-simulation examples computed by the real functions, and the takeaway thresholds read from settings.
+  - Also included: sources and joins, baselines, the market-lens definitions, the known data quirks, and how accuracy is enforced.
+- **Data additions:** per selection, `cal` (Brier, log loss, reliability, naive benchmark), `runs`, and cumulative market/xPts/P&L series.
+- **External model hook (M2 code, now visible):** `data/external/model_probs.csv` is scored with the same maths. An end-to-end test writes a CSV containing the market's own probabilities for 20 matches and checks that the model's Brier equals the market's Brier on those matches (rebuilt page shows the row, then it disappears for seasons with no rows).
+- **Verified (95 tests):**
+  - The calibration table (own Brier and log-loss code and own de-vig), season table (points, xPts, market xPts, P&L, ROI for all 13 seasons), P&L and ROI, and mispriced runs (own windowing and merging) all equal independent recomputations.
+  - Reliability counts sum to 3 per match, the strip has one mark per match, and the era filter restricts the seasons.
+  - The Methodology worked examples equal an independent de-vig and a brute-force simulation of the same shots.
+  - Glossary rows and text equal the registry.
+  - Coverage numbers equal the data.
+  - The markdown converter escapes raw HTML.
+  - TOC clicks scroll without breaking hash routing.
+  - Every page (including market and methodology) shows no other season label on screen.
+- **Fixed after review:** a clipped runs table, overlapping ROI axis labels, result colours in the strip that clashed with the market series, a "+0.0" axis tick.
+- **Inaccuracy caught in my own text:** the M1 docstring said Understat's team xG is lower than the shot sum in "~14%" of team-matches; the measured figure is 17% (158 of 922). The Methodology page now computes that share from the data instead of hard-coding it.
+- **Open:** M7 polish and M8 ship remain. The Methodology page is long (the glossary is 89 rows); a collapsible glossary may help in M7.

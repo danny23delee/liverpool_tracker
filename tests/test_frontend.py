@@ -579,3 +579,231 @@ def test_match_explorer_no_other_season_labels(page, data):
         assert set(SEASON_RE.findall(visible_text(page))) <= {season}
         go(page, "players", season)
         assert set(SEASON_RE.findall(visible_text(page))) <= {season}
+
+
+# ------------------------------------------------------------------ M6: Market Lens and Methodology
+def _lens(season, era=None):
+    """Independent market-lens inputs for a season from the processed tables (own de-vig, own scoring)."""
+    import numpy as np
+    import pandas as pd
+    import metrics as MT
+    m = pd.read_parquet(ROOT / "data" / "processed" / "matches.parquet")
+    sh = pd.read_parquet(ROOT / "data" / "processed" / "shots.parquet")
+    m = m[m.season == season].sort_values("kickoff_utc").reset_index(drop=True)
+    inv = 1 / m[["mkt_h", "mkt_d", "mkt_a"]].values
+    prop = inv / inv.sum(axis=1, keepdims=True)                      # proportional de-vig, written out here
+    pm = np.where(m.is_home.values[:, None], prop, prop[:, ::-1])    # Liverpool W, D, L
+    sh = sh[(sh.result != "OwnGoal") & sh.match_id.isin(m.match_id)]
+    sim = []
+    for r in m.itertuples():
+        g = sh[sh.match_id == r.match_id]
+        sim.append(MT.outcome_probs(g[g.team == "Liverpool"].xg.values, g[g.team != "Liverpool"].xg.values))
+    o = m.result.map({"W": 0, "D": 1, "L": 2}).values
+    win_odds = np.where(m.is_home, m.mkt_h, m.mkt_a)
+    return m, pm, np.array(sim), o, win_odds
+
+
+def _score(P, o):
+    import numpy as np
+    onehot = np.eye(3)[o]
+    return float(((P - onehot) ** 2).sum(axis=1).mean()), float(-np.log(P[np.arange(len(o)), o]).mean())
+
+
+def test_market_lens_calibration_matches_independent_scores(page):
+    go(page, "market", "2024-25")
+    m, pm, sim, o, _ = _lens("2024-25")
+    rows = {r[0]: r for r in _table_rows(page.locator("table[data-table=calibration] tbody tr"))}
+    keys = list(rows)
+    b, ll = _score(pm, o)
+    assert rows[keys[0]][1] == f"{b:.3f}" and rows[keys[0]][2] == f"{ll:.3f}" and int(rows[keys[0]][3]) == len(m)
+    b, ll = _score(sim, o)
+    assert rows[keys[1]][1] == f"{b:.3f}" and rows[keys[1]][2] == f"{ll:.3f}"
+    import numpy as np
+    freq = np.bincount(o, minlength=3) / len(o)
+    b, ll = _score(np.tile(freq, (len(o), 1)), o)
+    assert rows[keys[2]][1] == f"{b:.3f}" and rows[keys[2]][2] == f"{ll:.3f}"
+    # reliability: each forecast contributes 3 outcomes per match, split across bins
+    tbl = _table_rows(page.locator("section[aria-label='Reliability plot'] tbody tr"))
+    for name in {r[0] for r in tbl}:
+        assert sum(int(r[4]) for r in tbl if r[0] == name) == 3 * len(m), name
+    assert page.locator("[data-testid=no-model]").count() == 1
+    assert page.locator("[data-chart=reliability] path.rel-pt[data-series=market]").count() > 3
+
+
+def test_market_lens_season_table_and_points(page, data):
+    import pandas as pd
+    go(page, "market", "2025-26")
+    rows = _table_rows(page.locator("section[aria-label='Points: actual vs expected'] tbody tr"))
+    assert [r[0] for r in rows] == data["seasons"]
+    for r in rows:
+        m, pm, sim, o, win_odds = _lens(r[0])
+        assert int(r[1]) == len(m) and int(r[2]) == int(m.pts.sum())
+        assert r[3] == f"{(3 * sim[:, 0] + sim[:, 1]).sum():.1f}", r[0]
+        assert r[4] == f"{(3 * pm[:, 0] + pm[:, 1]).sum():.1f}", r[0]
+        pnl = float(sum(w - 1 if oo == 0 else -1 for w, oo in zip(win_odds, o)))
+        assert _flt(r[7]) == pytest.approx(pnl, abs=0.006) and _flt(r[8].rstrip("%")) == pytest.approx(pnl / len(m) * 100, abs=0.06), r[0]
+    # seasons under the sample threshold are not charted, and the selected season is shaded
+    assert page.locator("[data-chart=season-points] rect.sbar").count() == 3 * (len(data["seasons"]) - 1)
+    for tag, expect in (("points", "Actual points"), ("xpts_sim", "xPts"), ("xpts_market", "Market")):
+        assert page.locator(f"[data-chart=season-points] rect.sbar[data-series={tag}]").count() == len(data["seasons"]) - 1
+    # manager-era filter restricts the seasons
+    go(page, "market", "all", "klopp")
+    rows = _table_rows(page.locator("section[aria-label='Points: actual vs expected'] tbody tr"))
+    assert [r[0] for r in rows] == data["seasons"][1:10]
+
+
+def test_market_lens_staking_matches_independent_pnl(page):
+    go(page, "market", "2019-20")
+    m, pm, sim, o, win_odds = _lens("2019-20")
+    pnl = float(sum(w - 1 if oo == 0 else -1 for w, oo in zip(win_odds, o)))
+    assert _flt(page.inner_text("[data-metric=pnl]")) == pytest.approx(pnl, abs=0.006)
+    assert _flt(page.inner_text("[data-metric=roi]").rstrip("%")) == pytest.approx(pnl / len(m) * 100, abs=0.06)
+    assert int(page.inner_text("[data-metric=stakes]")) == len(m)
+    assert page.locator("[data-testid=retro-badge]").count() == 1
+    assert "not a strategy" in page.inner_text("[data-testid=retro-badge]")
+    assert "not betting advice" in page.inner_text("footer")
+    assert page.locator("[data-chart=roi] rect.roi-bar").count() == 12  # completed seasons with the current one omitted
+
+
+def _own_runs(pts, xm, window=10, thr=4.0):
+    r = pts - xm
+    out = []
+    for sign, name in ((1, "beat"), (-1, "lagged")):
+        flagged = [(i - window + 1, i) for i in range(window - 1, len(r)) if sign * r[i - window + 1:i + 1].sum() >= thr]
+        merged = []
+        for lo, hi in flagged:
+            if merged and lo <= merged[-1][1] + 1:
+                merged[-1][1] = hi
+            else:
+                merged.append([lo, hi])
+        out += [(lo, hi, name) for lo, hi in merged]
+    return sorted(out)
+
+
+def test_market_lens_mispriced_runs_match_definition(page):
+    for season in ("2019-20", "2025-26", "2014-15"):
+        go(page, "market", season)
+        m, pm, sim, o, _ = _lens(season)
+        xm = 3 * pm[:, 0] + pm[:, 1]
+        exp = _own_runs(m.pts.values.astype(float), xm)
+        rows = _table_rows(page.locator("table[data-table=runs] tbody tr"))
+        assert len(rows) == len(exp), season
+        for r, (lo, hi, name) in zip(rows, exp):
+            assert int(r[3]) == hi - lo + 1 and int(r[4]) == int(m.pts.values[lo:hi + 1].sum()), (season, lo)
+            assert _flt(r[6]) == pytest.approx(m.pts.values[lo:hi + 1].sum() - xm[lo:hi + 1].sum(), abs=0.06)
+            assert ("Beat" if name == "beat" else "Lagged") in r[0]
+        assert page.locator("[data-chart=cum-market] rect.run-band").count() == len(exp)
+    go(page, "market", "2026-27")
+    assert page.locator("[data-testid=small-sample]").count() == 1 and "at least 10" in page.inner_text("section[aria-label='Mispriced runs']")
+
+
+def test_market_lens_strip_and_no_other_season_labels(page, data):
+    go(page, "market", "2024-25")
+    assert page.locator("[data-chart=strip] rect.res-strip").count() == 38
+    assert page.locator("[data-chart=strip] circle.p-mkt").count() == 38 and page.locator("[data-chart=strip] path.p-sim").count() == 38
+    wins = page.locator("[data-chart=strip] rect.res-strip[data-r=W]").count()
+    assert wins == data["selections"]["2024-25|all"]["record"]["wins"]
+    rows = _table_rows(page.locator("section[aria-label='Every match: market vs xG simulation'] tbody tr"))
+    assert len(rows) == 38
+    for route in ("market", "methodology", "attack", "defence", "players", "match"):
+        go(page, route, "2019-20")
+        assert set(SEASON_RE.findall(visible_text(page))) <= {"2019-20"}, route
+
+
+def test_external_model_hook_end_to_end(browser, tmp_path):
+    """A CSV of model probabilities is scored next to the market: same probabilities, same score, on the subset it covers."""
+    import numpy as np
+    import pandas as pd
+    import build
+    import metrics as MT
+    t = build.load_tables()
+    e0 = MT.enrich_matches(t["matches"], t["shots"])
+    sub = e0[e0.season == "2024-25"].iloc[:20]
+    probs = np.array([MT.devig_proportional([h, d, a]) for h, d, a in zip(sub.mkt_h, sub.mkt_d, sub.mkt_a)])  # home, draw, away
+    csv = tmp_path / "model.csv"
+    pd.DataFrame({"match_id": sub.match_id.values, "p_home": probs[:, 0], "p_draw": probs[:, 1], "p_away": probs[:, 2]}).to_csv(csv, index=False)
+    e = MT.attach_external_model(e0, MT.load_external_model(csv))
+    data = build.dashboard(e, t["fixtures"], t["shots"], t["rosters"], t["team_seasons"], t["team_matches"])
+    cal = data["selections"]["2024-25|all"]["cal"]
+    assert cal["model"]["n"] == 20
+    o = MT.outcome_index(sub.result)
+    assert cal["model"]["brier"] == pytest.approx(MT.brier(sub[["mp_w", "mp_d", "mp_l"]].values, o), abs=1e-9)  # same probabilities, same score
+    assert "model" not in data["selections"]["2023-24|all"]["cal"]
+    out = tmp_path / "index.html"
+    out.write_text(build.render(data), encoding="utf-8")
+    ctx, pg = _new_page(browser)
+    pg.goto(out.as_uri())
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    go(pg, "market", "2024-25")
+    rows = _table_rows(pg.locator("table[data-table=calibration] tbody tr"))
+    assert len(rows) == 4 and rows[2][0] == "External model" and int(rows[2][3]) == 20
+    assert rows[2][1] == f"{cal['model']['brier']:.3f}"
+    assert pg.locator("[data-testid=no-model]").count() == 0 and "scored on 20 of 38" in pg.inner_text("[data-testid=hook-status]")
+    assert pg.locator("[data-chart=reliability] path.rel-pt[data-series=model]").count() > 0
+    go(pg, "market", "2023-24")
+    assert pg.locator("[data-testid=no-model]").count() == 1
+    assert pg.errors == []
+    ctx.close()
+
+
+def test_methodology_generated_from_registry_and_data(page, data):
+    import pandas as pd
+    import metrics as MT
+    go(page, "methodology", "2025-26")
+    reg = data["registry"]
+    rows = page.locator("table.glossary tbody tr")
+    assert rows.count() == len(reg)
+    seen = rows.evaluate_all("trs => trs.map(t => [t.dataset.metricId, t.children[0].textContent, t.children[1].textContent])")
+    assert {r[0] for r in seen} == set(reg)
+    for mid, label, desc in seen:
+        assert label == reg[mid]["label"] and desc == reg[mid]["description"], mid
+    assert page.locator("[data-gen]").count() == 0  # every placeholder was resolved
+    txt = page.inner_text("[data-testid=methodology]")
+    for heading in ("Data sources", "Baselines and change", "Expected goals and the exact simulation", "Turning odds into probabilities", "Known limitations", "How accuracy is enforced"):
+        assert heading in txt, heading
+    # coverage numbers come from the data
+    m = pd.read_parquet(ROOT / "data" / "processed" / "matches.parquet")
+    assert f"{len(m)} Liverpool matches across {m.season.nunique()} seasons" in txt
+    src = m.mkt_source.value_counts()
+    assert f"Pinnacle closing odds for {src['pinnacle_close']} matches" in txt
+    # thresholds shown equal the settings used by the takeaway rules
+    rules = _table_rows(page.locator("table[data-table=takeaway-rules] tbody tr"))
+    T = MT.SETTINGS["takeaway_thresholds"]
+    assert f"{T['finishing_goals']} goals" in rules[1][1] and f"{T['market_points']}" in rules[2][1] and f"{T['xpts_points']}" in rules[3][1]
+    assert f"{T['baseline_pct'] * 100:.0f}%" in rules[4][1] and f"{T['form_strong_points']} or more" in rules[0][1]
+    # registry text agrees with the configured mispriced-run parameters
+    W = MT.SETTINGS["mispriced"]
+    assert f"{W['window']} consecutive" in reg["mispriced_runs"]["description"] and f"{W['threshold_points']:.0f} points" in reg["mispriced_runs"]["description"]
+
+
+def test_methodology_worked_examples_are_correct(page):
+    import numpy as np
+    import metrics as MT
+    go(page, "methodology", "2025-26")
+    rows = _table_rows(page.locator("table[data-table=devig-example] tbody tr"))
+    odds = [float(r[1]) for r in rows]
+    prop, shin, z = MT.devig_proportional(odds), MT.devig_shin(odds), MT.shin_z(odds)
+    for r, p, s in zip(rows, prop, shin):
+        assert r[3] == f"{p * 100:.2f}%" and r[4] == f"{s * 100:.2f}%" and r[2] == f"{100 / float(r[1]):.2f}%"
+    assert f"z = {z:.4f}" in page.inner_text("[data-example=devig]")
+    sim = page.inner_text("[data-example=sim]")
+    # brute force of the worked example (Liverpool shots 0.30 and 0.50 against one shot of 0.20)
+    import itertools
+    w = d = 0.0
+    for a1, a2, b1 in itertools.product([0, 1], repeat=3):
+        pr = (0.3 if a1 else 0.7) * (0.5 if a2 else 0.5) * (0.2 if b1 else 0.8)
+        gl, go_ = a1 + a2, b1
+        w += pr * (gl > go_)
+        d += pr * (gl == go_)
+    assert f"P(win) = {w * 100:.1f}%" in sim and f"P(draw) = {d * 100:.1f}%" in sim and f"{3 * w + d:.2f}" in sim
+
+
+def test_methodology_navigation_does_not_break_routing(page):
+    go(page, "methodology", "2024-25")
+    page.click("[data-toc='accuracy']")
+    page.wait_for_function("document.getElementById('accuracy').getBoundingClientRect().top < 700", timeout=8000)  # smooth scroll finished
+    assert page.evaluate("location.hash").startswith("#/methodology?season=2024-25")
+    assert page.evaluate("document.getElementById('accuracy').getBoundingClientRect().top") > -5
+    page.click("a[data-jump='#accuracy']")
+    assert page.evaluate("location.hash").startswith("#/methodology")
+    assert page.errors == []
