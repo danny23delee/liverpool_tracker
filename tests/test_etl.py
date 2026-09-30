@@ -139,3 +139,17 @@ def test_league_team_seasons_complete(t):
         if season != cur:
             assert (g.matches == 38).all(), season
     assert (ts.shots > 0).all()
+
+
+def test_team_season_shotlevel_matches_liverpool_shots(t):
+    """Understat's team statistics include opponent own goals as 1.0-xG shots; the corrected
+    shot-level figures must equal the sums of Liverpool's actual shots exactly."""
+    ts, m = t["team_seasons"], t["matches"]
+    liv = ts[ts.team == etl.LIV].set_index("season")
+    s = t["shots"]
+    s = s[(s.team == etl.LIV) & (s.result != "OwnGoal")]
+    by = s.groupby("season").agg(n=("xg", "size"), xg=("xg", "sum"))
+    for season in liv.index:
+        assert liv.loc[season, "shots_shotlevel"] == by.loc[season, "n"], season
+        assert abs(liv.loc[season, "xg_shotlevel"] - by.loc[season, "xg"]) < 1e-6, season
+    assert (ts.og_for >= 0).all() and ts.og_for.max() <= 15

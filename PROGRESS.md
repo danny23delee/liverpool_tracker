@@ -40,3 +40,25 @@
 - **Screenshots reviewed** at 1440×900 and 390×844 (default, all-seasons, 2026-27 small sample, dark). Fixed from review: uneven tile wrapping and stranded ⓘ icons, chart end-label collision, crowded mobile axis ticks, oversized mobile table padding.
 - **Environment notes:** the Playwright Chromium download is blocked by the corporate proxy, so tests fall back to system Chrome (`channel="chrome"`); CI uses the bundled Chromium. D3 and Google Fonts requests are stubbed in tests (D3 from a cached copy of the pinned 7.9.0 file; the CDN tag carries an SRI hash).
 - **Open:** Attack, Defence, Players, Match Explorer, Market Lens and Methodology are placeholders until M4–M6. Default season is the latest with at least 10 matches (2025-26), since 2026-27 has only 5.
+
+## M4 Attack + Defence: done (2026-09-30)
+- **Built:**
+  - Attack page: shot map with player/situation/body-part/outcome filters (circle size grows with xG, goals filled), goals-minus-xG by player (with a penalties toggle), threat source mix, shot volume vs xG-per-shot scatter with league clubs and league-average lines, and a per-match xG trend with goals overlaid and a 10-match average.
+  - Defence page: shots-conceded map, xGA trend with the league average, open-play vs set-piece vs penalty xGA, PPDA trend, deep completions allowed, and a clean-sheet strip.
+  - Both pages start with a KPI row of baseline changes.
+  - Every chart has a registry ⓘ tooltip and a table view.
+- **Data additions:** `build.py` now ships all shots (both teams, 1.1 MB build), per-selection player rows, source mixes, rolling series and per-season league context.
+- **ETL finding:** Understat's team statistics count opponent own goals as 1.0-xG shots, giving three different xG totals per season. Corrected shot-level league figures now equal Liverpool's shot sums exactly (new ETL test); see DATA_NOTES.md.
+- **Verified (72 tests pass):** new `tests/test_build.py` checks the payload against independent pandas sums (shots, player rows vs the player-season table, source mixes, league context, rolling series). New Playwright tests check the following.
+  - The map stats and every filter match pandas.
+  - Pitch is exactly 105×68.
+  - Attack circle positions equal (105X, 68Y) and defence positions equal the 180° rotation, compared circle by circle.
+  - The finishing table matches pandas, including the non-penalty toggle.
+  - The source mix matches pandas by source.
+  - The scatter has 20 clubs (240 club-seasons for all seasons).
+  - Bar counts equal matches, and the clean-sheet strip equals the record.
+  - League reference lines are drawn (13 segments for all seasons).
+  - Small-sample and empty states, and the registry tooltip on every chart title.
+- **Screenshots reviewed** (desktop and 390px): fixed collapsed half-width cards (missing `span-6`), an unreadable in-pitch caption, clipped player names on mobile, a squashed single-group mix bar, an invisible legend swatch, and a "−0.0" label.
+- **Design decisions:** circle size uses r = 3.5 + 12·√xG px so tiny shots stay visible at the 8 px marker minimum (size still increases monotonically with xG; the registry text says "grows with", not "proportional"). The pitch is drawn from 36 m (attack) / to 69 m (defence) to avoid empty space; hidden long shots are disclosed.
+- **Open:** Players, Match Explorer, Market Lens and Methodology remain placeholders.

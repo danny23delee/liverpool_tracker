@@ -259,3 +259,141 @@ def test_screenshots(browser, data, width, height):
     pg.screenshot(path=str(SHOTS / f"overview_dark_{width}.png"), full_page=True)
     assert pg.errors == []
     ctx.close()
+
+
+# ------------------------------------------------------------------ M4: Attack and Defence pages
+def _shots(season, liverpool=True):
+    import pandas as pd
+    s = pd.read_parquet(ROOT / "data" / "processed" / "shots.parquet")
+    s = s[(s.season == season) & (s.result != "OwnGoal")]
+    return s[s.team == "Liverpool"] if liverpool else s[s.team != "Liverpool"]
+
+
+def _circles(page, chart):
+    return sorted((round(float(a), 3), round(float(b), 3)) for a, b in page.eval_on_selector_all(
+        f"[data-chart={chart}] circle.shot", "els => els.map(e => [e.getAttribute('cx'), e.getAttribute('cy')])"))
+
+
+def _table_rows(locator):
+    return locator.evaluate_all("trs => trs.map(t => [...t.children].map(c => c.textContent))")
+
+
+def test_attack_shot_map_stats_and_filters_match_data(page):
+    go(page, "attack", "2024-25")
+    liv = _shots("2024-25")
+
+    def n():
+        return int(page.inner_text("[data-stat=shots]").replace(",", ""))
+
+    assert n() == len(liv)
+    assert int(page.inner_text("[data-stat=goals]")) == int((liv.result == "Goal").sum())
+    assert page.inner_text("[data-stat=xg]") == f"{liv.xg.sum():.1f}"
+    assert page.inner_text("[data-stat=xgps]") == f"{liv.xg.sum() / len(liv):.3f}"
+    # circle size grows with xG: the biggest circle is the biggest shot
+    radii = page.eval_on_selector_all("[data-chart=attack] circle.shot", "els => els.map(e => +e.getAttribute('r'))")
+    assert len(radii) <= len(liv) and max(radii) > 2.5 * min(radii)
+    page.select_option("#f-player", label="Mohamed Salah")
+    sal = liv[liv.player == "Mohamed Salah"]
+    assert n() == len(sal) and page.inner_text("[data-stat=xg]") == f"{sal.xg.sum():.1f}"
+    page.select_option("#f-sit", "Penalty")
+    pen = sal[sal.situation == "Penalty"]
+    assert n() == len(pen) and int(page.inner_text("[data-stat=goals]")) == int((pen.result == "Goal").sum())
+    page.select_option("#f-player", "all")
+    page.select_option("#f-sit", "all")
+    page.select_option("#f-typ", "Head")
+    assert n() == int((liv.shot_type == "Head").sum())
+    page.select_option("#f-typ", "all")
+    page.select_option("#f-res", "Goal")
+    assert n() == int((liv.result == "Goal").sum())
+    assert page.locator("[data-chart=attack] circle.shot").count() == n()
+
+
+def test_pitch_proportions_and_transforms(page):
+    go(page, "attack", "2025-26")
+    pitch = page.eval_on_selector("[data-chart=attack] svg rect", "e => [+e.getAttribute('width'), +e.getAttribute('height')]")
+    assert pitch == [105, 68]  # true 105 x 68 m proportions
+    liv = _shots("2025-26")
+    exp = sorted((round(105 * x, 3), round(68 * y, 3)) for x, y in zip(liv.x, liv.y) if 105 * x >= 36)
+    assert _circles(page, "attack") == exp  # attack drawn as-is, towards the right goal
+    go(page, "defence", "2025-26")
+    opp = _shots("2025-26", liverpool=False)
+    exp = sorted((round(105 * (1 - x), 3), round(68 * (1 - y), 3)) for x, y in zip(opp.x, opp.y) if 105 * (1 - x) <= 69)
+    assert _circles(page, "defence") == exp  # opposition shots rotated: Liverpool defend the left goal
+    assert int(page.inner_text("[data-stat=shots]")) == len(opp)
+
+
+def test_finishing_chart_and_source_mix_match_data(page):
+    go(page, "attack", "2024-25")
+    liv = _shots("2024-25")
+    card = page.locator("section[aria-label='Goals minus xG']")
+    rows = _table_rows(card.locator("tbody tr"))
+    g = liv.groupby("player").agg(sh=("xg", "size"), goals=("result", lambda x: int((x == "Goal").sum())), xg=("xg", "sum"))
+    g = g[g.sh >= 5]
+    assert {r[0] for r in rows} == set(g.index)
+    for name, shots, goals, xg, diff in rows:
+        r = g.loc[name]
+        assert int(shots) == r.sh and int(goals) == r.goals and xg == f"{r.xg:.2f}", name
+        assert diff.replace("−", "-") in (f"{r.goals - r.xg:+.2f}", "0.00")
+    # excluding penalties switches to non-penalty goals and npxG
+    card.get_by_role("button", name="Excluding penalties").click()
+    rows = _table_rows(card.locator("tbody tr"))
+    npl = liv[liv.situation != "Penalty"].groupby("player").agg(goals=("result", lambda x: int((x == "Goal").sum())), xg=("xg", "sum"))
+    for name, shots, goals, xg, diff in rows:
+        assert int(goals) == npl.loc[name].goals and xg == f"{npl.loc[name].xg:.2f}", name
+    # source mix: xG by source equals pandas
+    mix = _table_rows(page.locator("section[aria-label='Threat source mix']").locator("tbody tr"))
+    src = liv.situation.map({"OpenPlay": "Open play", "FromCorner": "Set pieces", "SetPiece": "Set pieces",
+                             "DirectFreekick": "Set pieces", "Penalty": "Penalties"})
+    for _, name, xg, shots, goals in mix:
+        x = liv[src == name]
+        assert xg == f"{x.xg.sum():.1f}" and int(shots) == len(x) and int(goals) == int((x.result == "Goal").sum()), name
+    assert sum(float(r[2]) for r in mix) == pytest.approx(liv.xg.sum(), abs=0.2)
+
+
+def test_scatter_league_context(page):
+    go(page, "attack", "2025-26")
+    assert page.locator("[data-chart=scatter] circle").count() == 20  # 19 other clubs + Liverpool
+    liv = _shots("2025-26")
+    rows = _table_rows(page.locator("section[aria-label='Shot volume vs shot quality'] tbody tr"))
+    lfc = next(r for r in rows if r[0] == "Liverpool")
+    assert lfc[1] == f"{len(liv) / 38:.1f}" and lfc[2] == f"{liv.xg.sum() / len(liv):.3f}"
+    assert len(rows) == 20
+    go(page, "attack", "all")
+    assert page.locator("[data-chart=scatter] circle").count() == 20 * 13  # every club-season, Liverpool 13 highlighted
+
+
+def test_defence_charts_and_clean_sheets(page, data):
+    for season in ("2024-25", "2019-20"):
+        go(page, "defence", season)
+        sel = data["selections"][f"{season}|all"]
+        assert page.locator("[data-chart=xga-trend] rect.bar").count() == sel["n"]
+        assert page.locator("[data-strip=clean-sheets] i").count() == sel["n"]
+        assert page.locator("[data-strip=clean-sheets] i.cs").count() == sel["record"]["clean_sheets"]
+        assert num(page.inner_text("[data-metric=clean_sheets]")) == sel["record"]["clean_sheets"]
+        assert page.locator("[data-chart=xga-trend] line[stroke-dasharray]").count() == 1  # league average line
+        mix = page.locator("section[aria-label='Open play vs set piece xGA'] tbody tr").evaluate_all("trs => trs.map(t => t.children[2].textContent)")
+        assert sum(float(x) for x in mix) == pytest.approx(sel["record"]["xga"], abs=0.2)
+    go(page, "defence", "all")
+    assert page.locator("[data-chart=xga-trend] line[stroke-dasharray]").count() == 13  # per-season league averages
+    assert page.locator("section[aria-label='Open play vs set piece xGA'] .mixrow").count() == 13
+
+
+def test_attack_defence_small_sample_and_empty_states(page):
+    go(page, "attack", "2026-27")
+    assert page.locator("[data-testid=small-sample]").count() == 1
+    go(page, "defence", "2026-27")
+    assert page.locator("[data-strip=clean-sheets] i").count() == 5
+    go(page, "attack", "2025-26", "iraola")
+    assert page.locator("[data-testid=empty]").count() == 1
+
+
+def test_attack_defence_titles_have_registry_tooltips_and_table_views(page, data):
+    for route in ("attack", "defence"):
+        go(page, route, "2024-25")
+        titles = page.locator("section.card > h2 > button.info")
+        assert titles.count() >= 4, route
+        for i in range(titles.count()):
+            mid = titles.nth(i).get_attribute("data-info")
+            titles.nth(i).hover()
+            assert data["registry"][mid]["description"] in page.inner_text("#tip"), mid
+        assert page.locator("details.tbl").count() >= 4, route
