@@ -94,3 +94,31 @@ def test_lfc_points_and_rolls(payload):
         assert len(sel[k]) == sel["n"]
         assert all(v is None for v in sel[k][:9]) and all(v is not None for v in sel[k][9:])
     assert len(payload["selections"]["all|all"]["lfc_points"]) == 13
+
+
+def test_player_per90_fields_are_consistent(payload):
+    n = 0
+    for key, sel in payload["selections"].items():
+        for p in sel["players"]:
+            assert p["min"] > 0
+            for k, v in (("npxg90", "npxg"), ("xa90", "xa"), ("build90", "build"), ("chain90", "chain"), ("sh90", "sh"), ("kp90", "kp"), ("xg90", "xg")):
+                assert abs(p[k] - p[v] / p["min"] * 90) < 1e-4 + 5.1e-5 * 90 / p["min"], (key, p["name"], k)  # inputs are rounded to 4 dp
+            assert abs(p["fin"] - (p["npg"] - p["npxg"])) < 1e-3
+            assert p["npg"] <= p["g"] and p["npxg"] <= p["xg"] + 1e-6
+            n += 1
+    assert n > 900
+
+
+def test_match_market_payload_matches_metrics(payload, tables):
+    import metrics as MT
+    e = tables["enriched"]
+    for m, r in zip(payload["matches"], e.itertuples()):
+        odds = [r.mkt_h, r.mkt_d, r.mkt_a]
+        home = r.is_home
+        for name, fn in (("proportional", MT.devig_proportional), ("shin", MT.devig_shin)):
+            p = fn(odds)
+            exp = list(p) if home else list(p[::-1])
+            assert all(abs(a - b) < 2e-6 for a, b in zip(m["mktp"][name], exp)), (m["id"], name)
+            assert abs(sum(m["mktp"][name]) - 1) < 1e-5
+        assert abs(sum(m["sim"]) - 1) < 1e-5 and abs(m["ovr"] - (sum(1 / o for o in odds) - 1)) < 1e-4
+        assert m["o"] == [round(o, 4) for o in odds]

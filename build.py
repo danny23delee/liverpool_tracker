@@ -46,6 +46,12 @@ def r4(x):
     return None if x is None or (isinstance(x, float) and math.isnan(x)) else round(float(x), 4)
 
 
+def r6(x):
+    """Six decimals for values that are displayed and re-added in the browser (xG, probabilities), so the
+    rounding of the payload can never change a displayed digit."""
+    return None if x is None or (isinstance(x, float) and math.isnan(x)) else round(float(x), 6)
+
+
 # ------------------------------------------------------------------ payload
 def match_rows(e: pd.DataFrame) -> list[dict]:
     rows = []
@@ -53,11 +59,14 @@ def match_rows(e: pd.DataFrame) -> list[dict]:
         rows.append({
             "id": int(r.match_id), "d": r.fd_date.strftime("%Y-%m-%d"), "ko": r.kickoff_utc.isoformat(),
             "s": r.season, "era": r.era, "opp": r.opponent, "h": bool(r.is_home), "gf": int(r.gf), "ga": int(r.ga),
-            "r": r.result, "pts": int(r.pts), "xg": r4(r.xg), "xga": r4(r.xga), "xpts": r4(r.xpts_sim),
-            "xptm": r4(r.xpts_market), "sim": [r4(r.sim_w), r4(r.sim_d), r4(r.sim_l)],
-            "mkt": [r4(r.mp_w), r4(r.mp_d), r4(r.mp_l)], "src": r.mkt_source, "odds": r4(r.odds_win),
+            "r": r.result, "pts": int(r.pts), "xg": r6(r.xg), "xga": r6(r.xga), "xpts": r6(r.xpts_sim),
+            "xptm": r6(r.xpts_market), "sim": [r6(r.sim_w), r6(r.sim_d), r6(r.sim_l)],
+            "mkt": [r6(r.mp_w), r6(r.mp_d), r6(r.mp_l)], "src": r.mkt_source, "odds": r6(r.odds_win),
             "ppda": r4(r.ppda_att / r.ppda_def) if r.ppda_def > 0 else None, "deep": int(r.deep), "deepa": int(r.deep_allowed),
             "sh": int(r.shots_for), "sha": int(r.shots_against),
+            "mktp": {"proportional": [r6(r.mp_proportional_w), r6(r.mp_proportional_d), r6(r.mp_proportional_l)],
+                     "shin": [r6(r.mp_shin_w), r6(r.mp_shin_d), r6(r.mp_shin_l)]},
+            "o": [r4(r.mkt_h), r4(r.mkt_d), r4(r.mkt_a)], "ovr": r4(r.overround), "shin_z": r4(M.shin_z([r.mkt_h, r.mkt_d, r.mkt_a])),
         })
     return rows
 
@@ -76,7 +85,7 @@ def shots_payload(e: pd.DataFrame, shots: pd.DataFrame) -> dict:
     pidx = {int(p): i for i, p in enumerate(pids)}
     rows = []
     for r in shots.sort_values(["match_id", "minute", "shot_id"]).itertuples():
-        rows.append([mi[int(r.match_id)], int(r.minute), round(r.x, 3), round(r.y, 3), round(r.xg, 4),
+        rows.append([mi[int(r.match_id)], int(r.minute), round(r.x, 3), round(r.y, 3), round(r.xg, 6),
                      RES_CODES.index(r.result), SIT_CODES.index(r.situation), TYP_CODES.index(r.shot_type),
                      pidx[int(r.player_id)], 1 if r.team == M.LIV else 0])
     return {"cols": ["mi", "min", "x", "y", "xg", "res", "sit", "typ", "pl", "fl"],
@@ -111,9 +120,12 @@ def player_rows(rosters: pd.DataFrame, shots: pd.DataFrame, ids: set) -> list[di
     n = s[s.situation != "Penalty"].groupby("player_id").agg(npxg=("xg", "sum"), npg=("result", lambda x: int((x == "Goal").sum())))
     g = g.merge(a, on="player_id", how="left").merge(n, on="player_id", how="left").fillna({"sh": 0, "xg": 0, "npxg": 0, "npg": 0})
     g = g[g["min"] > 0].sort_values("min", ascending=False)
+    p90 = lambda v, mins: r4(v / mins * 90.0)  # minutes > 0 is guaranteed by the filter above
     return [{"id": int(x.player_id), "name": x.player, "pos": x.pos, "apps": int(x.apps), "min": int(x.min), "g": int(x.g),
              "npg": int(x.npg), "xg": r4(x.xg), "npxg": r4(x.npxg), "sh": int(x.sh), "ast": int(x.ast), "xa": r4(x.xa),
-             "kp": int(x.kp), "chain": r4(x.chain), "build": r4(x.build)} for x in g.itertuples()]
+             "kp": int(x.kp), "chain": r4(x.chain), "build": r4(x.build), "fin": r4(x.npg - x.npxg),
+             "xg90": p90(x.xg, x.min), "npxg90": p90(x.npxg, x.min), "xa90": p90(x.xa, x.min), "build90": p90(x.build, x.min),
+             "chain90": p90(x.chain, x.min), "sh90": p90(x.sh, x.min), "kp90": p90(x.kp, x.min)} for x in g.itertuples()]
 
 
 def mix_payload(sel: pd.DataFrame, shots: pd.DataFrame, season: str) -> dict:

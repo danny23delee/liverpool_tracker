@@ -173,6 +173,69 @@ table.data tbody tr:last-child td { border-bottom: 0; }
 .cols-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 @media (max-width: 860px) { .cols-2 { grid-template-columns: minmax(0, 1fr); } .mixrow { grid-template-columns: 60px minmax(0, 1fr); } .mixrow.single { grid-template-columns: minmax(0, 1fr); } }
 
+/* ---------- players / match explorer ---------- */
+.roles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.role h3 { margin: 0 0 8px; font: 600 13px/1.3 var(--font-body); display: flex; align-items: center; gap: 4px; color: var(--ink); }
+.role ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.role li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; font-size: 13px; }
+.role li .rk { color: var(--muted); font-weight: 600; font-size: 12px; } .role li .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.role li b { font-variant-numeric: tabular-nums; } .role li small { grid-column: 2 / -1; color: var(--muted); margin-top: -4px; }
+.tools { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; margin-bottom: 12px; }
+.tools .field { flex: 0 1 200px; } .tools input[type=search] { min-height: 38px; border: 1px solid var(--line-strong); border-radius: 8px; padding: 6px 12px; background: var(--surface); width: 100%; font: inherit; color: inherit; }
+.tools .count { margin-left: auto; font-size: 12.5px; color: var(--muted); align-self: center; }
+.sq-wrap { overflow: auto; max-height: 560px; border: 1px solid var(--line); border-radius: 10px; }
+table.sq { border-collapse: separate; border-spacing: 0; width: 100%; font-variant-numeric: tabular-nums; font-size: 13px; }
+table.sq th, table.sq td { padding: 7px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); background: var(--surface); }
+table.sq thead th { position: sticky; top: 0; z-index: 2; font-size: 11.5px; letter-spacing: .03em; color: var(--muted); font-weight: 600; vertical-align: bottom; }
+table.sq th:first-child, table.sq td:first-child { position: sticky; left: 0; z-index: 1; text-align: left; min-width: 150px; box-shadow: 1px 0 0 var(--line); }
+table.sq thead th:first-child { z-index: 3; }
+table.sq th:nth-child(2), table.sq td:nth-child(2) { text-align: left; }
+table.sq tbody tr { cursor: pointer; } table.sq tbody tr:hover td { background: var(--surface-2); }
+table.sq tbody tr.sel td { background: var(--accent-soft); }
+table.sq .sortbtn { all: unset; cursor: pointer; text-transform: uppercase; }
+table.sq .sortbtn:focus-visible { outline: 2px solid var(--accent); }
+table.sq th[aria-sort="ascending"] .sortbtn::after { content: " ▲"; font-size: 9px; } table.sq th[aria-sort="descending"] .sortbtn::after { content: " ▼"; font-size: 9px; }
+table.sq td .pl { all: unset; cursor: pointer; font-weight: 600; } table.sq td .pl:focus-visible { outline: 2px solid var(--accent); }
+.dim { color: var(--muted); }
+.profile-head { display: flex; flex-wrap: wrap; gap: 6px 24px; align-items: baseline; margin-bottom: 14px; }
+.profile-head h3 { margin: 0; font: 700 22px/1.2 var(--font-display); }
+.profile-head p { margin: 0; color: var(--ink-2); font-size: 13px; }
+.minis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; margin-bottom: 14px; }
+.mini h4 { margin: 0 0 4px; font: 600 12.5px/1.3 var(--font-body); color: var(--ink-2); display: flex; align-items: center; gap: 4px; }
+.mini .chart-wrap { overflow-x: auto; }
+.cmp { display: grid; gap: 14px; }
+.cmp-row .cl { font-size: 12.5px; color: var(--muted); margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+.cmp-bar { display: grid; grid-template-columns: minmax(0, 1fr) 56px; gap: 8px; align-items: center; margin-bottom: 3px; font-size: 12.5px; }
+.cmp-bar .track { position: relative; height: 14px; background: var(--surface-2); border-radius: 3px; }
+.cmp-bar .fill { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+.cmp-bar .zero { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--ink-2); }
+.cmp-bar b { text-align: right; font-variant-numeric: tabular-nums; }
+.score-card { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px 24px; align-items: center; }
+.score-card .tm { font: 700 clamp(18px, 2.4vw, 26px)/1.2 var(--font-display); } .score-card .tm.away { text-align: right; }
+.score-card .tm small { display: block; font: 400 13px/1.4 var(--font-body); color: var(--ink-2); margin-top: 4px; }
+.score-card .sc { font: 700 clamp(34px, 5vw, 52px)/1 var(--font-display); font-variant-numeric: tabular-nums; text-align: center; letter-spacing: -.02em; }
+.score-card .sc small { display: block; font: 500 12px/1.4 var(--font-body); color: var(--muted); letter-spacing: 0; margin-top: 6px; }
+.score-card ul { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13px; color: var(--ink-2); }
+.score-card .tm.away ul { text-align: right; }
+.picker { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.picker .field { flex: 1 1 320px; } .picker select { width: 100%; }
+.pbar { display: flex; gap: 2px; height: 20px; margin: 4px 0 6px; }
+.pbar span { display: block; border-radius: 3px; min-width: 2px; }
+.pbar .w { background: var(--pos); } .pbar .d { background: var(--line-strong); } .pbar .l { background: var(--neg); }
+.prob-row { margin-bottom: 12px; font-size: 12.5px; }
+.prob-row .pl { display: flex; justify-content: space-between; gap: 8px; color: var(--ink-2); flex-wrap: wrap; }
+.prob-row .pl b { color: var(--ink); font-weight: 600; }
+.chip { display: inline-block; padding: 1px 9px; border-radius: 999px; font-weight: 700; font-size: 12px; border: 1px solid var(--line-strong); }
+.chip.W { color: var(--good); border-color: var(--good); background: var(--good-bg); } .chip.L { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); }
+.shot-list { max-height: 420px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+.shot-list table.data td:nth-child(3) { text-align: left; }
+.hl-row td { font-weight: 600; }
+table.compact th, table.compact td { padding: 6px 6px; font-size: 12.5px; }
+table.compact thead th { font-size: 10.5px; letter-spacing: .02em; }
+@media (max-width: 1100px) { .roles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 860px) { .minis { grid-template-columns: minmax(0, 1fr); } .score-card { grid-template-columns: minmax(0, 1fr); text-align: left; } .score-card .tm.away { text-align: left; } .score-card .tm.away ul { text-align: left; } .score-card .sc { text-align: left; } }
+@media (max-width: 480px) { .roles { grid-template-columns: minmax(0, 1fr); } }
+
 /* ---------- responsive ---------- */
 @media (max-width: 1100px) { .span-8, .span-7, .span-6, .span-5, .span-4 { grid-column: span 12; } }
 @media (max-width: 860px) {
@@ -311,10 +374,15 @@ function parseHash() {
   if (season !== 'all' && !D.seasons.includes(season)) season = D.default_season;
   let era = q.get('era');
   if (era !== 'all' && !ERAS.some(e => e.slug === era)) era = 'all';
-  return { page, season, era };
+  return { page, season, era, x: { player: q.get('player'), vs: q.get('vs'), match: q.get('match') } };
 }
-const hashFor = (s, page) => `#/${page || s.page}?season=${s.season}&era=${s.era}`;
+const EXTRA = { players: ['player', 'vs'], match: ['match'] };     // page-specific state kept in the URL
+const hashFor = (s, page) => {
+  page = page || s.page;
+  return `#/${page}?season=${s.season}&era=${s.era}` + (EXTRA[page] || []).filter(k => s.x && s.x[k]).map(k => `&${k}=${encodeURIComponent(s.x[k])}`).join('');
+};
 function go(s) { const h = hashFor(s); if (location.hash === h) render(); else location.hash = h; }
+function setHeader(title, sub) { $('#title').textContent = title; $('#subtitle').textContent = sub; document.title = `${title} · Liverpool Performance Tracker`; }
 const eraName = slugv => slugv === 'all' ? null : ERAS.find(e => e.slug === slugv).manager;
 const selKey = s => `${s.season}|${eraName(s.era) || 'all'}`;
 
@@ -517,10 +585,13 @@ const RES_L = { Goal: 'Goal', SavedShot: 'Saved', BlockedShot: 'Blocked', Missed
 const SIT_L = { OpenPlay: 'Open play', FromCorner: 'Corner', SetPiece: 'Set piece', DirectFreekick: 'Direct free kick', Penalty: 'Penalty' };
 const TYP_L = { RightFoot: 'Right foot', LeftFoot: 'Left foot', Head: 'Head', OtherBodyPart: 'Other body part' };
 let SBM = null;
-function shotsFor(sel, fl) {                         // shots (own goals excluded) in the selection's matches; fl 1 = Liverpool, 0 = opposition
+function sbm() {                                     // shots indexed by match index (built once)
   if (!SBM) { SBM = new Map(); for (const r of SH.rows) { let a = SBM.get(r[0]); if (!a) SBM.set(r[0], a = []); a.push(r); } }
+  return SBM;
+}
+function shotsFor(sel, fl) {                         // shots (own goals excluded) in the selection's matches; fl 1 = Liverpool, 0 = opposition
   const out = [];
-  for (const mi of sel.idx) { const a = SBM.get(mi); if (a) for (const r of a) if (r[SI.fl] === fl && SH.codes.res[r[SI.res]] !== 'OwnGoal') out.push(r); }
+  for (const mi of sel.idx) { const a = sbm().get(mi); if (a) for (const r of a) if (r[SI.fl] === fl && SH.codes.res[r[SI.res]] !== 'OwnGoal') out.push(r); }
   return out;
 }
 const isGoal = r => SH.codes.res[r[SI.res]] === 'Goal';
@@ -816,13 +887,250 @@ function defence(s, d) {
   return { node: grid, after: () => cards.forEach(c => c._draw && c._draw()), redraw: cards.map(c => c._draw) };
 }
 
+/* ================= Players ================= */
+const CAREER = new Map();                              // player id -> {name, rows: [{se, ...season totals}]}
+D.seasons.forEach(se => (D.selections[`${se}|all`] || { players: [] }).players.forEach(p => {
+  if (!CAREER.has(p.id)) CAREER.set(p.id, { name: p.name, rows: [] });
+  CAREER.get(p.id).rows.push({ se, ...p });
+}));
+const P_MINS = [0, 90, 270, 450, 900, 1500];
+const P_UI = { q: '', min: null, sort: 'min', dir: -1, key: null };   // dir: 1 ascending, -1 descending
+const P_COLS = [
+  { k: 'name', label: 'Player', text: true }, { k: 'pos', label: 'Pos', text: true },
+  { k: 'apps', id: 'apps' }, { k: 'min', id: 'minutes' }, { k: 'g', id: 'player_goals' }, { k: 'npg', id: 'npg' }, { k: 'ast', id: 'assists' },
+  { k: 'xg', id: 'xg_player' }, { k: 'npxg', id: 'npxg_player' }, { k: 'xa', id: 'xa' }, { k: 'fin', id: 'npg_minus_npxg' },
+  { k: 'npxg90', id: 'npxg_p90' }, { k: 'xa90', id: 'xa_p90' }, { k: 'build90', id: 'xgbuildup_p90' }, { k: 'chain90', id: 'xgchain_p90' },
+  { k: 'sh90', id: 'shots_p90' }, { k: 'kp90', id: 'key_passes_p90' }, { k: 'xg90', id: 'xg_p90' },
+];
+const ROLES = [['fin', 'npg_minus_npxg', 'Finisher'], ['npxg90', 'npxg_p90', 'Shot Threat'], ['xa90', 'xa_p90', 'Creator'],
+  ['build90', 'xgbuildup_p90', 'Build-up'], ['chain90', 'xgchain_p90', 'Involvement']];
+const CMP_ROWS = [['min', 'minutes'], ['g', 'player_goals'], ['ast', 'assists'], ['npxg90', 'npxg_p90'], ['xa90', 'xa_p90'],
+  ['build90', 'xgbuildup_p90'], ['chain90', 'xgchain_p90'], ['sh90', 'shots_p90'], ['kp90', 'key_passes_p90'], ['fin', 'npg_minus_npxg']];
+const num1 = (id, v) => fmt(id, v).replace('-', MINUS);
+
+function setExtras(obj) {                               // page-internal state -> shareable URL, without re-rendering
+  const s = parseHash(); s.x = { ...s.x, ...obj }; history.replaceState(null, '', hashFor(s));
+}
+function miniTrend(host, rows, id, signed) {
+  host.innerHTML = '';
+  const W = Math.max(host.clientWidth || 300, 240), H = 150, mg = { t: 10, r: 12, b: 24, l: 42 };
+  const pts = rows.filter(r => r.v != null);
+  const x = d3.scalePoint().domain(rows.map(r => r.se)).range([mg.l, W - mg.r]).padding(0.3);
+  const ext = d3.extent(pts, r => r.v), lo = signed ? Math.min(0, ext[0]) : 0, hi = Math.max(signed ? 0 : 0.01, ext[1]), pad = (hi - lo) * 0.12 || 0.1;
+  const y = d3.scaleLinear().domain([signed ? lo - pad : 0, hi + pad]).nice().range([H - mg.b, mg.t]);
+  const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', `${R[id].label} by season`);
+  svg.append('g').selectAll('line').data(y.ticks(3)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
+  if (signed) svg.append('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y(0)).attr('y2', y(0)).style('stroke', 'var(--ink-2)').attr('stroke-dasharray', '4 3');
+  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(3).tickSize(0).tickPadding(6).tickFormat(d3.format(signed ? '+.1f' : '.2f')))
+    .call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '11px'); });
+  const every = W < 380 ? 2 : 1;
+  svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).tickValues(rows.map(r => r.se).filter((_, i) => i % every === 0)).tickSize(3).tickFormat(se => se.slice(2)))
+    .call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '10.5px'); });
+  if (pts.length > 1) svg.append('path').datum(pts).attr('d', d3.line().x(r => x(r.se)).y(r => y(r.v))).attr('fill', 'none').style('stroke', 'var(--accent)').attr('stroke-width', 2);
+  svg.append('g').selectAll('circle').data(pts).join('circle').attr('class', 'pt').attr('cx', r => x(r.se)).attr('cy', r => y(r.v)).attr('r', 4.5)
+    .style('fill', r => r.low ? 'var(--surface)' : 'var(--accent)').style('stroke', 'var(--accent)').attr('stroke-width', 2)
+    .on('pointermove', (ev, r) => showTip(`<b>${r.se}</b><br>${fmt(id, r.v)} · ${r.min.toLocaleString()} minutes${r.low ? '<br>below the minimum minutes: unreliable' : ''}`, ev.clientX, ev.clientY)).on('pointerleave', hideTip);
+}
+function profileCard(pid) {
+  const c = CAREER.get(pid), card = el('section', { class: 'card span-7', 'aria-label': 'Player profile', 'data-ref-season': '' },
+    el('h2', {}, 'Player profile', el('span', { class: 'tag' }, 'all seasons')));
+  if (!c) { card.append(el('div', { class: 'empty' }, 'No player to show.')); return card; }
+  const tot = k => d3.sum(c.rows, r => r[k]), poss = [...new Set(c.rows.map(r => r.pos).filter(p => p !== 'Sub'))];
+  card.append(el('div', { class: 'profile-head', 'data-profile': pid }, el('h3', {}, c.name),
+    el('p', {}, `${c.rows.length} ${c.rows.length === 1 ? 'season' : 'seasons'} in the data · ${tot('apps')} appearances · ${tot('min').toLocaleString()} minutes · ${tot('g')} goals · ${tot('ast')} assists (actual)${poss.length ? ' · ' + poss.join(', ') : ''}`)));
+  const minis = el('div', { class: 'minis' }), draws = [];
+  [['npxg90', 'npxg_p90', false], ['xa90', 'xa_p90', false], ['build90', 'xgbuildup_p90', false], ['fin', 'npg_minus_npxg', true]].forEach(([k, id, signed]) => {
+    const host = el('div', { class: 'chart-wrap', 'data-mini': id });
+    draws.push(() => miniTrend(host, c.rows.map(r => ({ se: r.se, v: r[k], min: r.min, low: r.min < R[id].min_sample })), id, signed));
+    minis.append(el('div', { class: 'mini' }, el('h4', {}, R[id].label, info(id)), host));
+  });
+  card.append(minis, tableView('View the season table', ['Season', 'Pos', 'Apps', 'Minutes', 'Goals', 'npG', 'Assists', 'xG', 'npxG', 'xA', 'npxG/90', 'xA/90', 'xGBuildup/90', 'xGChain/90'],
+    c.rows.map(r => [r.se, r.pos, r.apps, r.min, r.g, r.npg, r.ast, r.xg.toFixed(1), r.npxg.toFixed(1), r.xa.toFixed(1), r.npxg90.toFixed(2), r.xa90.toFixed(2), r.build90.toFixed(2), r.chain90.toFixed(2)])),
+    el('p', { class: 'note-small' }, 'Hollow points: fewer minutes than the 450-minute minimum, so per-90 rates there are unreliable. Premier League matches only.'));
+  card._draw = () => draws.forEach(f => f());
+  return card;
+}
+function compareCard(sel, a, b, onChange) {
+  const opts = sel.players.map(p => [String(p.id), p.name]), body = el('div', { class: 'cmp' });
+  const bar = (id, v, m, color, tag) => {
+    const signed = !!R[id].signed, w = Math.abs(v) / m * 100 / (signed ? 2 : 1);
+    const pos = signed ? `${v >= 0 ? 'left' : 'right'}:50%` : 'left:0';
+    return el('div', { class: 'cmp-bar', 'data-cmp': `${id}:${tag}` }, el('div', { class: 'track' }, el('div', { class: 'fill', style: `${pos};width:${w}%;background:${color}` }), signed && el('div', { class: 'zero', style: 'left:50%' })), el('b', {}, num1(id, v)));
+  };
+  const paint = () => {
+    body.replaceChildren();
+    const A = sel.players.find(p => p.id === a), B = sel.players.find(p => p.id === b);
+    if (!A || !B) { body.append(el('div', { class: 'empty' }, 'Pick two players who played in this selection.')); return; }
+    body.append(legend([{ color: 'var(--accent)', text: A.name }, { color: 'var(--s1)', text: B.name }]));
+    CMP_ROWS.forEach(([k, id]) => { const m = Math.max(Math.abs(A[k]), Math.abs(B[k])) || 1;
+      body.append(el('div', { class: 'cmp-row' }, el('div', { class: 'cl' }, R[id].label, info(id)), bar(id, A[k], m, 'var(--accent)', 'a'), bar(id, B[k], m, 'var(--s1)', 'b'))); });
+    body.append(el('p', { class: 'note-small' }, 'Values for the current selection. Compare per-90 rates only between players with a similar number of minutes.'));
+  };
+  const selA = field('cmp-a', 'Player A', opts, v => { a = +v; onChange(a, b); paint(); });
+  const selB = field('cmp-b', 'Player B', opts, v => { b = +v; onChange(a, b); paint(); });
+  selA.querySelector('select').value = String(a); selB.querySelector('select').value = String(b);
+  paint();
+  return el('section', { class: 'card span-5', 'aria-label': 'Player comparison' }, el('h2', {}, R.player_compare.label, info('player_compare'), el('span', { class: 'tag' }, 'this selection')),
+    el('div', { class: 'tools' }, selA, selB), body);
+}
+function playersPage(s, d) {
+  const sel = d.sel, players = sel.players, key = selKey(s), ids = new Set(players.map(p => p.id));
+  if (P_UI.key !== key) { P_UI.key = key; P_UI.min = sel.n >= MIN ? 450 : 90; }
+  const px = s.x.player ? +s.x.player : null, vx = s.x.vs ? +s.x.vs : null;
+  let selected = (px && CAREER.has(px)) ? px : (players[0] || {}).id;
+  const vs = (vx && ids.has(vx)) ? vx : (players.find(p => p.id !== selected) || players[0] || {}).id;
+  const rolesHost = el('div', { class: 'roles' }), rolesNote = el('p', { class: 'note-small', 'data-testid': 'roles-note' });
+  const tbody = el('tbody'), count = el('span', { class: 'count', 'data-testid': 'player-count' });
+  const filtered = () => players.filter(p => p.min >= P_UI.min && p.name.toLowerCase().includes(P_UI.q.trim().toLowerCase()));
+  const table = el('table', { class: 'sq', 'data-table': 'squad' }, el('thead', {}, el('tr', {}, P_COLS.map(c => {
+    const th = el('th', { scope: 'col' });
+    th.append(el('button', { class: 'sortbtn', type: 'button', onclick: () => { if (P_UI.sort === c.k) P_UI.dir *= -1; else { P_UI.sort = c.k; P_UI.dir = c.text ? 1 : -1; } paintTable(); } }, c.text ? c.label : R[c.id].label));
+    if (c.id) th.append(info(c.id));
+    return th; }))), tbody);
+  let profNode = profileCard(selected);
+  function paintTable() {
+    [...table.querySelectorAll('th')].forEach((th, i) => th.setAttribute('aria-sort', P_UI.sort === P_COLS[i].k ? (P_UI.dir < 0 ? 'descending' : 'ascending') : 'none'));
+    const rows = filtered().sort((p, q) => { const x = p[P_UI.sort], y = q[P_UI.sort]; const c = (typeof x === 'string' ? x.localeCompare(y) : x - y) * P_UI.dir; return c || q.min - p.min; });
+    tbody.replaceChildren(...rows.map(p => el('tr', { 'data-pid': p.id, class: p.id === selected ? 'sel' : null, onclick: () => choose(p.id) },
+      P_COLS.map(c => el('td', {}, c.k === 'name' ? el('button', { class: 'pl', type: 'button', onclick: e => { e.stopPropagation(); choose(p.id); } }, p.name) : c.text ? p[c.k] : num1(c.id, p[c.k]))))));
+    count.textContent = `Showing ${rows.length} of ${players.length} players`;
+    rolesHost.replaceChildren(...ROLES.map(([k, id, title]) => { const top = rows.slice().sort((p, q) => q[k] - p[k] || q.min - p.min).slice(0, 3);
+      return el('div', { class: 'role', 'data-role': title }, el('h3', {}, title, info(id)),
+        el('ol', {}, top.map((p, i) => el('li', { 'data-rank': i + 1 }, el('span', { class: 'rk' }, i + 1), el('span', { class: 'nm' }, p.name), el('b', {}, num1(id, p[k])), el('small', {}, `${p.min.toLocaleString()} min`))))); }));
+    rolesNote.textContent = `Ranked among the ${rows.length} players shown (at least ${P_UI.min} minutes).`;
+  }
+  function choose(id) {
+    selected = id; paintTable();
+    const n = profileCard(id); profNode.replaceWith(n); profNode = n; n._draw && n._draw();
+    setExtras({ player: id });
+  }
+  const minSel = field('p-min', 'Minimum minutes', P_MINS.map(m => [String(m), m === 0 ? 'Any' : `${m}+ minutes`]), v => { P_UI.min = +v; paintTable(); });
+  minSel.querySelector('select').value = String(P_UI.min);
+  const search = el('div', { class: 'field' }, el('label', { for: 'p-search' }, 'Search players'),
+    el('input', { id: 'p-search', type: 'search', placeholder: 'Type a name', value: P_UI.q, oninput: e => { P_UI.q = e.target.value; paintTable(); } }));
+  const grid = el('div', { class: 'grid' },
+    el('section', { class: 'card span-12', 'aria-label': 'Role leaders' }, el('h2', {}, R.role_leaders.label, info('role_leaders'), el('span', { class: 'tag expected' }, 'expected')), rolesHost, rolesNote),
+    el('section', { class: 'card span-12', 'aria-label': 'Squad table' }, el('h2', {}, R.squad_table.label, info('squad_table')), el('div', { class: 'tools' }, search, minSel, count),
+      el('div', { class: 'sq-wrap' }, table), el('p', { class: 'note-small' }, 'Goals, assists, appearances and minutes are actual; xG, npxG, xA, xGBuildup and xGChain are expected values. Per-90 = total ÷ minutes × 90. Click a player for their profile.')),
+    profNode, compareCard(sel, selected, vs, (a, b) => setExtras({ vs: b })));
+  paintTable();
+  return { node: grid, after: () => { profNode._draw && profNode._draw(); setExtras({ player: selected, vs }); }, redraw: () => profNode._draw && profNode._draw() };
+}
+
+/* ================= Match Explorer ================= */
+const matchShots = mi => sbm().get(mi) || [];
+const fpct = d3.format('.1%');
+function matchEvents(rows) {                            // goals in minute order: own goals count for the other side
+  return rows.filter(r => ['Goal', 'OwnGoal'].includes(SH.codes.res[r[SI.res]])).map(r => { const og = SH.codes.res[r[SI.res]] === 'OwnGoal';
+    return { min: r[SI.min], og, lfc: og ? r[SI.fl] === 0 : r[SI.fl] === 1, name: SH.players[r[SI.pl]] }; }).sort((a, b) => a.min - b.min);
+}
+function raceChart(host, rows, m, ev) {
+  host.innerHTML = '';
+  const W = Math.max(host.clientWidth || 560, 300), H = 300, mg = { t: 16, r: 92, b: 34, l: 40 };
+  const maxMin = Math.max(95, ...rows.map(r => r[SI.min] + 1)), xs = d3.scaleLinear().domain([0, maxMin]).range([mg.l, W - mg.r]);
+  const series = (fl) => { let c = 0; const pts = [[0, 0]]; rows.filter(r => r[SI.fl] === fl && SH.codes.res[r[SI.res]] !== 'OwnGoal').forEach(r => { pts.push([r[SI.min], c]); c += r[SI.xg]; pts.push([r[SI.min], c]); }); pts.push([maxMin, c]); return { pts, total: c }; };
+  const L = series(1), O = series(0), top = Math.max(L.total, O.total, 0.5);
+  const y = d3.scaleLinear().domain([0, top * 1.1]).nice().range([H - mg.b, mg.t]);
+  const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', `Cumulative xG: Liverpool ${L.total.toFixed(2)}, ${m.opp} ${O.total.toFixed(2)}`);
+  svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
+  svg.append('line').attr('x1', xs(45)).attr('x2', xs(45)).attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--line-strong)').attr('stroke-dasharray', '3 3');
+  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format('.1f'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(xs).tickValues(d3.range(0, maxMin, 15).concat(45).filter((v, i, a) => a.indexOf(v) === i)).tickSize(4).tickFormat(v => v + "'")).call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  const line = d3.line().x(p => xs(p[0])).y(p => y(p[1]));
+  const cumAt = (S, t) => { let last = 0; for (let i = 0; i < S.pts.length; i++) { if (S.pts[i][0] <= t) last = S.pts[i][1]; } return last; };
+  [[O, 'var(--s1)', 'opp'], [L, 'var(--accent)', 'lfc']].forEach(([S, col, cls]) => svg.append('path').datum(S.pts).attr('d', line).attr('fill', 'none').style('stroke', col).attr('stroke-width', 2.5).attr('stroke-linejoin', 'round').attr('class', 'race-' + cls));
+  ev.forEach(e => { const S = e.lfc ? L : O, yy = y(cumAt(S, e.min + 0.001)); svg.append('circle').attr('class', 'goal-mark').attr('cx', xs(e.min)).attr('cy', yy).attr('r', 6).style('fill', e.lfc ? 'var(--accent)' : 'var(--s1)').style('stroke', 'var(--surface)').attr('stroke-width', 2)
+    .on('pointermove', evn => showTip(`<b>${esc(e.name)}${e.og ? ' (own goal)' : ''}</b> · ${e.min}'<br>Goal for ${e.lfc ? 'Liverpool' : esc(m.opp)} (actual)`, evn.clientX, evn.clientY)).on('pointerleave', hideTip); });
+  const yl = y(L.total), yo = y(O.total), gap = Math.abs(yl - yo) < 16 ? 9 : 0, dir = yl <= yo ? -1 : 1;
+  svg.append('text').attr('x', W - mg.r + 8).attr('y', yl + 4 + gap * dir * -1).style('fill', 'var(--ink)').style('font-size', '12.5px').style('font-weight', 600).attr('data-race-final', 'lfc').text(m.xg.toFixed(2)).append('tspan').style('font-weight', 400).style('fill', 'var(--ink-2)').text(' Liverpool');
+  svg.append('text').attr('x', W - mg.r + 8).attr('y', yo + 4 + gap * dir).style('fill', 'var(--ink)').style('font-size', '12.5px').style('font-weight', 600).attr('data-race-final', 'opp').text(m.xga.toFixed(2)).append('tspan').style('font-weight', 400).style('fill', 'var(--ink-2)').text(' ' + (m.opp.length > 10 ? m.opp.slice(0, 9) + '…' : m.opp));
+  svg.append('rect').attr('x', mg.l).attr('y', mg.t).attr('width', W - mg.l - mg.r).attr('height', H - mg.t - mg.b).attr('fill', 'transparent').style('touch-action', 'pan-y')
+    .on('pointermove', evn => { const t = Math.max(0, Math.min(maxMin, Math.round(xs.invert(d3.pointer(evn)[0])))); showTip(`<b>Minute ${t}</b><br>Liverpool xG ${cumAt(L, t).toFixed(2)}<br>${esc(m.opp)} xG ${cumAt(O, t).toFixed(2)}`, evn.clientX, evn.clientY); })
+    .on('pointerleave', hideTip);
+}
+function matchPitch(host, rows, m) {
+  host.innerHTML = '';
+  const ppm = Math.max(host.clientWidth || 640, 300) / 109;
+  const svg = d3.select(host).append('svg').attr('viewBox', '-2 -2 109 72').attr('role', 'img').attr('aria-label', 'Both teams shots');
+  drawPitch(svg.append('g'));
+  const shots = rows.filter(r => SH.codes.res[r[SI.res]] !== 'OwnGoal'), l = r => r[SI.fl] === 1;
+  const px = r => 105 * (l(r) ? r[SI.x] : 1 - r[SI.x]), py = r => 68 * (l(r) ? r[SI.y] : 1 - r[SI.y]);
+  svg.append('g').selectAll('circle').data(shots.slice().sort((a, b) => (isGoal(a) - isGoal(b)) || (b[SI.xg] - a[SI.xg]))).join('circle').attr('class', 'shot').attr('data-team', r => l(r) ? 'lfc' : 'opp')
+    .attr('cx', px).attr('cy', py).attr('r', r => (3.5 + 12 * Math.sqrt(r[SI.xg])) / ppm)
+    .style('fill', r => isGoal(r) ? (l(r) ? 'var(--accent)' : 'var(--s1)') : 'var(--ink-2)').attr('fill-opacity', r => isGoal(r) ? 0.95 : 0.16)
+    .style('stroke', r => isGoal(r) ? 'var(--surface)' : (l(r) ? 'var(--accent)' : 'var(--s1)')).attr('stroke-width', r => (isGoal(r) ? 1.5 : 1.6) / ppm)
+    .on('pointermove', (ev, r) => showTip(`<b>${esc(SH.players[r[SI.pl]])}</b> · ${r[SI.min]}'<br>${l(r) ? 'Liverpool' : esc(m.opp)} · xG ${r[SI.xg].toFixed(2)} (expected)<br>${RES_L[SH.codes.res[r[SI.res]]]} · ${TYP_L[SH.codes.typ[r[SI.typ]]]} · ${SIT_L[SH.codes.sit[r[SI.sit]]]}`, ev.clientX, ev.clientY)).on('pointerleave', hideTip);
+}
+function probBar(p) { return el('div', { class: 'pbar' }, [['w', p[0]], ['d', p[1]], ['l', p[2]]].map(([c, v]) => el('span', { class: c, style: `flex:${v} 1 0` }))); }
+function marketPanel(m) {
+  const dv = D.settings.devig_method, other = dv === 'proportional' ? 'shin' : 'proportional', names = { proportional: 'proportional', shin: 'Shin' };
+  const mk = m.mktp[dv], alt = m.mktp[other], sim = m.sim, act = { W: 0, D: 1, L: 2 }[m.r];
+  const src = { pinnacle_close: 'Pinnacle closing odds', market_avg_close: 'market-average closing odds (Pinnacle unavailable)', betfair_exchange_close: 'Betfair Exchange closing odds' }[m.src] || m.src;
+  const row = (title, p, note) => el('div', { class: 'prob-row' }, el('div', { class: 'pl' }, el('span', {}, title), el('span', {}, `Win ${fpct(p[0])} · Draw ${fpct(p[1])} · Loss ${fpct(p[2])}`)), probBar(p), note && el('div', { class: 'note-small' }, note));
+  const home = m.h, o = m.o;
+  return pageCard('span-5', 'match_probs', 'expected',
+    row(`Market (${names[dv]} de-vig)`, mk, `Source: ${src}. Bookmaker margin ${fpct(m.ovr)}.`),
+    row('xG simulation (this match’s shots)', sim, 'Post-match view of the chances created, not a forecast.'),
+    el('div', { class: 'prob-row' }, el('div', { class: 'pl' }, el('span', {}, 'Actual result'), el('span', {}, el('span', { class: 'chip ' + m.r, 'data-testid': 'actual-result' }, { W: 'Win', D: 'Draw', L: 'Loss' }[m.r]), ` ${m.pts} ${m.pts === 1 ? 'point' : 'points'}`))),
+    el('div', { class: 'tbl-x' }, el('table', { class: 'data compact', 'data-table': 'probs' }, el('thead', {}, el('tr', {}, ['Outcome', `Market (${names[dv]})`, `Market (${names[other]})`, 'xG sim', 'Actual'].map(h => el('th', {}, h)))),
+      el('tbody', {}, ['Win', 'Draw', 'Loss'].map((n, i) => el('tr', { class: i === act ? 'hl-row' : null }, el('td', {}, n), el('td', {}, fpct(mk[i])), el('td', {}, fpct(alt[i])), el('td', {}, fpct(sim[i])), el('td', {}, i === act ? '✓' : '')))),
+      el('tfoot', {}, el('tr', {}, el('td', {}, 'Expected points'), el('td', {}, m.xptm.toFixed(2)), el('td', {}, (3 * alt[0] + alt[1]).toFixed(2)), el('td', {}, m.xpts.toFixed(2)), el('td', {}, m.pts))))),
+    el('p', { class: 'note-small' }, `Closing odds (${home ? 'Liverpool' : m.opp} home / draw / ${home ? m.opp : 'Liverpool'} away): ${o[0].toFixed(2)} / ${o[1].toFixed(2)} / ${o[2].toFixed(2)}. Shin insider share z = ${m.shin_z.toFixed(3)}.`));
+}
+function matchPage(s, d) {
+  const sel = d.sel, idxs = sel.idx;
+  const wanted = s.x.match ? idxs.find(i => String(M(i).id) === s.x.match) : null;
+  let cur = wanted != null ? wanted : idxs[idxs.length - 1];
+  const body = el('div', { class: 'grid', 'data-testid': 'match-body' });
+  const label = i => { const m = M(i), hg = m.h ? m.gf : m.ga, ag = m.h ? m.ga : m.gf; return `${dfmt(dparse(m.d))} · ${m.h ? 'v' : '@'} ${m.opp} · ${hg}–${ag} ${m.r}`; };
+  const pick = field('m-pick', 'Match', idxs.slice().reverse().map(i => [String(i), label(i)]), v => show(+v));
+  const prev = el('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Previous match', 'data-testid': 'prev-match', onclick: () => step(-1) }, '‹ Older');
+  const next = el('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Next match', 'data-testid': 'next-match', onclick: () => step(1) }, 'Newer ›');
+  const step = k => { const j = idxs.indexOf(cur) + k; if (j >= 0 && j < idxs.length) show(idxs[j]); };
+  const picker = el('section', { class: 'card span-12', 'aria-label': 'Pick a match' }, el('div', { class: 'picker' }, pick, el('div', { class: 'field' }, el('label', {}, 'Step'), el('div', { style: 'display:flex;gap:8px' }, prev, next))));
+  const redraws = [];
+  function show(i) {
+    cur = i; const m = M(i), rows = matchShots(i), ev = matchEvents(rows);
+    pick.querySelector('select').value = String(i);
+    prev.disabled = idxs.indexOf(i) === 0; next.disabled = idxs.indexOf(i) === idxs.length - 1;
+    const home = m.h ? 'Liverpool' : m.opp, away = m.h ? m.opp : 'Liverpool', hg = m.h ? m.gf : m.ga, ag = m.h ? m.ga : m.gf;
+    const evList = side => el('ul', {}, ev.filter(e => (side === 'home') === (e.lfc === m.h)).map(e => el('li', { 'data-goal': e.lfc ? 'lfc' : 'opp' }, `${e.name}${e.og ? ' (og)' : ''} ${e.min}'`)));
+    const xgH = m.h ? m.xg : m.xga, xgA = m.h ? m.xga : m.xg;
+    const score = el('section', { class: 'card span-12', 'aria-label': 'Scoreboard' },
+      el('div', { class: 'score-card' },
+        el('div', { class: 'tm' }, home, el('small', {}, el('span', { 'data-testid': 'xg-home' }, `xG ${xgH.toFixed(2)}`), ' (expected)'), evList('home')),
+        el('div', { class: 'sc', 'data-testid': 'scoreline' }, `${hg}–${ag}`, el('small', {}, `${dfmt(dparse(m.d))} · Premier League · ${m.h ? 'Home' : 'Away'} · ${m.r === 'W' ? 'Win' : m.r === 'D' ? 'Draw' : 'Loss'}`)),
+        el('div', { class: 'tm away' }, away, el('small', {}, el('span', { 'data-testid': 'xg-away' }, `xG ${xgA.toFixed(2)}`), ' (expected)'), evList('away'))));
+    const race = el('div', { class: 'chart-wrap', 'data-chart': 'race' }), pitch = el('div', { class: 'pitch-wrap', 'data-chart': 'match-pitch' });
+    const drawRace = () => raceChart(race, rows, m, ev), drawPitch2 = () => matchPitch(pitch, rows, m);
+    redraws.length = 0; redraws.push(drawRace, drawPitch2);
+    const sorted = rows.slice().sort((a, b) => a[SI.min] - b[SI.min] || a[SI.xg] - b[SI.xg]);
+    const list = el('div', { class: 'shot-list' }, el('table', { class: 'data compact', 'data-table': 'match-shots' }, el('thead', {}, el('tr', {}, ['Min', 'Team', 'Player', 'xG (expected)', 'Outcome'].map(h => el('th', {}, h)))),
+      el('tbody', {}, sorted.map(r => { const og = SH.codes.res[r[SI.res]] === 'OwnGoal', l = r[SI.fl] === 1;
+        return el('tr', {}, el('td', {}, r[SI.min] + "'"), el('td', {}, l ? 'Liverpool' : m.opp), el('td', {}, SH.players[r[SI.pl]]), el('td', {}, r[SI.xg].toFixed(2)), el('td', {}, og ? `Own goal for ${l ? m.opp : 'Liverpool'}` : RES_L[SH.codes.res[r[SI.res]]])); }))));
+    body.replaceChildren(score,
+      pageCard('span-7', 'xg_race', 'expected · goals actual', legend([{ cls: 'line', color: 'var(--accent)', text: 'Liverpool xG' }, { cls: 'line', color: 'var(--s1)', text: `${m.opp} xG` }, { cls: 'dot', color: 'var(--ink-2)', text: 'Goal' }]), race,
+        el('p', { class: 'note-small' }, 'Cumulative expected goals by minute; dashed line marks half-time (45\'). Hover for the score of the chances at any minute.')),
+      marketPanel(m),
+      pageCard('span-7', 'match_shots', 'goals actual · xG expected', legend([{ cls: 'dot', color: 'var(--accent)', text: 'Liverpool goal' }, { cls: 'dot', color: 'var(--s1)', text: `${m.opp} goal` }, { cls: 'ring', text: 'No goal' }]), pitch,
+        el('p', { class: 'note-small' }, 'Liverpool attack left to right →. The opposition’s shots are rotated to attack ←. Own goals are not shots and are not drawn.')),
+      el('section', { class: 'card span-5', 'aria-label': 'Shots list' }, el('h2', {}, 'Shots in order', el('span', { class: 'tag' }, `${rows.filter(r => SH.codes.res[r[SI.res]] !== 'OwnGoal').length} shots`)), list));
+    drawRace(); drawPitch2();
+    const title = `Match Explorer: ${home} ${hg}–${ag} ${away}`;
+    setHeader(title, `${dfmt(dparse(m.d))} · ${describe(parseHash()).sub}`);
+    setExtras({ match: m.id });
+  }
+  const grid = el('div', {}, el('div', { class: 'grid' }, picker), el('div', { style: 'height:16px' }), body);
+  return { node: grid, after: () => show(cur), redraw: () => redraws.forEach(f => f()) };
+}
+
 /* ================= placeholder pages (later milestones) ================= */
 function stub(title, milestone) {
   return () => ({ node: el('div', { class: 'card stub' }, el('h2', {}, title), el('p', {}, `This page is planned for milestone ${milestone} and is not built yet.`)) });
 }
 const RENDERERS = {
-  overview, attack, defence, players: stub('Players', 'M5'),
-  match: stub('Match Explorer', 'M5'), market: stub('Market Lens', 'M6'), methodology: stub('Methodology', 'M6'),
+  overview, attack, defence, players: playersPage,
+  match: matchPage, market: stub('Market Lens', 'M6'), methodology: stub('Methodology', 'M6'),
 };
 const TITLES = { overview: 'Overview', attack: 'Attack', defence: 'Defence', players: 'Players', match: 'Match Explorer', market: 'Market Lens', methodology: 'Methodology' };
 
@@ -834,9 +1142,7 @@ function render() {
   paintChrome(s);
   const d = describe(s);
   const seasonWord = s.season === 'all' ? 'all seasons' : s.season;
-  $('#title').textContent = `${TITLES[s.page]}: ${seasonWord}`;
-  $('#subtitle').textContent = d.sub;
-  document.title = `${TITLES[s.page]} · ${d.seasonTxt} · Liverpool Performance Tracker`;
+  setHeader(`${TITLES[s.page]}: ${seasonWord}`, d.sub);
   const badges = $('#badges'); badges.innerHTML = '';
   if (d.sel && d.sel.small && s.page !== 'methodology') badges.append(el('span', { class: 'badge warn', 'data-testid': 'small-sample', title: `Fewer than ${MIN} matches: treat rates with caution and note that significance-based takeaways are suppressed.` },
     `Small sample: ${d.sel.n} ${d.sel.n === 1 ? 'match' : 'matches'} (under ${MIN})`));

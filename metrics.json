@@ -437,6 +437,86 @@
   "source": "Understat shots"
  },
  {
+  "id": "apps",
+  "label": "Appearances",
+  "description": "Matches in which the player played at least one minute.",
+  "unit": "count",
+  "higher_is_better": null,
+  "format": ",d",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "squad_table",
+  "label": "Squad table",
+  "description": "Every Liverpool player with minutes in the selection. Per-90 values divide the total by minutes played and multiply by 90, so they are only shown as reliable above the minimum-minutes filter. Click a column to sort and a player to open the profile.",
+  "unit": "per90",
+  "higher_is_better": null,
+  "format": ".2f",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "role_leaders",
+  "label": "Role leaders",
+  "description": "The top three players for five roles using only the data available: Finisher (npG minus npxG), Shot Threat (npxG per 90), Creator (xA per 90), Build-up (xGBuildup per 90) and Involvement (xGChain per 90), among players above the minimum-minutes filter.",
+  "unit": "per90",
+  "higher_is_better": null,
+  "format": ".2f",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "player_trends",
+  "label": "Season-over-season trends",
+  "description": "The player metric in every Premier League season. Hollow points mark seasons below the minimum minutes, where per-90 rates are unreliable.",
+  "unit": "per90",
+  "higher_is_better": null,
+  "format": ".2f",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "player_compare",
+  "label": "Player comparison",
+  "description": "Two players side by side for the current selection. Bars share one scale within each row.",
+  "unit": "per90",
+  "higher_is_better": null,
+  "format": ".2f",
+  "min_sample": 450,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xg_race",
+  "label": "xG race",
+  "description": "Cumulative expected goals for each team over the match, minute by minute. Steps are shots; filled markers are goals (actual), including own goals credited to the other team.",
+  "unit": "count",
+  "higher_is_better": null,
+  "format": ".2f",
+  "min_sample": 1,
+  "source": "Understat shots"
+ },
+ {
+  "id": "match_shots",
+  "label": "Match shot map",
+  "description": "Both teams shots on one 105 x 68 m pitch. Liverpool attack left to right and the opposition shots are rotated to attack the other way. Circle size grows with xG; filled circles are goals.",
+  "unit": "count",
+  "higher_is_better": null,
+  "format": ",d",
+  "min_sample": 1,
+  "source": "Understat shots"
+ },
+ {
+  "id": "match_probs",
+  "label": "Market vs xG-simulated probabilities",
+  "description": "Liverpool win/draw/loss probabilities before the match from the closing betting odds with the margin removed (proportional and Shin methods), next to the exact simulation from this match shots. The simulation uses what actually happened in the match: it is a post-match view of the chances, not a forecast.",
+  "unit": "prob",
+  "higher_is_better": null,
+  "format": ".1%",
+  "min_sample": 1,
+  "source": "football-data.co.uk"
+ },
+ {
   "id": "win_rate",
   "label": "Win rate",
   "description": "Share of matches won.",
