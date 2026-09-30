@@ -160,7 +160,9 @@ the market and the xG simulation, on the Market Lens page.
 
 Shot-level and player data: [Understat](https://understat.com). Results and odds:
 [football-data.co.uk](https://www.football-data.co.uk). Charts: [D3](https://d3js.org). This is an independent portfolio
-project and is not affiliated with or endorsed by Liverpool FC, the Premier League, Understat or football-data.co.uk. No
-club crests, player photos or other licensed imagery are used.
+project and is not affiliated with or endorsed by Liverpool FC, the Premier League, Understat or football-data.co.uk. The
+only club imagery is the Liverpool crest in the sidebar, an image supplied by the project owner (`assets/crest.png`, shown
+in that one place; if the file is absent the site shows a plain red bar instead). No player photos or other licensed
+imagery are used.
 
 Code is released under the MIT licence (see [LICENSE](LICENSE)); the data belongs to its sources and is subject to their terms.
