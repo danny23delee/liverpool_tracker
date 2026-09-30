@@ -197,3 +197,7 @@ The first CI run of the redesign failed two browser tests that pass on Windows: 
 - **Axis status:** Defence: Low◄►High (proxy, low), Passive◄►Active (proxy, medium), Lenient◄►Tight (proxy, medium) → full Pressure index. Build-up: Long◄►Short and Vertical◄►Horizontal unavailable, Simple◄►Elaborate proxy (low) → no Control index. Attack: Aerial◄►Grounded unavailable (needs league-wide shot type / last action), Rapid◄►Placed (proxy, medium), Scattered◄►Grouped (proxy, low) → partial Occupation index.
 - **Dropped:** the central-rectangle KPI and any shot-coordinate or shot-type KPI, because league-wide they need every match of every club (about 4,560 requests, 76+ minutes, over the CI job limit). They stay in `config/style.json` as external-only KPIs that `data/external/style_kpis.csv` can fill.
 - Stop rule passed (Defence 3 computable axes, Attack 2), so work continues.
+
+### Style of play: S1 ETL (2026-09-30)
+- `etl.build_style_raw` adds `data/processed/style_raw.parquet` (260 club-seasons × raw zone/speed/PPDA/deep/xGChain aggregates, 80 KB) from the already-cached team pages, league history and league player table. **0 new requests, 0 new raw data.**
+- Tests (17 in `test_etl.py`, +3): 20 clubs per season and match counts equal the team-match table; zone and speed splits add up to total shots for and against in every club-season; league shots for = against; Liverpool's shots for and against equal the shot-level dataset exactly in all 13 seasons (own goals accounted for), and Understat's in-box counts agree with a geometric classification within 6%.
