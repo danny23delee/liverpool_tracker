@@ -517,6 +517,100 @@
   "source": "football-data.co.uk"
  },
  {
+  "id": "season_points",
+  "label": "Points: actual vs expected",
+  "description": "For each season, actual league points next to xG-simulated expected points and market-expected points. Seasons with fewer than 10 matches are left out of the chart.",
+  "unit": "count",
+  "higher_is_better": null,
+  "format": ",.1f",
+  "min_sample": 10,
+  "source": "football-data.co.uk"
+ },
+ {
+  "id": "cum_market",
+  "label": "Results vs market expectation",
+  "description": "Running total of actual points minus market-expected points over the selection. Rising means results are beating what the closing odds implied; shaded stretches are the mispriced runs.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": "+,.1f",
+  "min_sample": 10,
+  "source": "football-data.co.uk",
+  "signed": true
+ },
+ {
+  "id": "mispriced_runs",
+  "label": "Mispriced runs",
+  "description": "Stretches where 10 consecutive matches returned at least 4 points more or fewer than the closing odds implied (actual points minus market-expected points). Overlapping windows of the same sign are merged into one run.",
+  "unit": "count",
+  "higher_is_better": null,
+  "format": "+,.1f",
+  "min_sample": 10,
+  "source": "football-data.co.uk",
+  "signed": true
+ },
+ {
+  "id": "calibration",
+  "label": "Calibration scores",
+  "description": "Brier score and log loss of the market probabilities and the xG-simulated probabilities on the selected matches, next to a naive forecast that always predicts the selection own win, draw and loss rates. The xG simulation is built from the match shots, so it describes the chances rather than forecasting them.",
+  "unit": "prob",
+  "higher_is_better": false,
+  "format": ".3f",
+  "min_sample": 10,
+  "source": "football-data.co.uk"
+ },
+ {
+  "id": "reliability",
+  "label": "Reliability plot",
+  "description": "Forecast probability against how often the outcome happened. Every match contributes three points (win, draw, loss), grouped into probability bins. On the dashed diagonal, forecasts are perfectly calibrated. Larger markers mean more outcomes in the bin.",
+  "unit": "prob",
+  "higher_is_better": null,
+  "format": ".0%",
+  "min_sample": 10,
+  "source": "football-data.co.uk"
+ },
+ {
+  "id": "match_strip",
+  "label": "Every match: market vs xG simulation",
+  "description": "For each match, the closing-odds win probability and the xG-simulated win probability, with the actual result shown along the top.",
+  "unit": "prob",
+  "higher_is_better": null,
+  "format": ".0%",
+  "min_sample": 10,
+  "source": "football-data.co.uk"
+ },
+ {
+  "id": "pnl_cum",
+  "label": "Flat-stake cumulative P&L",
+  "description": "Running profit of a hypothetical 1-unit stake on Liverpool to win every match at the closing odds. Retrospective analysis, not a strategy.",
+  "unit": "count",
+  "higher_is_better": true,
+  "format": "+,.2f",
+  "min_sample": 10,
+  "source": "football-data.co.uk",
+  "signed": true
+ },
+ {
+  "id": "roi_season",
+  "label": "Flat-stake ROI by season",
+  "description": "Profit divided by the number of 1-unit stakes for each season. Retrospective analysis, not a strategy: a season is a small sample of about 38 bets.",
+  "unit": "pct",
+  "higher_is_better": true,
+  "format": "+.1%",
+  "min_sample": 10,
+  "source": "football-data.co.uk",
+  "signed": true
+ },
+ {
+  "id": "model_hook",
+  "label": "External model",
+  "description": "Optional probabilities from your own model, supplied as a CSV with a match key and home, draw and away probabilities. When present they are scored with the same Brier score and log loss as the market and the xG simulation.",
+  "unit": "prob",
+  "higher_is_better": null,
+  "format": ".3f",
+  "min_sample": 10,
+  "source": "external CSV"
+ },
+ {
   "id": "win_rate",
   "label": "Win rate",
   "description": "Share of matches won.",

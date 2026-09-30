@@ -289,7 +289,7 @@ def build_matches(team_matches: pd.DataFrame, shots: pd.DataFrame) -> pd.DataFra
 
     xg/xga are the sums of the match's shot xG (what every shot map, xG race and the xG
     simulation use). Understat's own team-level figure is kept as xg_reported/xga_reported:
-    it is lower than the shot sum in ~14% of team-matches (see DATA_NOTES.md).
+    it is lower than the shot sum in ~17% of team-matches (see DATA_NOTES.md).
     """
     fd = load_football_data()
     liv = team_matches[team_matches.team == LIV].copy()
