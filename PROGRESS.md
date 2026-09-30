@@ -79,7 +79,7 @@
 - **Shareable state:** `player`, `vs` and `match` are kept in the URL (`replaceState`, no re-render), with validated fallbacks.
 - **Data additions:** per-90 fields computed in Python (`build.py`); market detail per match (both de-vig methods, raw odds, margin, Shin z).
 - **Precision fix found by the tests:** payload xG and probabilities were rounded to 4 decimals, and adding rounded shot xG in the browser gave a race-chart total (2.22) that disagreed with the scoreboard (2.21) for one match. xG and probabilities now ship at 6 decimals, and the race-chart end labels use the exact match total from Python.
-- **Verified (83 tests):**
+- **Verified (82 tests):**
   - Squad table rows, filters, search and sorting equal an independent pandas calculation from rosters and shots.
   - Role-leader ranking equals pandas, including after changing the filter.
   - The profile's season table equals the player-season table, and comparison values equal pandas.
