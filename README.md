@@ -32,8 +32,8 @@ selection, and every metric has an ⓘ tooltip whose text comes from one registr
 | Page | Contents |
 |---|---|
 | **Overview** | Record (actual) beside xPts, market-expected points and xG (expected), rolling 10-match xG difference, last five results, rule-based takeaways, and a vs-baseline panel that always names its baseline. |
-| **Attack** | Shot map (player / situation / body part / outcome filters, circle size grows with xG), goals minus xG by player, threat source mix, shot volume vs quality against every league club, per-match xG trend. |
-| **Defence** | Shots-conceded map, xGA trend against the league average, open-play vs set-piece xGA, PPDA, deep completions allowed, clean sheets. |
+| **Attack** | Shot map (player / situation / body part / outcome filters, circle size grows with xG), goals minus xG by player, threat source mix, shot volume vs quality against every league club, per-match xG trend, plus Build-up and Attack style cards (proxy scores). |
+| **Defence** | Shots-conceded map, xGA trend against the league average, open-play vs set-piece xGA, PPDA, deep completions allowed, clean sheets, plus a Defence style card (proxy scores). |
 | **Players** | Searchable, sortable squad table with per-90 values and a minimum-minutes filter, role leaders (Finisher, Shot Threat, Creator, Build-up, Involvement), player profile with season-over-season trends, two-player comparison. |
 | **Match Explorer** | Any match: scoreline and scorers, xG race chart, both teams' shot maps, de-vigged pre-match market probabilities next to the exact xG-simulated probabilities. |
 | **Market Lens** | Actual vs xG-simulated vs market-expected points by season; calibration (Brier score, log loss, reliability plot); mispriced runs; a hypothetical flat 1-unit stake at closing odds, clearly labelled *retrospective analysis, not a strategy*; a hook for an external model. |
@@ -147,6 +147,23 @@ To enable it: repository *Settings → Pages → Build and deployment → Source
 Save `data/external/model_probs.csv` with a match key and home/draw/away probabilities (format in
 [data/external/README.md](data/external/README.md)) and rebuild. It is scored with the same Brier score and log loss as
 the market and the xG simulation, on the Market Lens page.
+
+## Style of play (proxy scores)
+
+The Attack and Defence pages also show *how* Liverpool play: three phases (defence, build-up, attack) with three tactical
+axes each (for example Passive ◄► Active pressing), scored 0 to 100 against the other 19 clubs of the same season, plus a
+composite index per phase. The idea follows the [CIES Football Observatory](https://football-observatory.com)'s
+style-of-play work; CIES uses Impect event data that is not freely available, so these are **proxies from Understat team
+data** and are never called CIES scores. Axes without an honest proxy (build-up length and direction, aerial vs grounded)
+say "Needs pass-level data" instead of inventing a number, and style is drawn in neutral colours because it is neither good
+nor bad. Everything is configured in [config/style.json](config/style.json), scored in [style.py](style.py), and the
+Methodology page lists every KPI, sign and confidence. To replace a weak proxy with real data, add
+`data/external/style_kpis.csv` (see [data/external/README.md](data/external/README.md)):
+
+```csv
+season,club,kpi_id,value
+2024-25,Liverpool,def_ppda,8.9
+```
 
 ## Limitations
 
