@@ -213,3 +213,8 @@ The first CI run of the redesign failed two browser tests that pass on Windows: 
 - Defence: one full-width Defence style card after the map. Attack: Build-up and Attack cards side by side (equal height, stacked under 1100px) between the shot map and the lower row.
 - New frontend tests (in test_frontend.py): sections per page, every score/rank/index/change equals the build JSON, badge and pip on every axis, tick at 50 and dot at the score, no good/bad colours or arrows in both themes, season/era updates, keyboard expanders, small-sample badge, table alternatives, screenshots in `artifacts/screenshots/style/`.
 - Existing tests: two selectors/counts updated (touch-target scan excludes the tiny tooltip buttons, which have 44px hit areas; glossary sub-section count 7 to 8). No assertion on a value changed. Full suite 174 passed.
+
+### Style of play: S5 Methodology, README, QA (2026-09-30)
+- Methodology gains a "Style of play (proxy scores)" section: CIES credit (borrowed vs changed), formula, tie rule, relative-to-season-league explanation, central-rectangle assumption, confidence, unavailable axes, and a proxy mapping table generated from `config/style.json`. README section and external CSV documentation added (the external-model README content overwritten in S2 is restored).
+- Tests: methodology section test; section-count assertion 12 to 13 (a new section is added). Screenshots for both themes at 1920, 1440 and 390 in `artifacts/screenshots/style/` were viewed; a mobile overflow in the Defence card and the Defence table layout were fixed.
+- Size: payload `style` 50 KB, `style_raw.parquet` 80 KB (not shipped), dist 1.72 MB. Full suite 175 passed. Not merged: awaiting approval.

@@ -835,7 +835,7 @@ def test_methodology_is_collapsible(page, data):
     go(page, "methodology", "2025-26")
     secs = page.locator("details.sec")
     n = secs.count()
-    assert n == 12
+    assert n == 13
     # only the first section starts open; every heading is visible as a summary
     assert [secs.nth(i).get_attribute("open") is not None for i in range(n)] == [True] + [False] * (n - 1)
     assert page.locator("details.sec > summary h2").all_text_contents()[0] == "What this dashboard is"
@@ -1532,3 +1532,21 @@ def test_style_screenshots(browser):
                 pg.screenshot(path=str(out / f"{route}-{theme}-{w}.png"), full_page=True)
             assert pg.errors == []
             ctx.close()
+
+
+def test_methodology_style_section_credits_cies_and_lists_every_axis(page, data):
+    go(page, "methodology", "2024-25")
+    page.click("#toc-style-of-play-proxy-scores, [data-toc=style-of-play-proxy-scores]")
+    sec = page.locator("details.sec:has(#style-of-play-proxy-scores)")
+    assert sec.get_attribute("open") is not None
+    text = sec.inner_text()
+    assert "CIES Football Observatory" in text and "never a CIES score" in text and "neither good nor bad" in text
+    assert "Needs pass-level data" in text and "central rectangle" in text.lower()
+    rows = sec.locator("[data-table=style-mapping] tbody tr")
+    cfg = data["style"]["cfg"]
+    assert rows.count() == 9
+    for a, info in cfg["axes"].items():
+        r = sec.locator(f"tr[data-axis={a}]")
+        assert info["left"] in r.inner_text() and info["right"] in r.inner_text() and info["confidence"] in r.inner_text()
+        assert ("Unavailable" in r.inner_text()) == (info["status"] == "unavailable")
+    assert page.errors == []
