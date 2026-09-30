@@ -126,6 +126,7 @@ main:focus, main:focus-visible { outline: none; }   /* focus moves here on page 
 .tile .val { font: 700 clamp(44px, 4.2vw, 64px)/1.05 var(--font-display); letter-spacing: .01em; font-variant-numeric: tabular-nums; margin-top: 4px; }
 .tile .val.exp { font-weight: 600; }
 .tile .sub { font-size: 14px; color: var(--muted); }
+.tile, .kpi, .dstat { min-width: 0; } .tile .val, .kpi .val { overflow-wrap: anywhere; }
 .gap-row { display: grid; gap: 8px; margin-top: 22px; padding-top: 18px; border-top: 1px dashed var(--line-strong); }
 .gap { font-size: 15px; color: var(--ink-2); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .good { color: var(--good); } .bad { color: var(--bad); } .neutral { color: var(--neutral); }
@@ -408,6 +409,8 @@ table.data tr.best td { font-weight: 600; }
   .card { padding: 18px 16px; border-radius: 14px; }
   .grid, .row { gap: 16px; }
   .tiles { gap: 18px 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tiles.c3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tile .val, .kpi .val, .take-num { font-size: 38px; }
   table.data th, table.data td { padding: 8px 6px; font-size: 14px; }
   table.data thead th { font-size: 11px; }
 }

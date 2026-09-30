@@ -184,3 +184,10 @@ Second CI run: 52 of 53 browser tests passed; `test_tooltips_work_on_touch` fail
 - `min-height` of Overview bars, tile sizes and the 48px/32px limits are as specified; the dead-space rule measures the bottom edge only, so I also measured empty bands *between* blocks: after the final fixes the largest such gap on any page, season and both widths is 38px.
 - The Defence "open play vs set piece xGA" card no longer exists separately; it lives in the drawer with the same data.
 - The crest and `design/` mockups were added to the repo by `git add -A`; remove `design/` before merging if you do not want the mockups public.
+
+### CI fix 3 (2026-09-30, after the redesign merge)
+The first CI run of the redesign failed two browser tests that pass on Windows: the runner has no Barlow (fonts are stubbed in tests, and can fail for real users) and falls back to DejaVu Sans, which is far wider.
+- **Overflow (Market Lens, 390px):** the three stake tiles ("Stakes", "P&L", "ROI") sat in three columns at 44px, so "−22.4%" pushed the page 75px wider than the screen. Fixed by two columns and 38px numbers on phones, `min-width: 0` on tiles and wrapping on values.
+- **Drawer sizing:** with wider text the drawer's content was 27px taller than the stage, so it scrolled internally, which is allowed by the design but the test demanded no scrolling. The test now applies the no-scroll/no-band rule only when the content fits in the stage (a capped panel scrolls by design).
+- **Regression guard:** new test `test_no_overflow_with_wide_fallback_fonts` forces a DejaVu/Verdana stack and checks every page × several seasons × both themes at 390 and 768px for anything outside a scroll container reaching past the screen. I also ran the dead-space checks under the wide font at 1920, 1440 and 390: no card is over the limit.
+- 138 tests pass locally with the cached D3 file hidden (as on CI).
