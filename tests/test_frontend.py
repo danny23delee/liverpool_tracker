@@ -1378,3 +1378,43 @@ def test_no_overflow_with_wide_fallback_fonts(browser, data, width):
                     bad.append((theme, route, season, res[1]))
     assert bad == [], bad[:6]
     ctx.close()
+
+
+# ------------------------------------------------------------------ Liverpool identity layer: champions trim, red sidebar, masthead
+def _hex(rgb):
+    r, g, b = (int(float(x)) for x in re.findall(r"[\d.]+", rgb)[:3])
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def test_champions_trim_only_on_a_season_liverpool_won(page, data):
+    champs = [s for s in data["seasons"] if data["league"][s].get("champion") == "Liverpool"]
+    others = [s for s in data["seasons"] if data["league"][s].get("champion") != "Liverpool"]
+    for s in champs[:2]:
+        go(page, "overview", s)
+        assert page.locator("[data-testid=champions]").count() == 1 and page.locator(".card.record.champ").count() == 1
+    for s in others[:3]:
+        go(page, "overview", s)
+        assert page.locator("[data-testid=champions]").count() == 0 and page.locator(".card.record.champ").count() == 0
+    go(page, "overview", "all")
+    assert page.locator("[data-testid=champions]").count() == 0                       # never on a multi-season selection
+
+
+def test_sidebar_and_masthead_are_brand_red_and_readable(page):
+    def rgb(sel, prop="backgroundColor"):
+        return page.evaluate("([s, p]) => getComputedStyle(document.querySelector(s))[p]", [sel, prop])
+    assert rgb(".nav") == "rgb(200, 16, 46)" and rgb(".topbar") == "rgb(200, 16, 46)"
+    assert rgb("h1", "color") == "rgb(255, 255, 255)" and rgb(".nav a.item:not([aria-current])", "color") == "rgb(255, 255, 255)"
+    assert page.evaluate("getComputedStyle(document.querySelector('.nav'), '::before').content").strip('"') == "ANFIELD"
+
+
+def test_record_card_numbers_stay_readable_in_both_themes(browser, data):
+    for theme in ("dark", "light"):
+        ctx, pg = _new_page(browser)
+        pg.add_init_script(f"try{{localStorage.setItem('theme','{theme}')}}catch(e){{}}")
+        pg.goto(DIST.as_uri())
+        pg.wait_for_function("window.__tracker && window.__tracker.ready")
+        go(pg, "overview", data["default_season"])
+        bg, fg = pg.evaluate("""() => { const c = document.querySelector('.card.record'), v = c.querySelector('.val[data-metric=wins]');
+            return [getComputedStyle(c).backgroundColor, getComputedStyle(v).color]; }""")
+        assert _contrast(_hex(fg), _hex(bg)) >= 4.5, (theme, fg, bg)                   # the cream card must not inherit the dark theme's pale text
+        ctx.close()
