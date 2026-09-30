@@ -1,0 +1,89 @@
+name: Build, test and deploy
+
+# Weekly refresh (Tuesday 06:00 UTC), on demand, and on pushes to main.
+# The site is only deployed if every test passes; otherwise the last good deployment stays live.
+on:
+  schedule:
+    - cron: "0 6 * * 2"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      # Raw responses are cached between runs, so only new matches are fetched after the first run
+      # (the first run downloads ~750 files at one request per second, about 13 minutes).
+      - name: Restore raw data cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/raw
+          key: raw-v1-${{ github.run_id }}
+          restore-keys: raw-v1-
+
+      - name: ETL (fetch, cache, clean, join)
+        run: python etl.py
+
+      - name: Test pipeline, metrics and payload
+        run: python -m pytest tests/test_etl.py tests/test_metrics.py tests/test_build.py -q
+
+      - name: Build dist/index.html
+        run: python build.py
+
+      - name: Test the built site in a real browser
+        run: python -m pytest tests/test_frontend.py -q
+
+      - name: Save raw data cache (even if a later step failed, so a long first fetch is not lost)
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/raw
+          key: raw-v1-${{ github.run_id }}
+
+      - name: Keep screenshots for inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: artifacts/screenshots
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build   # skipped automatically if any step above failed
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -153,3 +153,44 @@ def test_team_season_shotlevel_matches_liverpool_shots(t):
         assert liv.loc[season, "shots_shotlevel"] == by.loc[season, "n"], season
         assert abs(liv.loc[season, "xg_shotlevel"] - by.loc[season, "xg"]) < 1e-6, season
     assert (ts.og_for >= 0).all() and ts.og_for.max() <= 15
+
+
+class _Resp:
+    def __init__(self, status):
+        self.status_code = status
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise etl.requests.HTTPError(f"{self.status_code}", response=self)
+
+
+def test_fetch_retries_transient_failures_and_respects_rate_limit(monkeypatch):
+    sleeps, calls = [], []
+    monkeypatch.setattr(etl.time, "sleep", lambda s: sleeps.append(s))
+    seq = iter([etl.requests.ConnectionError("boom"), _Resp(503), _Resp(200)])
+
+    def fake_get(url, headers=None, timeout=None):
+        calls.append(url)
+        r = next(seq)
+        if isinstance(r, Exception):
+            raise r
+        return r
+
+    monkeypatch.setattr(etl._session, "get", fake_get)
+    assert etl._get("http://x").status_code == 200
+    assert len(calls) == 3
+    assert sleeps.count(etl.BACKOFF) == 1 and etl.BACKOFF * 2 in sleeps  # exponential backoff between attempts
+
+
+def test_fetch_gives_up_and_raises_so_the_deploy_is_skipped(monkeypatch):
+    monkeypatch.setattr(etl.time, "sleep", lambda s: None)
+    calls = []
+    monkeypatch.setattr(etl._session, "get", lambda url, headers=None, timeout=None: (calls.append(1), _Resp(503))[1])
+    with pytest.raises(etl.requests.HTTPError):
+        etl._get("http://x")
+    assert len(calls) == etl.RETRIES
+    calls.clear()
+    monkeypatch.setattr(etl._session, "get", lambda url, headers=None, timeout=None: (calls.append(1), _Resp(404))[1])
+    with pytest.raises(etl.requests.HTTPError):  # a 404 is not transient: no retries
+        etl._get("http://x")
+    assert len(calls) == 1

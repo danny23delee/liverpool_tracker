@@ -1,0 +1,7 @@
+pandas>=2.2
+pyarrow>=15
+requests>=2.31
+pytest>=8
+playwright>=1.44
+# Only needed behind a corporate TLS-inspecting proxy on Windows (uses the OS certificate store; verification stays on)
+truststore>=0.9; sys_platform == "win32"
