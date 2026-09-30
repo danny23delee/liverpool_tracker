@@ -355,6 +355,47 @@ def build_matches(team_matches: pd.DataFrame, shots: pd.DataFrame) -> pd.DataFra
     return m.sort_values("kickoff_utc").reset_index(drop=True)
 
 
+def build_style_raw(leagues: dict[int, dict]) -> pd.DataFrame:
+    """Raw season aggregates for every club, used to build the style-of-play KPIs (style.py).
+
+    One row per club-season from Understat's team pages (`shotZone`, `attackSpeed`), team match history (PPDA,
+    deep completions) and the league player table (xGChain / xGBuildup summed per club). No new requests: the
+    team pages are already fetched for the league context. `*_for` is the club's own shots, `*_against` the
+    opposition's. Own goals appear as a pseudo-shot in `shotZone.ownGoals` only; the speed buckets include them
+    in their totals (at most 1 in ~600 shots), which is why style shares use the zone totals for the in-box shares.
+    """
+    rows = []
+    for s, lg in leagues.items():
+        chain: dict[str, list[float]] = {}
+        for p in lg["players"]:
+            if "," in p["team_title"]:  # a player listed for two clubs cannot be attributed to one
+                continue
+            c = chain.setdefault(p["team_title"], [0.0, 0.0])
+            c[0] += float(p["xGChain"])
+            c[1] += float(p["xGBuildup"])
+        for t in lg["teams"].values():
+            f = RAW / "understat" / f"team_{t['title'].replace(' ', '_')}_{s}.json"
+            st = json.loads(f.read_text(encoding="utf-8"))["statistics"]
+            hist = t["history"]
+            row = dict(season=season_label(s), season_start=s, club=t["title"], matches=len(hist),
+                       deep=float(sum(h["deep"] for h in hist)), deep_allowed=float(sum(h["deep_allowed"] for h in hist)),
+                       ppda_att=float(sum(h["ppda"]["att"] for h in hist)), ppda_def=float(sum(h["ppda"]["def"] for h in hist)),
+                       xgchain=chain.get(t["title"], [float("nan")] * 2)[0], xgbuildup=chain.get(t["title"], [float("nan")] * 2)[1])
+            for zone in ("shotSixYardBox", "shotPenaltyArea", "shotOboxTotal", "ownGoals"):
+                z = st["shotZone"].get(zone, {"shots": 0, "xG": 0.0, "against": {"shots": 0, "xG": 0.0}})
+                key = {"shotSixYardBox": "six", "shotPenaltyArea": "pen", "shotOboxTotal": "out", "ownGoals": "og"}[zone]
+                row.update({f"zone_{key}_shots_for": z["shots"], f"zone_{key}_xg_for": float(z["xG"]),
+                            f"zone_{key}_shots_against": z["against"]["shots"], f"zone_{key}_xg_against": float(z["against"]["xG"])})
+            for speed in ("Fast", "Normal", "Standard", "Slow"):
+                z = st["attackSpeed"].get(speed, {"shots": 0, "xG": 0.0, "against": {"shots": 0, "xG": 0.0}})
+                row.update({f"speed_{speed.lower()}_shots_for": z["shots"], f"speed_{speed.lower()}_xg_for": float(z["xG"]),
+                            f"speed_{speed.lower()}_shots_against": z["against"]["shots"], f"speed_{speed.lower()}_xg_against": float(z["against"]["xG"])})
+            row["situation_shots_for"] = sum(v["shots"] for v in st["situation"].values())
+            row["situation_shots_against"] = sum(v["against"]["shots"] for v in st["situation"].values())
+            rows.append(row)
+    return pd.DataFrame(rows).sort_values(["season_start", "club"]).reset_index(drop=True)
+
+
 def build() -> dict[str, pd.DataFrame]:
     leagues = {s: understat_league(s) for s in season_range()}
     tm = build_team_matches(leagues)
@@ -367,7 +408,7 @@ def build() -> dict[str, pd.DataFrame]:
              home=m["h"]["title"], away=m["a"]["title"], played=bool(m["isResult"]))
         for s, lg in leagues.items() for m in lg["dates"] if LIV_ID in (m["h"]["id"], m["a"]["id"])])
     tables = dict(matches=matches, fixtures=fixtures, team_matches=tm, team_seasons=ts,
-                  shots=shots, rosters=rosters, player_seasons=ps)
+                  shots=shots, rosters=rosters, player_seasons=ps, style_raw=build_style_raw(leagues))
     PROCESSED.mkdir(parents=True, exist_ok=True)
     for name, df in tables.items():
         df.to_parquet(PROCESSED / f"{name}.parquet", index=False)

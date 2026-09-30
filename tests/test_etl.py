@@ -194,3 +194,62 @@ def test_fetch_gives_up_and_raises_so_the_deploy_is_skipped(monkeypatch):
     with pytest.raises(etl.requests.HTTPError):  # a 404 is not transient: no retries
         etl._get("http://x")
     assert len(calls) == 1
+
+
+# ------------------------------------------------------------------ style of play: raw inputs (S1)
+@pytest.fixture(scope="session")
+def style_raw():
+    p = etl.PROCESSED / "style_raw.parquet"
+    if not p.exists():
+        pytest.fail("run `python etl.py --no-fetch` first")
+    return pd.read_parquet(p)
+
+
+def test_style_raw_has_twenty_clubs_per_season_and_matches_team_matches(style_raw, t):
+    per = style_raw.groupby("season").club.nunique()
+    assert set(per.index) == {etl.season_label(s) for s in etl.season_range()} and (per == 20).all()
+    assert not style_raw.duplicated(["season", "club"]).any()
+    played = t["team_matches"].groupby(["season", "team"]).size()
+    for r in style_raw.itertuples():
+        assert r.matches == played[(r.season, r.club)], (r.season, r.club)
+    cur = etl.season_label(etl.current_season_start())
+    assert (style_raw[style_raw.season != cur].matches == 38).all()
+
+
+def test_style_raw_zone_and_speed_splits_add_up_to_total_shots(style_raw):
+    zone_for = style_raw[[f"zone_{k}_shots_for" for k in ("six", "pen", "out", "og")]].sum(axis=1)
+    zone_ag = style_raw[[f"zone_{k}_shots_against" for k in ("six", "pen", "out", "og")]].sum(axis=1)
+    speed_for = style_raw[[f"speed_{k}_shots_for" for k in ("fast", "normal", "standard", "slow")]].sum(axis=1)
+    speed_ag = style_raw[[f"speed_{k}_shots_against" for k in ("fast", "normal", "standard", "slow")]].sum(axis=1)
+    assert (zone_for == style_raw.situation_shots_for).all() and (zone_ag == style_raw.situation_shots_against).all()
+    assert (speed_for == style_raw.situation_shots_for).all() and (speed_ag == style_raw.situation_shots_against).all()
+    # in-box is a subset of all shots; own goals are at most a handful
+    inbox = style_raw.zone_six_shots_against + style_raw.zone_pen_shots_against
+    assert (inbox <= zone_ag).all() and (inbox > 0).all() and style_raw.zone_og_shots_for.max() <= 12
+    # league symmetry: every shot is for one club and against another, per season
+    g = style_raw.groupby("season")[["situation_shots_for", "situation_shots_against"]].sum()
+    assert (g.situation_shots_for == g.situation_shots_against).all()
+    assert (style_raw.xgbuildup <= style_raw.xgchain + 1e-9).all() and style_raw.xgchain.notna().all()
+
+
+def test_style_raw_reconciles_with_liverpool_shot_dataset(style_raw, t):
+    """Liverpool's conceded / created shot counts from the team page equal the existing shot-level dataset exactly,
+    and the zone split agrees with a geometric box classification to within 6%."""
+    s = t["shots"]
+    liv = style_raw[style_raw.club == etl.LIV].set_index("season")
+    for season, r in liv.iterrows():
+        d = s[s.season == season]
+        opp_shots = int(((d.team != etl.LIV) & (d.result != "OwnGoal")).sum())
+        own_goals_by_liv = int(((d.team == etl.LIV) & (d.result == "OwnGoal")).sum())
+        assert r.situation_shots_against == opp_shots + own_goals_by_liv, season          # against = their shots + our own goals
+        liv_shots = int(((d.team == etl.LIV) & (d.result != "OwnGoal")).sum())
+        opp_own_goals = int(((d.team != etl.LIV) & (d.result == "OwnGoal")).sum())
+        assert r.situation_shots_for == liv_shots + opp_own_goals, season                 # for = our shots + their own goals
+        assert r.zone_og_shots_against == own_goals_by_liv and r.zone_og_shots_for == opp_own_goals, season
+        opp = d[(d.team != etl.LIV) & (d.result != "OwnGoal")]
+        x, y = opp.x * 105, opp.y * 68
+        six = (x >= 105 - 5.5) & (y >= 24.84) & (y <= 43.16)
+        pen = (x >= 105 - 16.5) & (y >= 13.84) & (y <= 54.16) & ~six
+        inbox_geo, inbox_us = int((six | pen).sum()), int(r.zone_six_shots_against + r.zone_pen_shots_against)
+        assert abs(inbox_geo - inbox_us) <= 0.06 * inbox_us + 2, (season, inbox_geo, inbox_us)
+        assert inbox_us <= r.situation_shots_against
