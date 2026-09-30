@@ -62,3 +62,31 @@
 - **Screenshots reviewed** (desktop and 390px): fixed collapsed half-width cards (missing `span-6`), an unreadable in-pitch caption, clipped player names on mobile, a squashed single-group mix bar, an invisible legend swatch, and a "−0.0" label.
 - **Design decisions:** circle size uses r = 3.5 + 12·√xG px so tiny shots stay visible at the 8 px marker minimum (size still increases monotonically with xG; the registry text says "grows with", not "proportional"). The pitch is drawn from 36 m (attack) / to 69 m (defence) to avoid empty space; hidden long shots are disclosed.
 - **Open:** Players, Match Explorer, Market Lens and Methodology remain placeholders.
+
+## M5 Players + Match Explorer: done (2026-09-30)
+- **Players page:**
+  - Role leaders (Finisher npG−npxG, Shot Threat npxG/90, Creator xA/90, Build-up xGBuildup/90, Involvement xGChain/90), ranked among players above the minimum-minutes filter.
+  - Searchable, sortable squad table with per-90 values and a minimum-minutes filter (450 by default, 90 for selections under 10 matches).
+  - Player profile with season-over-season trend charts (hollow points for seasons under 450 minutes) and a season table.
+  - Two-player comparison for the selected season/era.
+- **Match Explorer:**
+  - Match picker (any match in the selection, plus step buttons).
+  - Scoreboard with scorers (own goals credited to the other side).
+  - xG race chart.
+  - One full-pitch map of both teams' shots (Liverpool attack →, opposition rotated).
+  - Market panel with de-vigged pre-match probabilities (proportional and Shin), the exact xG-simulated probabilities, the actual result and expected points, raw closing odds, the odds source and the Shin z.
+  - Shot list.
+- **Shareable state:** `player`, `vs` and `match` are kept in the URL (`replaceState`, no re-render), with validated fallbacks.
+- **Data additions:** per-90 fields computed in Python (`build.py`); market detail per match (both de-vig methods, raw odds, margin, Shin z).
+- **Precision fix found by the tests:** payload xG and probabilities were rounded to 4 decimals, and adding rounded shot xG in the browser gave a race-chart total (2.22) that disagreed with the scoreboard (2.21) for one match. xG and probabilities now ship at 6 decimals, and the race-chart end labels use the exact match total from Python.
+- **Verified (83 tests):**
+  - Squad table rows, filters, search and sorting equal an independent pandas calculation from rosters and shots.
+  - Role-leader ranking equals pandas, including after changing the filter.
+  - The profile's season table equals the player-season table, and comparison values equal pandas.
+  - A shared URL restores profile and comparison.
+  - All 461 matches are rendered one by one, and each scoreline, title, both teams' xG, goal markers, scorer lists, shot circles, market probabilities (independent de-vig) and simulated probabilities (independent convolution) reconcile with the data.
+  - The picker steps, defaults to a season's latest match, and falls back correctly across seasons.
+  - Pages that span seasons keep other season labels out of visible text (the profile is exempt and marked).
+  - New payload tests cover the per-90 fields and market payload.
+- **Screenshots reviewed** (desktop and 390px). Fixed: the probability and shot tables were clipped in narrow cards (now compact and widened), and the shot list mislabelled the team for own goals.
+- **Open:** Market Lens and Methodology are still placeholders. The all-matches reconciliation test takes about 90 s.

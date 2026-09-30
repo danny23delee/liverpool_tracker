@@ -84,8 +84,8 @@ def page(browser):
     ctx.close()
 
 
-def go(page, route, season, era="all"):
-    h = f"#/{route}?season={season}&era={era}"
+def go(page, route, season, era="all", extra=""):
+    h = f"#/{route}?season={season}&era={era}{extra}"
     page.evaluate("""h => new Promise(r => { if (location.hash === h) return r();
         addEventListener('hashchange', () => setTimeout(r, 0), {once: true}); location.hash = h; })""", h)
 
@@ -397,3 +397,185 @@ def test_attack_defence_titles_have_registry_tooltips_and_table_views(page, data
             titles.nth(i).hover()
             assert data["registry"][mid]["description"] in page.inner_text("#tip"), mid
         assert page.locator("details.tbl").count() >= 4, route
+
+
+# ------------------------------------------------------------------ M5: Players and Match Explorer
+def _players(season):
+    """Independent per-player totals for a season from the processed rosters and shots."""
+    import pandas as pd
+    r = pd.read_parquet(ROOT / "data" / "processed" / "rosters.parquet")
+    r = r[(r.season == season) & (r.team == "Liverpool")]
+    g = r.groupby("player").agg(pid=("player_id", "first"), apps=("minutes", lambda x: int((x > 0).sum())), minutes=("minutes", "sum"),
+                                goals=("goals", "sum"), ast=("assists", "sum"), xa=("xa", "sum"), kp=("key_passes", "sum"),
+                                chain=("xgchain", "sum"), build=("xgbuildup", "sum"))
+    s = _shots(season)
+    a = s.groupby("player").agg(sh=("xg", "size"), xg=("xg", "sum"))
+    n = s[s.situation != "Penalty"].groupby("player").agg(npxg=("xg", "sum"), npg=("result", lambda x: int((x == "Goal").sum())))
+    g = g.join(a).join(n).fillna(0)
+    g = g[g.minutes > 0].copy()
+    for k, v in (("npxg90", "npxg"), ("xa90", "xa"), ("build90", "build"), ("chain90", "chain"), ("sh90", "sh"), ("kp90", "kp"), ("xg90", "xg")):
+        g[k] = g[v] / g.minutes * 90
+    g["fin"] = g.npg - g.npxg
+    return g
+
+
+def _flt(text):
+    return float(text.replace("−", "-").replace(",", "").replace("+", ""))
+
+
+SQUAD_KEYS = ["name", "pos", "apps", "minutes", "goals", "npg", "ast", "xg", "npxg", "xa", "fin", "npxg90", "xa90", "build90", "chain90", "sh90", "kp90", "xg90"]
+
+
+def test_squad_table_matches_data_and_filters(page):
+    go(page, "players", "2024-25")
+    g = _players("2024-25")
+    big = g[g.minutes >= 450]
+    rows = _table_rows(page.locator("table[data-table=squad] tbody tr"))
+    assert len(rows) == len(big) and {r[0] for r in rows} == set(big.index)
+    for r in rows:
+        p = big.loc[r[0]]
+        d = dict(zip(SQUAD_KEYS, r))
+        assert int(d["apps"]) == p.apps and _flt(d["minutes"]) == p.minutes and int(d["goals"]) == p.goals and int(d["npg"]) == p.npg and int(d["ast"]) == p.ast, r[0]
+        for k in ("xg", "npxg", "xa", "fin"):
+            assert abs(_flt(d[k]) - p[k]) < 0.06, (r[0], k)
+        for k in ("npxg90", "xa90", "build90", "chain90", "sh90", "kp90", "xg90"):
+            assert abs(_flt(d[k]) - p[k]) < 0.006, (r[0], k)
+    assert page.inner_text("[data-testid=player-count]") == f"Showing {len(big)} of {len(g)} players"
+    # minimum-minutes filter and search
+    page.select_option("#p-min", "1500")
+    assert page.locator("table[data-table=squad] tbody tr").count() == int((g.minutes >= 1500).sum())
+    page.select_option("#p-min", "0")
+    assert page.locator("table[data-table=squad] tbody tr").count() == len(g)
+    page.fill("#p-search", "salah")
+    assert page.locator("table[data-table=squad] tbody tr").count() == 1
+    assert page.inner_text("table[data-table=squad] tbody tr td") == "Mohamed Salah"
+    page.fill("#p-search", "zzzz")
+    assert page.locator("table[data-table=squad] tbody tr").count() == 0
+    page.fill("#p-search", "")
+    # sorting: default minutes descending, click flips it
+    page.select_option("#p-min", "450")
+    mins = [_flt(r[3]) for r in _table_rows(page.locator("table[data-table=squad] tbody tr"))]
+    assert mins == sorted(mins, reverse=True)
+    page.locator("table[data-table=squad] th").nth(3).locator("button.sortbtn").click()
+    mins = [_flt(r[3]) for r in _table_rows(page.locator("table[data-table=squad] tbody tr"))]
+    assert mins == sorted(mins)
+
+
+def test_role_leaders_match_data(page):
+    go(page, "players", "2024-25")
+    big = _players("2024-25")
+    big = big[big.minutes >= 450]
+    for title, col in (("Finisher", "fin"), ("Shot Threat", "npxg90"), ("Creator", "xa90"), ("Build-up", "build90"), ("Involvement", "chain90")):
+        exp = list(big.sort_values([col, "minutes"], ascending=False).index[:3])
+        got = page.locator(f"[data-role='{title}'] li .nm").all_inner_texts()
+        assert got == exp, (title, got, exp)
+    # the leaders respond to the minimum-minutes filter
+    page.select_option("#p-min", "1500")
+    hi = big[big.minutes >= 1500]
+    assert page.locator("[data-role='Creator'] li .nm").all_inner_texts() == list(hi.sort_values(["xa90", "minutes"], ascending=False).index[:3])
+    assert f"{len(hi)} players" in page.inner_text("[data-testid=roles-note]")
+
+
+def test_player_profile_and_comparison(page, data):
+    import pandas as pd
+    go(page, "players", "2024-25")
+    page.locator("table[data-table=squad] tbody tr", has_text="Mohamed Salah").first.click()
+    assert "player=1250" in page.evaluate("location.hash")
+    assert page.inner_text("[data-profile] h3") == "Mohamed Salah"
+    ps = pd.read_parquet(ROOT / "data" / "processed" / "player_seasons.parquet")
+    sal = ps[(ps.player_id == 1250) & (ps.minutes > 0)].sort_values("season")
+    prof = page.locator("section[aria-label='Player profile']")
+    rows = _table_rows(prof.locator("details.tbl tbody tr"))
+    assert [r[0] for r in rows] == list(sal.season)
+    for r, (_, p) in zip(rows, sal.iterrows()):
+        assert int(r[3]) == p.minutes and int(r[4]) == p.goals and int(r[5]) == p.npg and int(r[6]) == p.assists, r[0]
+    assert prof.locator("[data-mini=npxg_p90] circle.pt").count() == len(sal)
+    hollow = prof.locator("[data-mini=npxg_p90] circle.pt").evaluate_all("cs => cs.filter(c => c.style.fill.includes('surface')).length")
+    assert hollow == int((sal.minutes < 450).sum())
+    # comparison
+    page.select_option("#cmp-a", "1250")
+    page.select_option("#cmp-b", label="Virgil van Dijk")
+    g = _players("2024-25")
+    for name, tag in (("Mohamed Salah", "a"), ("Virgil van Dijk", "b")):
+        assert abs(_flt(page.inner_text(f"[data-cmp='npxg_p90:{tag}'] b")) - g.loc[name, "npxg90"]) < 0.006
+        assert _flt(page.inner_text(f"[data-cmp='minutes:{tag}'] b")) == g.loc[name, "minutes"]
+        assert abs(_flt(page.inner_text(f"[data-cmp='npg_minus_npxg:{tag}'] b")) - g.loc[name, "fin"]) < 0.06
+    assert f"vs={g.loc['Virgil van Dijk', 'pid']}" in page.evaluate("location.hash")
+
+
+def test_players_url_is_shareable(browser):
+    ctx, pg = _new_page(browser)
+    pg.goto(DIST.as_uri() + "#/players?season=2024-25&era=all&player=8260&vs=1250")
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    assert pg.input_value("#cmp-b") == "1250" and pg.inner_text("[data-profile] h3") != ""
+    assert pg.errors == []
+    ctx.close()
+
+
+def test_players_small_sample_selection_defaults_lower_minimum(page):
+    go(page, "players", "2026-27")
+    assert page.locator("[data-testid=small-sample]").count() == 1
+    assert page.input_value("#p-min") == "90" and page.locator("table[data-table=squad] tbody tr").count() > 5
+    go(page, "players", "2015-16", "rodgers")
+    assert page.locator("table[data-table=squad] tbody tr").count() > 0
+
+
+def test_every_match_explorer_page_reconciles_with_data(page, data):
+    import pandas as pd
+    import metrics as MT
+    m = pd.read_parquet(ROOT / "data" / "processed" / "matches.parquet").set_index("match_id")
+    shots = pd.read_parquet(ROOT / "data" / "processed" / "shots.parquet")
+    shots_by = {k: g for k, g in shots.groupby("match_id")}
+    for row in data["matches"]:
+        mid = row["id"]
+        go(page, "match", "all", "all", f"&match={mid}")
+        r = m.loc[mid]
+        sh = shots_by[mid]
+        hg, ag = (r.gf, r.ga) if r.is_home else (r.ga, r.gf)
+        assert page.inner_text("[data-testid=scoreline]").split("\n")[0] == f"{hg}–{ag}", mid
+        home, away = ("Liverpool", r.opponent) if r.is_home else (r.opponent, "Liverpool")
+        assert page.inner_text("#title") == f"Match Explorer: {home} {hg}–{ag} {away}", mid
+        # xG of both teams = sum of that team's shots
+        lx, ox = sh[sh.team == "Liverpool"].xg.sum(), sh[sh.team != "Liverpool"].xg.sum()
+        assert page.text_content("[data-race-final=lfc]").split()[0] == f"{lx:.2f}", mid
+        assert page.text_content("[data-race-final=opp]").split()[0] == f"{ox:.2f}", mid
+        # goals: markers and scorer lists equal the score (own goals credited to the other side)
+        assert page.locator("circle.goal-mark").count() == r.gf + r.ga, mid
+        assert page.locator("[data-goal=lfc]").count() == r.gf and page.locator("[data-goal=opp]").count() == r.ga, mid
+        assert page.locator("[data-chart=match-pitch] circle.shot").count() == int((sh.result != "OwnGoal").sum()), mid
+        # market panel: independent de-vig and exact simulation
+        odds = [r.mkt_h, r.mkt_d, r.mkt_a]
+        prop = MT.devig_proportional(odds)
+        exp = list(prop[:3]) if r.is_home else list(prop[::-1])
+        cells = _table_rows(page.locator("table[data-table=probs] tbody tr"))
+        assert all(abs(_flt(cells[i][1].rstrip("%")) - exp[i] * 100) <= 0.06 for i in range(3)), mid
+        s = sh[sh.result != "OwnGoal"]
+        w, d_, l = MT.outcome_probs(s[s.team == "Liverpool"].xg.values, s[s.team != "Liverpool"].xg.values)
+        assert all(abs(_flt(cells[i][3].rstrip("%")) - v * 100) <= 0.06 for i, v in enumerate((w, d_, l))), mid
+        assert page.inner_text("[data-testid=actual-result]") == {"W": "Win", "D": "Draw", "L": "Loss"}[r.result]
+    assert page.errors == []
+
+
+def test_match_picker_steps_and_urls(page, data):
+    go(page, "match", "2024-25")
+    ids = [m["id"] for m in data["matches"] if m["s"] == "2024-25"]
+    assert f"match={ids[-1]}" in page.evaluate("location.hash")  # defaults to the latest match in the selection
+    page.click("[data-testid=prev-match]")
+    assert f"match={ids[-2]}" in page.evaluate("location.hash")
+    page.click("[data-testid=next-match]")
+    assert f"match={ids[-1]}" in page.evaluate("location.hash")
+    assert page.locator("[data-testid=next-match]").is_disabled()
+    page.select_option("#m-pick", str(next(i for i, m in enumerate(data["matches"]) if m["id"] == ids[0])))
+    assert page.locator("[data-testid=prev-match]").is_disabled() and f"match={ids[0]}" in page.evaluate("location.hash")
+    assert page.locator("#m-pick option").count() == 38
+    go(page, "match", "2023-24")  # a match from another season falls back to that season's latest match
+    ids2 = [m["id"] for m in data["matches"] if m["s"] == "2023-24"]
+    assert f"match={ids2[-1]}" in page.evaluate("location.hash")
+
+
+def test_match_explorer_no_other_season_labels(page, data):
+    for season in ("2019-20", "2024-25"):
+        go(page, "match", season)
+        assert set(SEASON_RE.findall(visible_text(page))) <= {season}
+        go(page, "players", season)
+        assert set(SEASON_RE.findall(visible_text(page))) <= {season}
