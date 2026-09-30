@@ -29,16 +29,36 @@ _session = requests.Session()
 _session.headers["User-Agent"] = UA
 
 
+RETRIES = 4          # attempts per URL; a source that keeps failing stops the run (and so the deploy)
+BACKOFF = 5.0        # seconds, doubled after every failed attempt
+RETRY_STATUS = {429, 500, 502, 503, 504}
+
+
 def _get(url: str, headers: dict | None = None) -> requests.Response:
-    """Rate-limited GET (at most 1 request/second, process-wide)."""
+    """Rate-limited GET (at most 1 request/second, process-wide) with bounded retries.
+    Transient failures (timeouts, connection errors, 429/5xx) are retried with exponential backoff;
+    anything else, or running out of attempts, raises."""
     global _last_request
-    wait = MIN_INTERVAL - (time.monotonic() - _last_request)
-    if wait > 0:
-        time.sleep(wait)
-    resp = _session.get(url, headers=headers, timeout=60)
-    _last_request = time.monotonic()
-    resp.raise_for_status()
-    return resp
+    delay = BACKOFF
+    for attempt in range(1, RETRIES + 1):
+        wait = MIN_INTERVAL - (time.monotonic() - _last_request)
+        if wait > 0:
+            time.sleep(wait)
+        try:
+            resp = _session.get(url, headers=headers, timeout=60)
+            _last_request = time.monotonic()
+            if resp.status_code in RETRY_STATUS and attempt < RETRIES:
+                raise requests.HTTPError(f"{resp.status_code} for {url}", response=resp)
+            resp.raise_for_status()
+            return resp
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as exc:
+            _last_request = time.monotonic()
+            status = getattr(getattr(exc, "response", None), "status_code", None)
+            if attempt == RETRIES or (status is not None and status not in RETRY_STATUS):
+                raise
+            print(f"retry {attempt}/{RETRIES - 1} for {url}: {exc}", flush=True)
+            time.sleep(delay)
+            delay *= 2
 
 
 # ---------------------------------------------------------------- Understat adapter
