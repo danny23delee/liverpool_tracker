@@ -92,14 +92,14 @@ Recorded in [DATA_NOTES.md](DATA_NOTES.md) and surfaced on the Methodology page:
 
 ## How accuracy is enforced
 
-113 automated tests must pass before anything is deployed:
+115 automated tests must pass before anything is deployed:
 
 | Suite | Tests | What it checks |
 |---|---|---|
 | `tests/test_etl.py` | 14 | 38 matches per completed season; every match joins once to odds with an agreeing score; every club name maps; no duplicate ids; goals from shots + own goals equal the score in every match; player goals + own goals equal team goals per season; roster totals equal Understat's season table; corrected league shot figures equal Liverpool's shots; fetch retries and rate limiting. |
 | `tests/test_metrics.py` | 34 | Hand-computed fixtures; change function (null, pp, colour); +9.0% regression; de-vig validity and Shin/proportional agreement; **convolution equals brute-force enumeration**; season xPts within 2.0 of Understat's; takeaway sentences vs the data. |
 | `tests/test_build.py` | 12 | The payload against independent pandas sums: shots, player rows, source mixes, league context, market probabilities, calibration, P&L, methodology generation. |
-| `tests/test_frontend.py` | 53 | A real browser: every page × every season with zero console errors; no stale season labels; displayed values equal the build data; **all 461 match pages recomputed independently** (xG, market probabilities, simulated probabilities); shot positions compared circle by circle with the source coordinates and the 105×68 pitch; squad table, roles, calibration, staking, mispriced runs against independent code; external-model hook end to end; collapsible methodology; loading, failure and empty states; touch targets, tooltips on touch, WCAG AA text contrast, no overflow from 390 to 1440 px, performance budgets. |
+| `tests/test_frontend.py` | 55 | A real browser: every page × every season with zero console errors; no stale season labels; displayed values equal the build data; **all 461 match pages recomputed independently** (xG, market probabilities, simulated probabilities); shot positions compared circle by circle with the source coordinates and the 105×68 pitch; squad table, roles, calibration, staking, mispriced runs against independent code; external-model hook end to end; collapsible methodology; loading, failure and empty states; touch targets, tooltips on touch, WCAG AA text contrast, no overflow from 390 to 1440 px, performance budgets. |
 
 The build **fails rather than warns** on unmatched rows, and the deploy job only runs if every test passed, so the last good
 site stays live when a source changes shape.
