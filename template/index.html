@@ -5,305 +5,356 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Liverpool Performance Tracker</title>
 <meta name="description" content="Liverpool FC Premier League team and player performance since 2014/15, with a betting-market lens: expected goals, market probabilities and results side by side.">
-<meta name="theme-color" content="#c8102e">
+<meta name="theme-color" content="#100507">
 <meta property="og:title" content="Liverpool Performance Tracker">
 <meta property="og:description" content="Expected goals, betting-market probabilities and results side by side, with every number tested against independent calculations.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%23c8102e%27/%3E%3Crect x=%277%27 y=%277%27 width=%275%27 height=%2718%27 rx=%271%27 fill=%27white%27/%3E%3Crect x=%2717%27 y=%277%27 width=%275%27 height=%2718%27 rx=%271%27 fill=%27white%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
 <style>
 :root {
   color-scheme: light;
-  --bg: #f5f4f1; --surface: #ffffff; --surface-2: #eeece8; --ink: #15171c; --ink-2: #4a4f5c; --muted: #616674;
-  --line: #e1dfda; --line-strong: #c9c6bf; --accent: #c8102e; --accent-ink: #ffffff; --accent-soft: rgba(200,16,46,.10);
-  --good: #0b6b22; --bad: #b3261e; --neutral: #5b6070; --good-bg: rgba(12,163,12,.12); --bad-bg: rgba(208,59,59,.12);
-  --chart-grid: #e6e4df; --shadow: 0 1px 2px rgba(20,20,30,.06), 0 4px 14px rgba(20,20,30,.05);
-  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-display: "Bricolage Grotesque", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #faf5f5; --sidebar: #ffffff; --surface: #ffffff; --surface-2: #f7f0f0;
+  --ink: #1a0c0e; --ink-2: #6b5257; --muted: #7d6469; --neutral: #6b5257;
+  --line: #ecd9dc; --line-strong: #dcc3c7; --chart-grid: #f0e3e5; --zero: #b99aa0;
+  --accent: #c8102e; --accent-ink: #ffffff; --accent-soft: rgba(200,16,46,.09);
+  --red: #a30d25; --goal: #c8102e; --gold: #e0b400; --teal: #00998f; --teal-text: #00736e;
+  --good: #187a4e; --bad: #c2410c; --good-bg: rgba(24,122,78,.10); --bad-bg: rgba(194,65,12,.10);
+  --pos: #00998f; --neg: #e2621f; --s1: #00998f; --s2: #e0b400; --s3: #a30d25;
+  --mix-open: #c8102e; --mix-set: #e0b400; --mix-pen: #00998f;
+  --bar-sel: #c8102e; --bar-cmp: #b99aa0;
+  --stage: #f3e9ea; --pitch-line: rgba(26,12,14,.24); --shot-fill: rgba(26,12,14,.06); --shot-stroke: rgba(26,12,14,.6);
+  --drawer: rgba(255,255,255,.96); --shadow: 0 1px 2px rgba(60,20,26,.05), 0 6px 18px rgba(60,20,26,.05);
+  --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #0e1014; --surface: #171a20; --surface-2: #1f232b; --ink: #f0f1f4; --ink-2: #b9bdc9; --muted: #8c92a2;
-    --line: #2a2f3a; --line-strong: #3a4050; --accent: #f4536c; --accent-ink: #14060a; --accent-soft: rgba(244,83,108,.16);
-    --good: #4cc766; --bad: #ff7d75; --neutral: #a0a5b4; --good-bg: rgba(76,199,102,.14); --bad-bg: rgba(255,125,117,.14);
-    --chart-grid: #262b35; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.3);
+    --bg: #100507; --sidebar: #160709; --surface: #1c0b0e; --surface-2: #25100f;
+    --ink: #f4eaec; --ink-2: #b8a5a9; --muted: #8f7c80; --neutral: #b8a5a9;
+    --line: #3a1a1f; --line-strong: #4b2a30; --chart-grid: #2e1519; --zero: #6a3a40;
+    --accent: #c8102e; --accent-ink: #ffffff; --accent-soft: rgba(200,16,46,.22);
+    --red: #ff5468; --goal: #ff3b52; --gold: #f6eb61; --teal: #00b2a9; --teal-text: #00b2a9;
+    --good: #3ecf8e; --bad: #ff7a33; --good-bg: rgba(62,207,142,.12); --bad-bg: rgba(255,122,51,.12);
+    --pos: #00b2a9; --neg: #ff7a33; --s1: #00b2a9; --s2: #f6eb61; --s3: #ff5468;
+    --mix-open: #ff5468; --mix-set: #f6eb61; --mix-pen: #00b2a9;
+    --bar-sel: #ff5468; --bar-cmp: #7a5a60;
+    --stage: #130608; --pitch-line: rgba(255,255,255,.22); --shot-fill: rgba(255,255,255,.07); --shot-stroke: rgba(255,255,255,.62);
+    --drawer: rgba(22,8,10,.95); --shadow: none;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0e1014; --surface: #171a20; --surface-2: #1f232b; --ink: #f0f1f4; --ink-2: #b9bdc9; --muted: #8c92a2;
-  --line: #2a2f3a; --line-strong: #3a4050; --accent: #f4536c; --accent-ink: #14060a; --accent-soft: rgba(244,83,108,.16);
-  --good: #4cc766; --bad: #ff7d75; --neutral: #a0a5b4; --good-bg: rgba(76,199,102,.14); --bad-bg: rgba(255,125,117,.14);
-  --chart-grid: #262b35; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.3);
+  --bg: #100507; --sidebar: #160709; --surface: #1c0b0e; --surface-2: #25100f;
+  --ink: #f4eaec; --ink-2: #b8a5a9; --muted: #8f7c80; --neutral: #b8a5a9;
+  --line: #3a1a1f; --line-strong: #4b2a30; --chart-grid: #2e1519; --zero: #6a3a40;
+  --accent: #c8102e; --accent-ink: #ffffff; --accent-soft: rgba(200,16,46,.22);
+  --red: #ff5468; --goal: #ff3b52; --gold: #f6eb61; --teal: #00b2a9; --teal-text: #00b2a9;
+  --good: #3ecf8e; --bad: #ff7a33; --good-bg: rgba(62,207,142,.12); --bad-bg: rgba(255,122,51,.12);
+  --pos: #00b2a9; --neg: #ff7a33; --s1: #00b2a9; --s2: #f6eb61; --s3: #ff5468;
+  --mix-open: #ff5468; --mix-set: #f6eb61; --mix-pen: #00b2a9;
+  --bar-sel: #ff5468; --bar-cmp: #7a5a60;
+  --stage: #130608; --pitch-line: rgba(255,255,255,.22); --shot-fill: rgba(255,255,255,.07); --shot-stroke: rgba(255,255,255,.62);
+  --drawer: rgba(22,8,10,.95); --shadow: none;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 400 14px/1.5 var(--font-body); }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--font-body); }
 a { color: inherit; }
-button, select { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; border-radius: 4px; }
 .skip { position: absolute; left: -999px; top: 0; background: var(--accent); color: var(--accent-ink); padding: 8px 12px; z-index: 100; }
 .skip:focus { left: 8px; top: 8px; }
 
 /* ---------- shell ---------- */
 .shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
-.nav { position: sticky; top: 0; align-self: start; height: 100vh; padding: 22px 14px; border-right: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; gap: 22px; }
-.brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; text-decoration: none; }
-.brand-mark { width: 10px; height: 34px; background: var(--accent); border-radius: 2px; box-shadow: 14px 0 0 -3px var(--accent); margin-right: 12px; }
-.brand-text { font: 700 17px/1.1 var(--font-display); letter-spacing: -.01em; }
-.brand-text small { display: block; font: 500 11px/1.3 var(--font-body); color: var(--muted); letter-spacing: .04em; text-transform: uppercase; margin-top: 3px; }
-.nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.nav a.item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; text-decoration: none; color: var(--ink-2); font-weight: 500; }
+.nav { position: sticky; top: 0; align-self: start; height: 100vh; padding: 26px 16px; border-right: 1px solid var(--line); background: var(--sidebar); display: flex; flex-direction: column; gap: 30px; }
+.brand { display: flex; align-items: center; gap: 12px; padding: 0 6px; text-decoration: none; }
+.brand-mark { width: 6px; height: 46px; background: var(--accent); border-radius: 2px; flex: none; margin: 0 8px 0 4px; }
+.crest { width: 46px; height: 54px; object-fit: contain; flex: none; display: block; }
+.brand-text { font: 700 23px/1.05 var(--font-display); letter-spacing: .03em; text-transform: uppercase; }
+.brand-text small { display: block; font: 500 10.5px/1.3 var(--font-body); color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin-top: 5px; }
+.nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.nav a.item { display: flex; align-items: center; gap: 12px; padding: 0 14px; min-height: 44px; border-radius: 10px; text-decoration: none; color: var(--ink-2); font-weight: 500; font-size: 16px; }
 .nav a.item:hover { background: var(--surface-2); color: var(--ink); }
-.nav a.item[aria-current="page"] { background: var(--accent-soft); color: var(--ink); box-shadow: inset 3px 0 0 var(--accent); }
-.nav .num { font: 600 11px/1 var(--font-body); color: var(--muted); width: 16px; text-align: right; }
-.nav-foot { margin-top: auto; font-size: 12px; color: var(--muted); padding: 0 8px; }
-.content { min-width: 0; padding: 22px clamp(16px, 3vw, 36px) 0; display: flex; flex-direction: column; }
-.topbar { display: flex; flex-wrap: wrap; gap: 14px 24px; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
-.titles { min-width: 0; flex: 1 1 320px; }
-h1 { margin: 0; font: 700 clamp(24px, 3.4vw, 34px)/1.1 var(--font-display); letter-spacing: -.02em; }
-.subtitle { margin: 6px 0 0; color: var(--ink-2); }
-.badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-.badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2); }
-.badge.warn { border-color: #d99a00; background: rgba(250,178,25,.16); color: var(--ink); }
-.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
-.field { display: flex; flex-direction: column; gap: 3px; }
-.field label { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
-select { appearance: none; background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 10px center; border: 1px solid var(--line-strong); border-radius: 8px; padding: 8px 30px 8px 12px; min-width: 132px; min-height: 38px; cursor: pointer; }
-.icon-btn { min-height: 38px; min-width: 38px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 12px; }
+.nav a.item[aria-current="page"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.nav .num { font: 600 12px/1 var(--font-body); color: var(--muted); width: 14px; text-align: right; }
+.nav a.item[aria-current="page"] .num { color: var(--accent-ink); }
+.nav-foot { margin-top: auto; font-size: 13px; color: var(--muted); padding: 0 8px; }
+.content { min-width: 0; padding: 32px 36px 0; display: flex; flex-direction: column; }
+.topbar { display: flex; flex-wrap: wrap; gap: 16px 28px; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+.titles { min-width: 0; flex: 1 1 360px; }
+h1 { margin: 0; font: 700 clamp(36px, 7vw, 60px)/1 var(--font-display); letter-spacing: .01em; text-transform: uppercase; }
+.subtitle { margin: 10px 0 0; color: var(--ink-2); font-size: 16px; }
+.badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2); }
+.badge.warn { border-color: var(--gold); background: rgba(246,235,97,.12); color: var(--ink); }
+.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 11.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+select { appearance: none; background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23999' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 12px center; border: 1px solid var(--line-strong); border-radius: 10px; padding: 8px 34px 8px 14px; min-width: 140px; min-height: 44px; cursor: pointer; }
+.icon-btn { min-height: 44px; min-width: 44px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 16px; font-weight: 500; }
 .icon-btn:hover { background: var(--surface-2); }
-main { flex: 1; min-width: 0; padding-bottom: 28px; }
+.icon-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+main { flex: 1; min-width: 0; padding-bottom: 32px; }
 main:focus, main:focus-visible { outline: none; }   /* focus moves here on page change for screen readers; it is not a control */
-.foot { border-top: 1px solid var(--line); padding: 16px 0 calc(22px + env(safe-area-inset-bottom, 0px)); color: var(--muted); font-size: 12px; line-height: 1.6; }
+.foot { border-top: 1px solid var(--line); padding: 20px 0 calc(24px + env(safe-area-inset-bottom, 0px)); color: var(--muted); font-size: 13px; line-height: 1.6; }
 .foot a { color: var(--ink-2); }
-
 .loading { color: var(--muted); padding: 40px 0; }
+
 /* ---------- cards ---------- */
-.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: var(--shadow); min-width: 0; }
-.card h2 { margin: 0 0 14px; font: 600 13px/1.3 var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.card h2 .tag { font-size: 11px; letter-spacing: .03em; text-transform: none; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 20px; }
+.row { display: grid; gap: 20px; grid-column: 1 / -1; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 26px 28px; box-shadow: var(--shadow); min-width: 0; display: flex; flex-direction: column; }
+.card > :last-child:not(.fill) { margin-top: auto; }       /* whatever ends a card sits at its bottom edge: a card stretched by a taller neighbour has no empty band */
+.card > .fill { flex: 1 1 auto; min-height: 0; }
+.card h2 { margin: 0 0 18px; font: 600 18px/1.3 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.card h2 .tag { font: 500 12px/1.4 var(--font-body); letter-spacing: .02em; text-transform: none; padding: 1px 10px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--muted); }
 .card h2 .tag.expected { border-style: dashed; }
 .span-12 { grid-column: span 12; } .span-8 { grid-column: span 8; } .span-7 { grid-column: span 7; }
 .span-6 { grid-column: span 6; } .span-5 { grid-column: span 5; } .span-4 { grid-column: span 4; }
-.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 18px; }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 26px 24px; }
 .tiles.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.tile .lbl { font-size: 12.5px; color: var(--muted); font-weight: 500; line-height: 1.3; min-height: 20px; }
-.lbl .info { margin-left: 3px; vertical-align: -4px; }
-.tile .val { font: 700 clamp(26px, 3vw, 34px)/1.1 var(--font-display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-.tile .val.exp { font-weight: 500; }
-.tile .sub { font-size: 12px; color: var(--muted); }
-.gap-row { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line-strong); }
-.gap { font-size: 12.5px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
-.up-good, .down-good, .good { color: var(--good); } .up-bad, .down-bad, .bad { color: var(--bad); } .neutral { color: var(--neutral); }
-.delta { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.delta .arrow { font-size: 10px; margin-right: 3px; }
+.tiles.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tile .lbl { font-size: 15px; color: var(--ink-2); font-weight: 500; line-height: 1.3; min-height: 22px; }
+.lbl .info { margin-left: 4px; vertical-align: -4px; }
+.tile .val { font: 700 clamp(44px, 4.2vw, 64px)/1.05 var(--font-display); letter-spacing: .01em; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.tile .val.exp { font-weight: 600; }
+.tile .sub { font-size: 14px; color: var(--muted); }
+.gap-row { display: grid; gap: 8px; margin-top: 22px; padding-top: 18px; border-top: 1px dashed var(--line-strong); }
+.gap { font-size: 15px; color: var(--ink-2); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.good { color: var(--good); } .bad { color: var(--bad); } .neutral { color: var(--neutral); }
+.delta { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 15px; }
+.delta .arrow { font-size: 11px; margin-right: 4px; }
 .na { color: var(--muted); font-weight: 500; }
-.info { all: unset; cursor: help; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; color: var(--muted); font-size: 13px; line-height: 1; }
-.info { position: relative; }
+.info { all: unset; cursor: help; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; color: var(--muted); font-size: 13px; line-height: 1; position: relative; }
 .info::after { content: ''; position: absolute; inset: -9px; }   /* invisible 36px touch target around the 18px glyph */
-.info:hover, .info:focus-visible { color: var(--accent); background: var(--accent-soft); }
-.info:focus-visible { outline: 2px solid var(--accent); }
-#tip { position: fixed; z-index: 50; max-width: 300px; padding: 9px 11px; border-radius: 8px; background: var(--ink); color: var(--bg); font-size: 12.5px; line-height: 1.45; pointer-events: none; box-shadow: 0 6px 20px rgba(0,0,0,.25); opacity: 0; transition: opacity .08s; }
-#tip.on { opacity: 1; } #tip b { font-weight: 600; } #tip .src { display: block; margin-top: 5px; opacity: .7; font-size: 11.5px; }
+.info:hover, .info:focus-visible { color: var(--red); background: var(--accent-soft); }
+.info:focus-visible { outline: 2px solid var(--red); }
+#tip { position: fixed; z-index: 60; max-width: 320px; padding: 10px 12px; border-radius: 10px; background: var(--ink); color: var(--bg); font-size: 13.5px; line-height: 1.45; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.35); opacity: 0; transition: opacity .08s; }
+#tip.on { opacity: 1; } #tip b { font-weight: 600; } #tip .src { display: block; margin-top: 5px; opacity: .7; font-size: 12.5px; }
 
-/* ---------- chart & tables ---------- */
+/* ---------- charts & tables ---------- */
 .chart-wrap { width: 100%; overflow-x: auto; }
 .chart-wrap svg { display: block; }
-.chart-note { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
-.empty { color: var(--ink-2); padding: 28px 8px; text-align: center; border: 1px dashed var(--line-strong); border-radius: 10px; }
-details.tbl { margin-top: 10px; font-size: 12.5px; } details.tbl summary { cursor: pointer; color: var(--ink-2); display: flex; align-items: center; min-height: 32px; }
-.tbl-scroll { max-height: 220px; overflow: auto; margin-top: 8px; border: 1px solid var(--line); border-radius: 8px; }
-table.data { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-table.data th, table.data td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.chart-fill { position: relative; flex: 1 1 auto; min-height: var(--minh, 260px); overflow: hidden; }
+.chart-fill svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.chart-note { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.note-small { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.empty { color: var(--ink-2); padding: 32px 10px; text-align: center; border: 1px dashed var(--line-strong); border-radius: 12px; }
+details.tbl { margin-top: 12px; font-size: 14px; } details.tbl summary { cursor: pointer; color: var(--red); display: flex; align-items: center; min-height: 36px; }
+.tbl-scroll { max-height: 240px; overflow: auto; margin-top: 8px; border: 1px solid var(--line); border-radius: 10px; }
+table.data { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 15px; }
+table.data th, table.data td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
 table.data th:first-child, table.data td:first-child { text-align: left; white-space: normal; }
-table.data thead th { font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--surface); }
+table.data thead th { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--surface); }
 table.data tbody tr:last-child td { border-bottom: 0; }
 .tbl-x { overflow-x: auto; }
-.base-note { margin: 0 0 12px; color: var(--ink-2); font-size: 13px; }
+.base-note { margin: 0 0 16px; color: var(--ink-2); font-size: 15px; }
 .base-note b { font-weight: 600; color: var(--ink); }
-.form { display: flex; flex-direction: column; gap: 8px; }
-.res { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
-.res .rl { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-weight: 700; font-size: 13px; }
-.res .rl.W { background: var(--good-bg); color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
-.res .rl.D { background: var(--surface-2); color: var(--neutral); box-shadow: inset 0 0 0 1px var(--line-strong); }
-.res .rl.L { background: var(--bad-bg); color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
-.res .who { min-width: 0; } .res .who b { font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.res .who span { font-size: 12px; color: var(--muted); }
-.res .score { font: 700 17px var(--font-display); font-variant-numeric: tabular-nums; text-align: right; }
-.res .score small { display: block; font: 400 11.5px var(--font-body); color: var(--muted); }
-.tk { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.tk li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; align-items: start; }
-.tk .ico { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; margin-top: 1px; }
-.tk .positive .ico { background: var(--good-bg); color: var(--good); } .tk .negative .ico { background: var(--bad-bg); color: var(--bad); }
-.cap { font-size: 12px; color: var(--muted); margin: 12px 0 0; }
+.form { display: flex; flex-direction: column; gap: 10px; }
+.form.fill { justify-content: space-between; }
+.res { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 10px 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; flex: 1 1 auto; }
+.res .rl { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-weight: 700; font-size: 15px; background: transparent; }
+.res .rl.W { color: var(--good); box-shadow: inset 0 0 0 2px var(--good); }
+.res .rl.D { color: var(--neutral); box-shadow: inset 0 0 0 2px var(--line-strong); }
+.res .rl.L { color: var(--bad); box-shadow: inset 0 0 0 2px var(--bad); }
+.res .who { min-width: 0; } .res .who b { font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; }
+.res .who span { font-size: 13px; color: var(--muted); }
+.res .score { font: 700 24px var(--font-display); font-variant-numeric: tabular-nums; text-align: right; }
+.res .score small { display: block; font: 400 12.5px var(--font-body); color: var(--muted); }
+.cap { font-size: 13px; color: var(--muted); margin: 16px 0 0; }
 .stub { max-width: 620px; }
+.chip { display: inline-block; padding: 1px 10px; border-radius: 999px; font-weight: 700; font-size: 13px; border: 1px solid var(--line-strong); }
+.chip.W { color: var(--good); border-color: var(--good); background: var(--good-bg); } .chip.L { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); }
+.chip.beat { color: var(--teal-text); border-color: var(--teal-text); } .chip.lagged { color: var(--bad); border-color: var(--bad); }
+.retro { border-color: var(--red); color: var(--ink); background: var(--accent-soft); }
 
-/* ---------- attack / defence ---------- */
-:root { --pos: #2a78d6; --neg: #e34948; --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --pitch: #efeeea; --pitch-line: #b9b5ac; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --pos: #3987e5; --neg: #e66767; --s1: #3987e5; --s2: #d95926; --s3: #199e70; --pitch: #1d2129; --pitch-line: #4a5162; } }
-:root[data-theme="dark"] { --pos: #3987e5; --neg: #e66767; --s1: #3987e5; --s2: #d95926; --s3: #199e70; --pitch: #1d2129; --pitch-line: #4a5162; }
-.filters { display: flex; flex-wrap: wrap; gap: 10px 14px; margin: 0 0 14px; }
-.filters .field { flex: 0 1 148px; } .filters select { width: 100%; min-width: 0; padding: 6px 28px 6px 10px; min-height: 34px; }
-.seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; }
-.seg button { border: 0; background: var(--surface); padding: 6px 12px; cursor: pointer; font-size: 12.5px; color: var(--ink-2); min-height: 32px; }
+/* ---------- legend, filters, segmented ---------- */
+.filters { display: flex; flex-wrap: wrap; gap: 12px 16px; margin: 0 0 16px; }
+.filters .field { flex: 0 1 170px; } .filters select { width: 100%; min-width: 0; }
+.seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 0 16px; cursor: pointer; font-size: 15px; color: var(--ink-2); min-height: 44px; }
 .seg button + button { border-left: 1px solid var(--line-strong); }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); margin: 0 0 10px; align-items: center; }
-.legend .it { display: inline-flex; align-items: center; gap: 6px; }
-.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; flex: none; }
-.sw.ring { border-radius: 50%; background: var(--surface); border: 2px solid var(--ink); width: 11px; height: 11px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13.5px; color: var(--ink-2); margin: 0 0 12px; align-items: center; }
+.legend .it { display: inline-flex; align-items: center; gap: 7px; }
+.sw { display: inline-block; width: 13px; height: 13px; border-radius: 3px; flex: none; }
+.sw.ring { border-radius: 50%; background: transparent; border: 2px solid var(--ink); width: 12px; height: 12px; }
 .sw.hollow { background: transparent; border: 2px solid var(--pos); }
-.lbl .tag { margin-left: 6px; font-size: 11px; font-weight: 600; padding: 0 7px; border-radius: 999px; border: 1px solid var(--line-strong); }
-.sw.dot { border-radius: 50%; } .sw.line { height: 0; border-top: 2.5px solid var(--accent); border-radius: 0; width: 16px; }
-.sw.dash { height: 0; border-top: 2px dashed var(--ink-2); border-radius: 0; width: 16px; }
+.sw.dot { border-radius: 50%; } .sw.line { height: 0; border-top: 3px solid var(--red); border-radius: 0; width: 18px; }
+.sw.dash { height: 0; border-top: 2px dashed var(--ink-2); border-radius: 0; width: 18px; }
+.lbl .tag { margin-left: 6px; font-size: 12px; font-weight: 500; padding: 0 8px; border-radius: 999px; border: 1px solid var(--line-strong); }
+.pitch-wrap { background: var(--stage); border: 1px solid var(--line); border-radius: 14px; }
 .pitch-wrap svg { width: 100%; height: auto; display: block; }
-.stat-list { display: grid; gap: 12px; }
-.stat-list .tile .val { font-size: 26px; }
-.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 18px; }
-.kpi .val { font: 700 26px/1.1 var(--font-display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-.kpi .chg { font-size: 12.5px; margin-top: 2px; min-height: 18px; }
-.mix { display: grid; gap: 10px; }
-.mixrow { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 4px 12px; align-items: center; font-size: 12.5px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 22px 28px; }
+.kpi .val { font: 700 clamp(44px, 4.2vw, 56px)/1.05 var(--font-display); letter-spacing: .01em; font-variant-numeric: tabular-nums; }
+.kpi .chg { font-size: 15px; margin-top: 2px; min-height: 22px; }
+.mix { display: grid; gap: 12px; }
+.mixrow { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 5px 12px; align-items: center; font-size: 14px; }
 .mixrow.single { grid-template-columns: minmax(0, 1fr); }
 .mixrow .nm { color: var(--ink-2); font-weight: 500; }
 .mixbar { display: flex; gap: 2px; height: 22px; }
 .mixbar span { display: block; min-width: 2px; border-radius: 3px; }
 .mixnum { font-variant-numeric: tabular-nums; color: var(--ink-2); grid-column: 1 / -1; }
-.strip { display: flex; flex-wrap: wrap; gap: 4px; }
-.strip i { width: 15px; height: 15px; border-radius: 3px; border: 2px solid var(--pos); display: block; }
+.strip { display: flex; flex-wrap: wrap; gap: 5px; }
+.strip i { width: 16px; height: 16px; border-radius: 3px; border: 2px solid var(--pos); display: block; }
 .strip i.cs { background: var(--pos); }
-.strip-wrap { margin-top: 12px; }
-.note-small { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
-.cols-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-@media (max-width: 860px) { .cols-2 { grid-template-columns: minmax(0, 1fr); } .mixrow { grid-template-columns: 60px minmax(0, 1fr); } .mixrow.single { grid-template-columns: minmax(0, 1fr); } }
+.strip-wrap { margin-top: 14px; }
 
 /* ---------- players / match explorer ---------- */
-.roles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
-.role h3 { margin: 0 0 8px; font: 600 13px/1.3 var(--font-body); display: flex; align-items: center; gap: 4px; color: var(--ink); }
-.role ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.role li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; font-size: 13px; }
-.role li .rk { color: var(--muted); font-weight: 600; font-size: 12px; } .role li .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.role li b { font-variant-numeric: tabular-nums; } .role li small { grid-column: 2 / -1; color: var(--muted); margin-top: -4px; }
-.tools { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; margin-bottom: 12px; }
-.tools .field { flex: 0 1 200px; } .tools input[type=search] { min-height: 38px; border: 1px solid var(--line-strong); border-radius: 8px; padding: 6px 12px; background: var(--surface); width: 100%; font: inherit; color: inherit; }
-.tools .count { margin-left: auto; font-size: 12.5px; color: var(--muted); align-self: center; }
-.sq-wrap { overflow: auto; max-height: 560px; border: 1px solid var(--line); border-radius: 10px; }
-table.sq { border-collapse: separate; border-spacing: 0; width: 100%; font-variant-numeric: tabular-nums; font-size: 13px; }
-table.sq th, table.sq td { padding: 7px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); background: var(--surface); }
-table.sq thead th { position: sticky; top: 0; z-index: 2; font-size: 11.5px; letter-spacing: .03em; color: var(--muted); font-weight: 600; vertical-align: bottom; }
-table.sq th:first-child, table.sq td:first-child { position: sticky; left: 0; z-index: 1; text-align: left; min-width: 150px; box-shadow: 1px 0 0 var(--line); }
+.roles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; }
+.role h3 { margin: 0 0 10px; font: 600 18px/1.3 var(--font-display); letter-spacing: .1em; text-transform: uppercase; display: flex; align-items: center; gap: 6px; color: var(--ink); }
+.role ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.role li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; font-size: 15px; }
+.role li .rk { color: var(--muted); font-weight: 600; font-size: 13px; } .role li .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.role li b { font-variant-numeric: tabular-nums; } .role li small { grid-column: 2 / -1; color: var(--muted); margin-top: -5px; font-size: 13px; }
+.tools { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; margin-bottom: 16px; }
+.tools .field { flex: 0 1 220px; } .tools input[type=search] { min-height: 44px; border: 1px solid var(--line-strong); border-radius: 10px; padding: 8px 14px; background: var(--surface); width: 100%; }
+.tools .count { margin-left: auto; font-size: 14px; color: var(--muted); align-self: center; }
+.sq-wrap { overflow: auto; max-height: 560px; border: 1px solid var(--line); border-radius: 12px; }
+table.sq { border-collapse: separate; border-spacing: 0; width: 100%; font-variant-numeric: tabular-nums; font-size: 15px; }
+table.sq th, table.sq td { padding: 9px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); background: var(--surface); }
+table.sq thead th { position: sticky; top: 0; z-index: 2; font-size: 12px; letter-spacing: .1em; color: var(--muted); font-weight: 600; vertical-align: bottom; }
+table.sq th:first-child, table.sq td:first-child { position: sticky; left: 0; z-index: 1; text-align: left; min-width: 160px; box-shadow: 1px 0 0 var(--line); }
 table.sq thead th:first-child { z-index: 3; }
 table.sq th:nth-child(2), table.sq td:nth-child(2) { text-align: left; }
 table.sq tbody tr { cursor: pointer; } table.sq tbody tr:hover td { background: var(--surface-2); }
 table.sq tbody tr.sel td { background: var(--accent-soft); }
 table.sq td.empty-cell { text-align: center !important; white-space: normal; padding: 28px 12px; color: var(--ink-2); position: static; box-shadow: none; }
 table.sq .sortbtn { all: unset; cursor: pointer; text-transform: uppercase; }
-table.sq .sortbtn:focus-visible { outline: 2px solid var(--accent); }
+table.sq .sortbtn:focus-visible { outline: 2px solid var(--red); }
 table.sq th[aria-sort="ascending"] .sortbtn::after { content: " ▲"; font-size: 9px; } table.sq th[aria-sort="descending"] .sortbtn::after { content: " ▼"; font-size: 9px; }
-table.sq td .pl { all: unset; cursor: pointer; font-weight: 600; } table.sq td .pl:focus-visible { outline: 2px solid var(--accent); }
+table.sq td .pl { all: unset; cursor: pointer; font-weight: 600; } table.sq td .pl:focus-visible { outline: 2px solid var(--red); }
 .dim { color: var(--muted); }
-.profile-head { display: flex; flex-wrap: wrap; gap: 6px 24px; align-items: baseline; margin-bottom: 14px; }
-.profile-head h3 { margin: 0; font: 700 22px/1.2 var(--font-display); }
-.profile-head p { margin: 0; color: var(--ink-2); font-size: 13px; }
-.minis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; margin-bottom: 14px; }
-.mini h4 { margin: 0 0 4px; font: 600 12.5px/1.3 var(--font-body); color: var(--ink-2); display: flex; align-items: center; gap: 4px; }
-.mini .chart-wrap { overflow-x: auto; }
-.cmp { display: grid; gap: 14px; }
-.cmp-row .cl { font-size: 12.5px; color: var(--muted); margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
-.cmp-bar { display: grid; grid-template-columns: minmax(0, 1fr) 56px; gap: 8px; align-items: center; margin-bottom: 3px; font-size: 12.5px; }
-.cmp-bar .track { position: relative; height: 14px; background: var(--surface-2); border-radius: 3px; }
-.cmp-bar .fill { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+.profile-head { display: flex; flex-wrap: wrap; gap: 6px 24px; align-items: baseline; margin-bottom: 18px; }
+.profile-head h3 { margin: 0; font: 700 34px/1.1 var(--font-display); letter-spacing: .02em; text-transform: uppercase; }
+.profile-head p { margin: 0; color: var(--ink-2); font-size: 15px; }
+.minis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; margin-bottom: 16px; }
+.mini { display: flex; flex-direction: column; } .mini .chart-fill { --minh: 150px; }
+.mini h4 { margin: 0 0 6px; font: 600 15px/1.3 var(--font-body); color: var(--ink-2); display: flex; align-items: center; gap: 5px; }
+.cmp { display: flex; flex-direction: column; gap: 14px; flex: 1 1 auto; justify-content: space-between; }
+.cmp-row .cl { font-size: 14px; color: var(--muted); margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.cmp-bar { display: grid; grid-template-columns: minmax(0, 1fr) 60px; gap: 10px; align-items: center; margin-bottom: 4px; font-size: 14px; }
+.cmp-bar .track { position: relative; height: 14px; background: var(--surface-2); border-radius: 4px; }
+.cmp-bar .fill { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
 .cmp-bar .zero { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--ink-2); }
 .cmp-bar b { text-align: right; font-variant-numeric: tabular-nums; }
-.score-card { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px 24px; align-items: center; }
-.score-card .tm { font: 700 clamp(18px, 2.4vw, 26px)/1.2 var(--font-display); } .score-card .tm.away { text-align: right; }
-.score-card .tm small { display: block; font: 400 13px/1.4 var(--font-body); color: var(--ink-2); margin-top: 4px; }
-.score-card .sc { font: 700 clamp(34px, 5vw, 52px)/1 var(--font-display); font-variant-numeric: tabular-nums; text-align: center; letter-spacing: -.02em; }
-.score-card .sc small { display: block; font: 500 12px/1.4 var(--font-body); color: var(--muted); letter-spacing: 0; margin-top: 6px; }
-.score-card ul { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13px; color: var(--ink-2); }
+.score-card { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px 28px; align-items: center; }
+.score-card .tm { font: 700 clamp(26px, 3vw, 40px)/1.1 var(--font-display); letter-spacing: .02em; text-transform: uppercase; } .score-card .tm.away { text-align: right; }
+.score-card .tm small { display: block; font: 400 15px/1.4 var(--font-body); color: var(--ink-2); margin-top: 6px; text-transform: none; letter-spacing: 0; }
+.score-card .sc { font: 700 clamp(48px, 6vw, 84px)/1 var(--font-display); font-variant-numeric: tabular-nums; text-align: center; }
+.score-card .sc small { display: block; font: 500 14px/1.4 var(--font-body); color: var(--muted); margin-top: 8px; }
+.score-card ul { list-style: none; margin: 10px 0 0; padding: 0; font-size: 15px; color: var(--ink-2); }
 .score-card .tm.away ul { text-align: right; }
-.picker { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.picker { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
 .picker .field { flex: 1 1 320px; } .picker select { width: 100%; }
-.pbar { display: flex; gap: 2px; height: 20px; margin: 4px 0 6px; }
-.pbar span { display: block; border-radius: 3px; min-width: 2px; }
-.pbar .w { background: var(--pos); } .pbar .d { background: var(--line-strong); } .pbar .l { background: var(--neg); }
-.prob-row { margin-bottom: 12px; font-size: 12.5px; }
+.pbar { display: flex; gap: 2px; height: 22px; margin: 6px 0 8px; }
+.pbar span { display: block; border-radius: 4px; min-width: 2px; }
+.pbar .w { background: var(--pos); } .pbar .d { background: var(--bar-cmp); } .pbar .l { background: var(--neg); }
+.prob-row { margin-bottom: 14px; font-size: 14px; }
 .prob-row .pl { display: flex; justify-content: space-between; gap: 8px; color: var(--ink-2); flex-wrap: wrap; }
 .prob-row .pl b { color: var(--ink); font-weight: 600; }
-.chip { display: inline-block; padding: 1px 9px; border-radius: 999px; font-weight: 700; font-size: 12px; border: 1px solid var(--line-strong); }
-.chip.W { color: var(--good); border-color: var(--good); background: var(--good-bg); } .chip.L { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); }
-.shot-list { max-height: 420px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+.shot-list { flex: 1 1 0; min-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
 .shot-list table.data th:nth-child(2), .shot-list table.data td:nth-child(2), .shot-list table.data th:nth-child(3), .shot-list table.data td:nth-child(3) { text-align: left; }
 .hl-row td { font-weight: 600; }
-table.compact th, table.compact td { padding: 6px 6px; font-size: 12.5px; }
-table.compact thead th { font-size: 10.5px; letter-spacing: .02em; }
-@media (max-width: 1100px) { .roles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 860px) { .minis { grid-template-columns: minmax(0, 1fr); } .score-card { grid-template-columns: minmax(0, 1fr); text-align: left; } .score-card .tm.away { text-align: left; } .score-card .tm.away ul { text-align: left; } .score-card .sc { text-align: left; } }
-@media (max-width: 480px) { .roles { grid-template-columns: minmax(0, 1fr); } }
-
-/* ---------- market lens / methodology ---------- */
-.retro { border-color: var(--accent); color: var(--ink); background: var(--accent-soft); }
-.tiles.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.chip.beat { color: var(--pos); border-color: var(--pos); } .chip.lagged { color: var(--neg); border-color: var(--neg); }
+table.compact th, table.compact td { padding: 7px 8px; font-size: 14px; }
+table.compact thead th { font-size: 11px; letter-spacing: .06em; }
+.mkt-note { font-size: 14px; color: var(--ink-2); margin: 12px 0 0; }
 table.data td.num, table.data th.num { text-align: right; }
 table.data tr.best td { font-weight: 600; }
-.mkt-note { font-size: 12.5px; color: var(--ink-2); margin: 10px 0 0; }
-.prose { padding: clamp(18px, 3vw, 32px); }
-.prose h2 { font: 700 22px/1.25 var(--font-display); letter-spacing: -.01em; margin: 32px 0 10px; text-transform: none; color: var(--ink); scroll-margin-top: 16px; display: block; }
+
+/* ---------- methodology ---------- */
+.prose { padding: clamp(20px, 3vw, 36px); }
+.prose h2 { font: 700 30px/1.2 var(--font-display); letter-spacing: .04em; margin: 32px 0 10px; text-transform: uppercase; color: var(--ink); scroll-margin-top: 16px; display: block; }
 .prose h2:first-child { margin-top: 0; }
-.prose h3 { font: 600 15px/1.3 var(--font-body); margin: 22px 0 8px; color: var(--ink); }
-.prose p, .prose li { max-width: 78ch; line-height: 1.65; color: var(--ink); }
-.prose li { margin: 4px 0; } .prose ul { padding-left: 20px; }
-.prose a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
-.prose code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: .92em; }
-.prose pre { background: var(--surface-2); padding: 12px 14px; border-radius: 8px; overflow-x: auto; }
-.prose .tbl-x { margin: 10px 0 14px; border: 1px solid var(--line); border-radius: 8px; }
+.prose h3 { font: 600 20px/1.3 var(--font-display); letter-spacing: .06em; text-transform: uppercase; margin: 22px 0 8px; color: var(--ink); }
+.prose p, .prose li { max-width: 78ch; line-height: 1.65; color: var(--ink); font-size: 16px; }
+.prose li { margin: 5px 0; } .prose ul { padding-left: 22px; }
+.prose a { color: var(--red); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.prose code { background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-size: .92em; }
+.prose pre { background: var(--surface-2); padding: 14px 16px; border-radius: 10px; overflow-x: auto; }
+.prose .tbl-x { margin: 12px 0 16px; border: 1px solid var(--line); border-radius: 10px; }
 .prose table.data th, .prose table.data td { white-space: normal; text-align: left; vertical-align: top; }
 .prose table.data td:first-child { font-weight: 600; min-width: 130px; }
 .prose table.glossary td:nth-child(2) { min-width: 300px; }
-.prose .example { background: var(--surface-2); border-radius: 10px; padding: 4px 16px 10px; margin: 14px 0; }
+.prose .example { background: var(--surface-2); border-radius: 14px; padding: 6px 18px 12px; margin: 16px 0; }
 .prose .example table.data td, .prose .example table.data th { text-align: right; } .prose .example table.data td:first-child, .prose .example table.data th:first-child { text-align: left; }
 .prose details.sec { border-top: 1px solid var(--line); }
 .prose details.sec:first-of-type { border-top: 0; }
-.prose details.sec > summary, .prose details.sub > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px; padding: 12px 0; border-radius: 6px; }
-.prose details.sub > summary { padding: 8px 0; }
+.prose details.sec > summary, .prose details.sub > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 12px; padding: 14px 0; border-radius: 6px; }
+.prose details.sub > summary { padding: 10px 0; }
 .prose summary::-webkit-details-marker { display: none; }
-.prose summary::before { content: ""; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform .15s; flex: none; margin: 0 4px 0 2px; }
+.prose summary::before { content: ""; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform .15s; flex: none; margin: 0 4px 0 2px; }
 .prose details[open] > summary::before { transform: rotate(45deg); }
-.prose summary:hover::before { border-color: var(--accent); }
+.prose summary:hover::before { border-color: var(--red); }
 .prose details.sec > summary h2, .prose details.sub > summary h3 { margin: 0; }
 .prose details.sub > summary .cnt { color: var(--muted); font-weight: 500; }
-.prose details.sec > :not(summary) { margin-left: 0; }
-.prose .prose-tools { display: flex; gap: 8px; align-items: center; margin: 0 0 8px; flex-wrap: wrap; }
-.prose .prose-tools span { font-size: 12.5px; color: var(--muted); }
+.prose .prose-tools { display: flex; gap: 10px; align-items: center; margin: 0 0 10px; flex-wrap: wrap; }
+.prose .prose-tools span { font-size: 14px; color: var(--muted); }
 .toc { position: sticky; top: 16px; align-self: start; }
-.toc h2 { margin-bottom: 8px; } .toc ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13.5px; }
-.toc a { color: var(--ink-2); text-decoration: none; } .toc a:hover { color: var(--accent); text-decoration: underline; }
+.toc h2 { margin-bottom: 12px; } .toc ol { margin: 0; padding-left: 22px; display: grid; gap: 8px; font-size: 15px; }
+.toc a { color: var(--ink-2); text-decoration: none; } .toc a:hover { color: var(--red); text-decoration: underline; }
 .span-3 { grid-column: span 3; } .span-9 { grid-column: span 9; }
-@media (max-width: 1100px) { .span-3, .span-9 { grid-column: span 12; } .toc { position: static; } }
+
+/* ---------- overview ---------- */
+.row.r-a { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
+.row.r-b { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+.wdl-wrap { margin-top: auto; padding-top: 26px; }
+.wdl { display: flex; gap: 3px; height: 14px; }
+.wdl span { display: block; border-radius: 7px; min-width: 6px; }
+.wdl .w { background: var(--good); } .wdl .d { background: var(--bar-cmp); } .wdl .l { background: var(--bad); }
+.wdl-labels { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; font-size: 14px; color: var(--muted); flex-wrap: wrap; }
+.take-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+.take { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.take-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.take-tag { font: 600 13px/1.2 var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.take-arrow { font-size: 14px; }
+.take-num { font: 700 clamp(48px, 4.2vw, 64px)/1 var(--font-display); letter-spacing: .01em; font-variant-numeric: tabular-nums; margin: 6px 0 4px; }
+.take.good .take-num, .take.good .take-arrow { color: var(--good); } .take.bad .take-num, .take.bad .take-arrow { color: var(--bad); }
+.take-text { margin: 0; font-size: 16px; line-height: 1.4; color: var(--ink); }
+.take-bars { display: grid; gap: 8px; margin-top: auto; padding-top: 14px; }
+.take-bar { display: grid; grid-template-columns: 76px minmax(0, 1fr) 46px; gap: 10px; align-items: center; font-size: 14px; }
+.take-bar .bl { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.take-bar .track { height: 8px; border-radius: 4px; background: transparent; display: block; }
+.take-bar i { display: block; height: 100%; border-radius: 4px; }
+.take-bar i.sel { background: var(--bar-sel); } .take-bar i.cmp { background: var(--bar-cmp); }
+.take-bar b { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 44px; }
+@media (max-width: 1399px) { .take-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1100px) { .row.r-a, .row.r-b { grid-template-columns: minmax(0, 1fr); } .split { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 899px) { .take-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 599px) { .take-grid { grid-template-columns: minmax(0, 1fr); } }
 
 /* ---------- responsive ---------- */
-@media (max-width: 1100px) { .span-8, .span-7, .span-6, .span-5, .span-4 { grid-column: span 12; } }
+@media (max-width: 1100px) {
+  .span-8, .span-7, .span-6, .span-5, .span-4, .span-3, .span-9 { grid-column: span 12; }
+  .roles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .toc { position: static; }
+}
 @media (max-width: 860px) {
   .shell { grid-template-columns: minmax(0, 1fr); }
-  .nav { position: static; height: auto; flex-direction: row; align-items: center; gap: 12px; padding: 10px 14px; border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
-  .brand { flex: none; } .brand-mark { height: 26px; }
-  .brand-text small, .nav-foot, .nav .num { display: none; }
-  .nav ul { flex-direction: row; gap: 4px; } .nav a.item { white-space: nowrap; padding: 8px 12px; }
-  .nav a.item[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--accent); }
-  .content { padding-top: 16px; }
-  .controls { width: 100%; } .field { flex: 1 1 130px; } select { width: 100%; }
+  .nav { position: static; height: auto; flex-direction: row; align-items: center; gap: 14px; padding: 12px 16px; border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .brand { flex: none; } .brand-mark { height: 34px; } .crest { height: 44px; width: 38px; }
+  .brand-text { font-size: 19px; } .brand-text small, .nav-foot, .nav .num { display: none; }
+  .nav ul { flex-direction: row; gap: 6px; } .nav a.item { white-space: nowrap; padding: 0 16px; }
+  .content { padding: 20px 20px 0; }
+  .controls { width: 100%; } .field { flex: 1 1 140px; } select { width: 100%; }
+  .minis { grid-template-columns: minmax(0, 1fr); }
+  .score-card { grid-template-columns: minmax(0, 1fr); text-align: left; } .score-card .tm.away, .score-card .tm.away ul, .score-card .sc { text-align: left; }
 }
+@media (max-width: 600px) { .roles { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 480px) {
-  .card { padding: 14px 14px; border-radius: 12px; }
-  .tiles { gap: 14px 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  table.data th, table.data td { padding: 7px 5px; font-size: 13px; }
-  table.data thead th { font-size: 10.5px; }
+  .content { padding: 18px 16px 0; }
+  .card { padding: 18px 16px; border-radius: 14px; }
+  .grid, .row { gap: 16px; }
+  .tiles { gap: 18px 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  table.data th, table.data td { padding: 8px 6px; font-size: 14px; }
+  table.data thead th { font-size: 11px; }
 }
 @media print { .nav, .controls { display: none; } }
 </style>
@@ -329,7 +380,7 @@ table.data tr.best td { font-weight: 600; }
       <div class="controls" role="group" aria-label="Filters">
         <div class="field"><label for="sel-season">Season</label><select id="sel-season"></select></div>
         <div class="field"><label for="sel-era">Manager era</label><select id="sel-era"></select></div>
-        <div class="field"><label for="theme-btn">Theme</label><button class="icon-btn" id="theme-btn" type="button" aria-label="Toggle light or dark theme">◐ <span id="theme-label">Theme</span></button></div>
+        <div class="field"><label for="theme-btn">Theme</label><button class="icon-btn primary" id="theme-btn" type="button" aria-label="Toggle light or dark theme">◐ <span id="theme-label">Theme</span></button></div>
       </div>
     </header>
     <main id="main" tabindex="-1"><div id="view"><p class="loading" role="status">Loading the dashboard…</p></div></main>
@@ -503,19 +554,28 @@ const M = i => MATCHES[i];
 const vs = m => `${m.h ? 'H' : 'A'}`;
 const dfmt = d3.timeFormat('%-d %b %Y'), dparse = d3.timeParse('%Y-%m-%d');
 
+function wdlBar(r) {                                     // proportional win / draw / defeat bar from the real record
+  const n = r.wins + r.draws + r.losses;
+  return el('div', { class: 'wdl-wrap' },
+    el('div', { class: 'wdl', role: 'img', 'aria-label': `${r.wins} wins, ${r.draws} draws, ${r.losses} defeats in ${n} matches` },
+      [['w', r.wins], ['d', r.draws], ['l', r.losses]].filter(([, v]) => v > 0).map(([c, v]) => el('span', { class: c, 'data-wdl': c, style: `flex:${v} 1 0` }))),
+    el('div', { class: 'wdl-labels' }, el('span', {}, `${r.wins} ${r.wins === 1 ? 'win' : 'wins'}`), el('span', {}, `${r.draws} ${r.draws === 1 ? 'draw' : 'draws'}`),
+      el('span', {}, `${r.losses} ${r.losses === 1 ? 'defeat' : 'defeats'} · ${n} played`)));
+}
 function recordCard(sel) {
   const r = sel.record;
-  return el('section', { class: 'card span-7', 'aria-label': 'Record' },
+  return el('section', { class: 'card', 'aria-label': 'Record' },
     el('h2', {}, 'Record', el('span', { class: 'tag' }, 'actual')),
     el('div', { class: 'tiles' },
       tile('wins', fmt('wins', r.wins)), tile('draws', fmt('draws', r.draws)), tile('losses', fmt('losses', r.losses)),
       tile('points', fmt('points', r.points)),
       tile('goals_for', fmt('goals_for', r.goals_for)), tile('goals_against', fmt('goals_against', r.goals_against)),
-      tile('goal_diff', fmt('goal_diff', r.goal_diff).replace('-', MINUS)), tile('clean_sheets', fmt('clean_sheets', r.clean_sheets))));
+      tile('goal_diff', fmt('goal_diff', r.goal_diff).replace('-', MINUS)), tile('clean_sheets', fmt('clean_sheets', r.clean_sheets))),
+    wdlBar(r));
 }
 function expectedCard(sel) {
   const r = sel.record;
-  return el('section', { class: 'card span-5', 'aria-label': 'Expected' },
+  return el('section', { class: 'card', 'aria-label': 'Expected' },
     el('h2', {}, 'Expected', el('span', { class: 'tag expected' }, 'not actual')),
     el('div', { class: 'tiles c2' },
       tile('xpts_sim', fmt('xpts_sim', r.xpts_sim), { exp: true }), tile('xpts_market', fmt('xpts_market', r.xpts_market), { exp: true }),
@@ -528,7 +588,7 @@ function expectedCard(sel) {
 
 function rollChart(host, pts, label) {
   host.innerHTML = '';
-  const W = Math.max(host.clientWidth || 640, 320), H = 270, mg = { t: 14, r: 46, b: 30, l: 48 };
+  const W = Math.max(host.clientWidth || 640, 320), H = Math.max(host.clientHeight || 270, 240), mg = { t: 14, r: 56, b: 34, l: 52 };   // fills its card: height comes from the layout
   const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', label);
   const xs = d3.extent(pts, p => p.date);
   const x = d3.scaleTime().domain(xs[0] - 0 === xs[1] - 0 ? [d3.timeDay.offset(xs[0], -7), d3.timeDay.offset(xs[1], 7)] : xs).range([mg.l, W - mg.r]);
@@ -537,20 +597,20 @@ function rollChart(host, pts, label) {
   const g = svg.append('g');
   g.selectAll('line.grid').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d))
     .style('stroke', 'var(--chart-grid)').attr('stroke-width', 1);
-  g.append('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y(0)).attr('y2', y(0)).style('stroke', 'var(--line-strong)').attr('stroke-width', 1.25).attr('stroke-dasharray', '4 3');
+  g.append('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y(0)).attr('y2', y(0)).style('stroke', 'var(--zero)').attr('stroke-width', 1.5).attr('stroke-dasharray', '5 4');
   g.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d => d3.format('+.1f')(d).replace('-', MINUS).replace(/^\+0\.0$/, '0.0')))
-    .call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+    .call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
   g.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).ticks(W < 420 ? 3 : W < 700 ? 5 : 8).tickSize(4).tickFormat(d3.timeFormat(W < 700 ? "%b '%y" : '%b %Y')))
-    .call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
-  g.append('path').datum(pts).attr('d', d3.area().x(p => x(p.date)).y0(y(0)).y1(p => y(p.v)).curve(d3.curveMonotoneX)).style('fill', 'var(--accent)').attr('fill-opacity', 0.1);
-  g.append('path').datum(pts).attr('d', d3.line().x(p => x(p.date)).y(p => y(p.v)).curve(d3.curveMonotoneX)).attr('fill', 'none').style('stroke', 'var(--accent)').attr('stroke-width', 2).attr('stroke-linejoin', 'round');
+    .call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
+  g.append('path').datum(pts).attr('d', d3.area().x(p => x(p.date)).y0(y(0)).y1(p => y(p.v)).curve(d3.curveMonotoneX)).style('fill', 'var(--red)').attr('fill-opacity', 0.16);
+  g.append('path').datum(pts).attr('d', d3.line().x(p => x(p.date)).y(p => y(p.v)).curve(d3.curveMonotoneX)).attr('fill', 'none').style('stroke', 'var(--red)').attr('stroke-width', 2.5).attr('stroke-linejoin', 'round');
   const last = pts[pts.length - 1];
-  g.append('circle').attr('cx', x(last.date)).attr('cy', y(last.v)).attr('r', 5).style('fill', 'var(--accent)').style('stroke', 'var(--surface)').attr('stroke-width', 2);
+  g.append('circle').attr('cx', x(last.date)).attr('cy', y(last.v)).attr('r', 5).style('fill', 'var(--red)').style('stroke', 'var(--surface)').attr('stroke-width', 2);
   g.append('text').attr('x', x(last.date) + 10).attr('y', y(last.v) + 4).attr('text-anchor', 'start')
-    .style('fill', 'var(--ink)').style('font-size', '12px').style('font-weight', 600).text(d3.format('+.2f')(last.v).replace('-', MINUS));
+    .style('fill', 'var(--ink)').style('font-size', '13px').style('font-weight', 600).text(d3.format('+.2f')(last.v).replace('-', MINUS));
   const cross = g.append('g').style('display', 'none');
   cross.append('line').attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--ink-2)').attr('stroke-width', 1);
-  const dot = cross.append('circle').attr('r', 5).style('fill', 'var(--accent)').style('stroke', 'var(--surface)').attr('stroke-width', 2);
+  const dot = cross.append('circle').attr('r', 5).style('fill', 'var(--red)').style('stroke', 'var(--surface)').attr('stroke-width', 2);
   const bis = d3.bisector(p => p.date).center;
   svg.append('rect').attr('x', mg.l).attr('y', mg.t).attr('width', W - mg.l - mg.r).attr('height', H - mg.t - mg.b).attr('fill', 'transparent').style('touch-action', 'pan-y')
     .on('pointermove pointerdown', ev => {
@@ -563,13 +623,13 @@ function rollChart(host, pts, label) {
 function rollCard(sel) {
   const pts = sel.roll.map((v, k) => v == null ? null : { v, m: M(sel.idx[k]) }).filter(Boolean)
     .map(({ v, m }) => ({ v, date: dparse(m.d), opp: m.opp, h: m.h }));
-  const card = el('section', { class: 'card span-8', 'aria-label': 'Rolling xG difference' },
+  const card = el('section', { class: 'card', 'aria-label': 'Rolling xG difference' },
     el('h2', {}, mlabel('xgd_roll10'), el('span', { class: 'tag expected' }, 'expected')));
   if (!pts.length) {
-    card.append(el('div', { class: 'empty' }, `A rolling 10-match average needs at least 10 matches; this selection has ${sel.n}.`));
+    card.append(el('div', { class: 'empty fill' }, `A rolling 10-match average needs at least 10 matches; this selection has ${sel.n}.`));
     return card;
   }
-  const host = el('div', { class: 'chart-wrap', 'data-chart': 'roll' });
+  const host = el('div', { class: 'chart-fill fill', style: '--minh: 300px', 'data-chart': 'roll' });
   card.append(host, el('p', { class: 'chart-note' }, 'Average xG difference per match over the latest 10 matches. Above zero, Liverpool created more expected goals than they conceded.'));
   const label = `Rolling 10-match xG difference per match, ${pts.length} points, latest ${d3.format('+.2f')(pts[pts.length - 1].v)}`;
   const draw = () => rollChart(host, pts, label);
@@ -582,37 +642,56 @@ function rollCard(sel) {
 }
 function lastFiveCard(sel, s) {
   const items = sel.last5.map(i => M(i)).reverse();
-  return el('section', { class: 'card span-4', 'aria-label': 'Last five results' },
+  return el('section', { class: 'card', 'aria-label': 'Last five results' },
     el('h2', {}, `Last ${items.length} results`, el('span', { class: 'tag' }, 'actual')),
-    el('div', { class: 'form' }, items.map(m => el('div', { class: 'res', title: `Expected goals (xG): Liverpool ${m.xg.toFixed(2)}, ${m.opp} ${m.xga.toFixed(2)}` },
+    el('div', { class: 'form fill' }, items.map(m => el('div', { class: 'res', title: `Expected goals (xG): Liverpool ${m.xg.toFixed(2)}, ${m.opp} ${m.xga.toFixed(2)}` },
       el('span', { class: 'rl ' + m.r, 'aria-label': { W: 'Win', D: 'Draw', L: 'Loss' }[m.r] }, m.r),
       el('div', { class: 'who' }, el('b', {}, `${m.h ? 'v' : '@'} ${m.opp}`), el('span', {}, `${dfmt(dparse(m.d))} · ${m.h ? 'Home' : 'Away'}`)),
       el('div', { class: 'score' }, m.h ? `${m.gf}–${m.ga}` : `${m.ga}–${m.gf}`, el('small', {}, `Exp. xG ${m.xg.toFixed(1)} v ${m.xga.toFixed(1)}`))))));
 }
+const BAR_DP = { form: [0, 0], finishing: [0, 1], market: [0, 1], xpts: [0, 1] };     // decimals shown in the two comparison bars (as in the sentence)
+function takeTile(t) {                                    // one takeaway: tag, arrow, big number, the sentence, two comparison bars
+  const dp = BAR_DP[t.id] || [2, 2], mx = Math.max(...t.bars.map(b => b.value)) || 1;
+  return el('article', { class: 'take ' + (t.good ? 'good' : 'bad'), 'data-takeaway': t.id, 'data-good': String(t.good), 'data-ref-season': /\d{4}-\d{2}/.test(t.text) ? '' : null },
+    el('div', { class: 'take-head' }, el('span', { class: 'take-tag' }, t.tag),
+      el('span', { class: 'take-arrow', 'aria-label': `${t.direction}, ${t.good ? 'better' : 'worse'}` }, t.direction === 'up' ? '▲' : '▼')),
+    el('div', { class: 'take-num' }, t.headline),
+    el('p', { class: 'take-text' }, t.text),
+    el('div', { class: 'take-bars' }, t.bars.map((b, i) => el('div', { class: 'take-bar' }, el('span', { class: 'bl' }, b.label),
+      el('span', { class: 'track' }, el('i', { class: i ? 'cmp' : 'sel', style: `width:${Math.max(2, b.value / mx * 100)}%` })), el('b', {}, b.value.toFixed(dp[i]).replace('-', MINUS))))));
+}
+function spanTakeaways(grid) {                            // an incomplete last row: its tile spans the remaining columns
+  const tiles = [...grid.children];
+  tiles.forEach(t => { t.style.gridColumn = ''; });
+  const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length, rem = tiles.length % cols;
+  if (tiles.length && rem) tiles[tiles.length - 1].style.gridColumn = `span ${cols - rem + 1}`;
+}
 function takeawaysCard(sel) {
-  if (!sel.takeaways.length) return null;
-  return el('section', { class: 'card span-5', 'aria-label': 'Takeaways' }, el('h2', {}, 'Takeaways'),
-    el('ul', { class: 'tk' }, sel.takeaways.map(t => el('li', { class: t.sentiment, 'data-takeaway': t.id, 'data-ref-season': /\d{4}-\d{2}/.test(t.text) ? '' : null },
-      el('span', { class: 'ico', 'aria-hidden': 'true' }, t.sentiment === 'positive' ? '▲' : '▼'), el('span', {}, t.text)))),
+  if (!sel.takeaways.length) return null;               // nothing fired: no card, no filler
+  const grid = el('div', { class: 'take-grid', 'data-testid': 'take-grid' }, sel.takeaways.map(takeTile));
+  const card = el('section', { class: 'card span-12', 'aria-label': 'Takeaways' }, el('h2', {}, 'Takeaways'), grid,
     el('p', { class: 'cap' }, 'Generated from fixed rules with thresholds; every number is computed from the data.'));
+  card._span = () => spanTakeaways(grid);
+  return card;
 }
 const BASE_ROWS = ['points_pm', 'goals_pm', 'goals_against_pm', 'xg_pm', 'xga_pm', 'xgd_pm', 'shots_pm', 'shots_against_pm', 'ppda', 'win_rate', 'clean_sheet_rate'];
-function baselineCard(sel, s, span) {
+function baselineCard(sel, s) {
   const has = !!sel.baseline_label;
   const note = has ? el('p', { class: 'base-note', 'data-baseline': '' }, 'Baseline: ', el('b', {}, sel.baseline_label), '. Per-match rates for the same measures, all managers.')
     : el('p', { class: 'base-note' }, s.season === 'all' ? 'No baseline: it is defined against the two seasons before a single selected season.' : 'No baseline: this is the first season in the data.');
-  return el('section', { class: `card ${span}`, 'aria-label': 'Versus baseline' }, el('h2', {}, 'Vs baseline'), note,
-    el('div', { class: 'tbl-x' }, el('table', { class: 'data' },
-      el('thead', {}, el('tr', {}, el('th', {}, 'Per match'), el('th', {}, 'Selection'), el('th', {}, 'Baseline'), el('th', {}, 'Change'))),
-      el('tbody', {}, BASE_ROWS.map(id => { const r = sel.rates[id]; return el('tr', { 'data-row': id },
-        el('td', {}, mlabel(id)), el('td', {}, fmt(id, r.v).replace('-', MINUS)), el('td', {}, fmt(id, r.b).replace('-', MINUS)), el('td', {}, deltaNode(r.c, id))); })))));
+  const table = ids => el('div', { class: 'tbl-x' }, el('table', { class: 'data' },
+    el('thead', {}, el('tr', {}, el('th', {}, 'Per match'), el('th', {}, 'Selection'), el('th', {}, 'Baseline'), el('th', {}, 'Change'))),
+    el('tbody', {}, ids.map(id => { const r = sel.rates[id]; return el('tr', { 'data-row': id },
+      el('td', {}, mlabel(id)), el('td', {}, fmt(id, r.v).replace('-', MINUS)), el('td', {}, fmt(id, r.b).replace('-', MINUS)), el('td', {}, deltaNode(r.c, id))); }))));
+  const half = Math.ceil(BASE_ROWS.length / 2);          // two side-by-side halves; one column on narrow screens
+  return el('section', { class: 'card span-12', 'aria-label': 'Versus baseline' }, el('h2', {}, 'Vs baseline'), note,
+    el('div', { class: 'split' }, table(BASE_ROWS.slice(0, half)), table(BASE_ROWS.slice(half))));
 }
 function overview(s, d) {
-  const sel = d.sel, grid = el('div', { class: 'grid' });
-  const tk = takeawaysCard(sel);
-  const roll = rollCard(sel);
-  grid.append(...[recordCard(sel), expectedCard(sel), roll, lastFiveCard(sel, s), tk, baselineCard(sel, s, tk ? 'span-7' : 'span-12')].filter(Boolean));
-  return { node: grid, after: () => roll._draw && roll._draw(), redraw: roll._draw };
+  const sel = d.sel, roll = rollCard(sel), tk = takeawaysCard(sel);
+  const grid = el('div', { class: 'grid' },
+    ...[el('div', { class: 'row r-a' }, recordCard(sel), expectedCard(sel)), el('div', { class: 'row r-b' }, roll, lastFiveCard(sel, s)), tk, baselineCard(sel, s)].filter(Boolean));
+  return { node: grid, after: () => { roll._draw && roll._draw(); tk && tk._span(); }, redraw: [roll._draw, tk && tk._span].filter(Boolean) };
 }
 
 /* ================= shared chart pieces ================= */
@@ -664,8 +743,8 @@ function shotsFor(sel, fl) {                         // shots (own goals exclude
 }
 const isGoal = r => SH.codes.res[r[SI.res]] === 'Goal';
 function drawPitch(g) {                              // 105 x 68 m, attacking left to right
-  const L = 'var(--pitch-line)', w = 0.35;
-  g.append('rect').attr('x', 0).attr('y', 0).attr('width', 105).attr('height', 68).attr('rx', 0.6).style('fill', 'var(--pitch)').style('stroke', L).attr('stroke-width', w);
+  const L = 'var(--pitch-line)', w = 2;
+  g.append('rect').attr('x', 0).attr('y', 0).attr('width', 105).attr('height', 68).attr('rx', 0.6).style('fill', 'none').style('stroke', L).attr('stroke-width', w);
   const line = (x1, y1, x2, y2) => g.append('line').attr('x1', x1).attr('y1', y1).attr('x2', x2).attr('y2', y2).style('stroke', L).attr('stroke-width', w);
   const rect = (x, y, wd, h) => g.append('rect').attr('x', x).attr('y', y).attr('width', wd).attr('height', h).style('fill', 'none').style('stroke', L).attr('stroke-width', w);
   line(52.5, 0, 52.5, 68);
@@ -680,6 +759,7 @@ function drawPitch(g) {                              // 105 x 68 m, attacking le
     const sx = right ? xs - dx : xs + dx;
     g.append('path').attr('d', `M${sx},${34 - dy} A9.15,9.15 0 0 ${right ? 0 : 1} ${sx},${34 + dy}`).style('fill', 'none').style('stroke', L).attr('stroke-width', w);
   }
+  g.selectAll('*').attr('vector-effect', 'non-scaling-stroke');   // 2 px lines at every scale
 }
 function shotTip(r) {
   const m = M(r[0]);
@@ -698,7 +778,7 @@ function drawShotMap(host, rows, mode, label) {
   if (!rows.length) svg.append('text').attr('class', 'empty-note').attr('x', vx + vw / 2).attr('y', 36).attr('text-anchor', 'middle').style('fill', 'var(--ink-2)').style('font-size', `${14 / ppm}px`).text('No shots match these filters');
   const sorted = inView.slice().sort((a, b) => (isGoal(a) - isGoal(b)) || (b[SI.xg] - a[SI.xg]));
   svg.append('g').selectAll('circle').data(sorted).join('circle').attr('class', 'shot').attr('cx', px).attr('cy', py).attr('r', rad)
-    .style('fill', r => isGoal(r) ? 'var(--accent)' : 'var(--ink-2)').attr('fill-opacity', r => isGoal(r) ? 0.95 : (dense < 1 ? 0.1 : 0.16))
+    .style('fill', r => isGoal(r) ? 'var(--goal)' : 'var(--ink-2)').attr('fill-opacity', r => isGoal(r) ? 0.95 : (dense < 1 ? 0.1 : 0.16))
     .style('stroke', r => isGoal(r) ? 'var(--surface)' : 'var(--ink-2)').attr('stroke-width', r => (isGoal(r) ? 1.5 : 1.3) / ppm)
     .on('pointermove pointerdown', (ev, r) => showTip(shotTip(r), ev.clientX, ev.clientY)).on('pointerleave', leaveTip);
   svg.attr('data-dense', dense < 1 ? dense.toFixed(2) : null);
@@ -744,7 +824,7 @@ function shotMapCard(sel, mode) {
     field('f-typ', 'Body part', opts(SH.codes.typ, TYP_L), v => { flt.typ = v; draw(); }),
     field('f-res', 'Outcome', opts(SH.codes.res, RES_L), v => { flt.res = v; draw(); }));
   const key = el('div', { class: 'legend' },
-    el('span', { class: 'it' }, el('span', { class: 'sw dot', style: 'background:var(--accent)' }), 'Goal'), el('span', { class: 'it' }, el('span', { class: 'sw ring' }), 'No goal'),
+    el('span', { class: 'it' }, el('span', { class: 'sw dot', style: 'background:var(--goal)' }), 'Goal'), el('span', { class: 'it' }, el('span', { class: 'sw ring' }), 'No goal'),
     el('span', { class: 'it' }, 'Circle size grows with xG (expected)'));
   const card = el('section', { class: 'card span-8', 'aria-label': R[id].label },
     el('h2', {}, R[id].label, info(id), el('span', { class: 'tag' }, 'goals actual · xG expected')), filters, key, host,
@@ -774,15 +854,15 @@ function finishCard(sel) {
       .attr('aria-label', `${np ? 'Non-penalty goals minus npxG' : 'Goals minus xG'} by player`);
     svg.append('g').selectAll('line').data(x.ticks(5)).join('line').attr('x1', d => x(d)).attr('x2', d => x(d)).attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--chart-grid)');
     svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).ticks(5).tickSize(0).tickPadding(8).tickFormat(d => d3.format('+d')(d) === '+0' ? '0' : d3.format('+d')(d)))
-      .call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+      .call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
     svg.append('line').attr('x1', x(0)).attr('x2', x(0)).attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--ink-2)').attr('stroke-width', 1.25);
     const g = svg.append('g').selectAll('g').data(data).join('g');
     g.append('rect').attr('x', d => d.d >= 0 ? x(0) : x(d.d)).attr('y', d => y(d.name + d.sh)).attr('width', d => Math.max(1, Math.abs(x(d.d) - x(0)))).attr('height', y.bandwidth()).attr('rx', 3)
       .style('fill', d => d.d >= 0 ? 'var(--pos)' : 'var(--neg)')
       .on('pointermove pointerdown', (ev, d) => showTip(`<b>${esc(d.name)}</b><br>${d.g} goals from ${d.x.toFixed(1)} xG (expected)<br>${d.sh} shots`, ev.clientX, ev.clientY)).on('pointerleave', leaveTip);
-    g.append('text').attr('x', mg.l - 8).attr('y', d => y(d.name + d.sh) + y.bandwidth() / 2 + 4).attr('text-anchor', 'end').style('fill', 'var(--ink)').style('font-size', '12.5px').text(d => label(d.name));
+    g.append('text').attr('x', mg.l - 8).attr('y', d => y(d.name + d.sh) + y.bandwidth() / 2 + 4).attr('text-anchor', 'end').style('fill', 'var(--ink)').style('font-size', '13px').text(d => label(d.name));
     g.append('text').attr('x', d => d.d >= 0 ? x(d.d) + 6 : x(d.d) - 6).attr('y', d => y(d.name + d.sh) + y.bandwidth() / 2 + 4).attr('text-anchor', d => d.d >= 0 ? 'start' : 'end')
-      .style('fill', 'var(--ink)').style('font-size', '12px').style('font-weight', 600).text(d => Math.abs(d.d) < 0.05 ? '0.0' : (d.d >= 0 ? '+' : MINUS) + Math.abs(d.d).toFixed(1));
+      .style('fill', 'var(--ink)').style('font-size', '13px').style('font-weight', 600).text(d => Math.abs(d.d) < 0.05 ? '0.0' : (d.d >= 0 ? '+' : MINUS) + Math.abs(d.d).toFixed(1));
     tbl.replaceChildren(tableView('View as a table', ['Player', 'Shots', np ? 'Non-penalty goals' : 'Goals', np ? 'npxG (expected)' : 'xG (expected)', 'Difference'],
       all.map(d => [d.name, d.sh, d.g, d.x.toFixed(2), Math.abs(d.d) < 0.005 ? '0.00' : (d.d >= 0 ? '+' : MINUS) + Math.abs(d.d).toFixed(2)])));
   };
@@ -809,10 +889,10 @@ function scatterCard(sel, s) {
     const y = d3.scaleLinear().domain([ye[0] - 0.005, ye[1] + 0.005]).nice().range([H - mg.b, mg.t]);
     const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Shots per match against xG per shot, Liverpool and league clubs');
     svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
-    svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format('.3f'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
-    svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).ticks(6).tickSize(4).tickFormat(d3.format('.0f'))).call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
-    svg.append('text').attr('x', (mg.l + W - mg.r) / 2).attr('y', H - 6).attr('text-anchor', 'middle').style('fill', 'var(--ink-2)').style('font-size', '12px').text('Shots per match');
-    svg.append('text').attr('transform', `translate(14,${(mg.t + H - mg.b) / 2}) rotate(-90)`).attr('text-anchor', 'middle').style('fill', 'var(--ink-2)').style('font-size', '12px').text('xG per shot (expected)');
+    svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format('.3f'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
+    svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).ticks(6).tickSize(4).tickFormat(d3.format('.0f'))).call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
+    svg.append('text').attr('x', (mg.l + W - mg.r) / 2).attr('y', H - 6).attr('text-anchor', 'middle').style('fill', 'var(--ink-2)').style('font-size', '13px').text('Shots per match');
+    svg.append('text').attr('transform', `translate(14,${(mg.t + H - mg.b) / 2}) rotate(-90)`).attr('text-anchor', 'middle').style('fill', 'var(--ink-2)').style('font-size', '13px').text('xG per shot (expected)');
     if (avg) {
       svg.append('line').attr('x1', x(avg.shots_pm)).attr('x2', x(avg.shots_pm)).attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--ink-2)').attr('stroke-dasharray', '4 3');
       svg.append('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y(avg.xgps)).attr('y2', y(avg.xgps)).style('stroke', 'var(--ink-2)').attr('stroke-dasharray', '4 3');
@@ -821,15 +901,15 @@ function scatterCard(sel, s) {
     svg.append('g').selectAll('circle').data(others).join('circle').attr('cx', p => x(p.shots_pm)).attr('cy', p => y(p.xgps)).attr('r', all ? 3.5 : 5.5)
       .style('fill', 'var(--muted)').attr('fill-opacity', all ? 0.4 : 0.55).on('pointermove pointerdown', tip).on('pointerleave', leaveTip);
     const lg = svg.append('g');
-    lg.selectAll('circle').data(lfc).join('circle').attr('cx', p => x(p.shots_pm)).attr('cy', p => y(p.xgps)).attr('r', 7).style('fill', 'var(--accent)').style('stroke', 'var(--surface)').attr('stroke-width', 2)
+    lg.selectAll('circle').data(lfc).join('circle').attr('cx', p => x(p.shots_pm)).attr('cy', p => y(p.xgps)).attr('r', 7).style('fill', 'var(--red)').style('stroke', 'var(--surface)').attr('stroke-width', 2)
       .on('pointermove pointerdown', tip).on('pointerleave', leaveTip);
-    lg.selectAll('text').data(lfc).join('text').attr('x', p => x(p.shots_pm) + 10).attr('y', p => y(p.xgps) + 4).style('fill', 'var(--ink)').style('font-size', '12px').style('font-weight', 600)
+    lg.selectAll('text').data(lfc).join('text').attr('x', p => x(p.shots_pm) + 10).attr('y', p => y(p.xgps) + 4).style('fill', 'var(--ink)').style('font-size', '13px').style('font-weight', 600)
       .text(p => all ? "'" + p.se.slice(2, 4) : 'Liverpool');
     tbl.replaceChildren(tableView('View as a table', ['Club', ...(all ? ['Season'] : []), 'Shots per match', 'xG per shot (expected)'],
       pts.slice().sort((a, b) => b.xgps - a.xgps).map(p => [p.team, ...(all ? [p.se] : []), p.shots_pm.toFixed(1), p.xgps.toFixed(3)])));
   };
   const card = pageCard('span-5', 'vol_vs_quality', 'expected',
-    legend([{ cls: 'dot', color: 'var(--accent)', text: all ? 'Liverpool, by season' : 'Liverpool' }, { cls: 'dot', color: 'var(--muted)', text: all ? 'Other clubs, every season' : 'Other clubs' }, ...(avg ? [{ cls: 'dash', text: 'League average' }] : [])]),
+    legend([{ cls: 'dot', color: 'var(--red)', text: all ? 'Liverpool, by season' : 'Liverpool' }, { cls: 'dot', color: 'var(--muted)', text: all ? 'Other clubs, every season' : 'Other clubs' }, ...(avg ? [{ cls: 'dash', text: 'League average' }] : [])]),
     host, el('p', { class: 'note-small' }, s.era !== 'all' ? 'Liverpool point is the selected manager era; league clubs are full seasons.' : 'Shots exclude own goals; xG per shot is total xG divided by total shots.'), tbl);
   draw(); card._draw = draw; return card;
 }
@@ -837,7 +917,7 @@ function scatterCard(sel, s) {
 /* ---- source mix (attack share of xG; defence xGA per match) ---- */
 function mixCard(sel, side) {
   const rows = sel.mix[side], att = side === 'for', id = att ? 'xg_mix' : 'xga_mix';
-  const src = [['open', 'Open play', 'var(--s1)'], ['set', 'Set pieces', 'var(--s2)'], ['pen', 'Penalties', 'var(--s3)']];
+  const src = [['open', 'Open play', 'var(--mix-open)'], ['set', 'Set pieces', 'var(--mix-set)'], ['pen', 'Penalties', 'var(--mix-pen)']];
   const tot = r => src.reduce((a, [k]) => a + r[k].xg, 0);
   const maxTot = d3.max(rows, r => tot(r) / r.n);
   const body = el('div', { class: 'mix' }, rows.map(r => {
@@ -866,20 +946,20 @@ function matchChart(host, o) {                              // o.hint: optional 
   const lo = bars ? 0 : Math.min(...vals) * 0.9, hi = Math.max(...vals) * 1.08 || 1;
   const y = d3.scaleLinear().domain([lo, hi]).nice().range([H - mg.b, mg.t]);
   svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
-  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format(o.yfmt || '.1f'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format(o.yfmt || '.1f'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
   const step = x.step(), k = Math.max(1, Math.ceil(n / Math.max(2, Math.floor((W - mg.l - mg.r) / 96)))), tf = n <= 40 ? d3.timeFormat('%-d %b') : d3.timeFormat("%b '%y");
   const ticks = d3.range(0, n, k);
-  svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).tickValues(ticks).tickSize(4).tickFormat(i => tf(dparse(o.rows[i].d)))).call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
-  if (bars) svg.append('g').selectAll('rect').data(o.rows).join('rect').attr('class', 'bar').attr('x', (r, i) => x(i)).attr('width', x.bandwidth()).attr('y', r => y(r.v)).attr('height', r => y(0) - y(r.v)).attr('rx', 2).style('fill', 'var(--accent)').attr('fill-opacity', 0.82);
+  svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).tickValues(ticks).tickSize(4).tickFormat(i => tf(dparse(o.rows[i].d)))).call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
+  if (bars) svg.append('g').selectAll('rect').data(o.rows).join('rect').attr('class', 'bar').attr('x', (r, i) => x(i)).attr('width', x.bandwidth()).attr('y', r => y(r.v)).attr('height', r => y(0) - y(r.v)).attr('rx', 2).style('fill', 'var(--red)').attr('fill-opacity', 0.82);
   else svg.append('g').selectAll('circle').data(o.rows.filter(r => r.v != null)).join('circle').attr('cx', r => x(r.i) + x.bandwidth() / 2).attr('cy', r => y(r.v)).attr('r', 2.6).style('fill', 'var(--ink-2)').attr('fill-opacity', 0.5);
   for (const rf of o.refs) svg.append('line').attr('x1', x(rf.i0)).attr('x2', x(rf.i1) + x.bandwidth()).attr('y1', y(rf.v)).attr('y2', y(rf.v)).style('stroke', 'var(--ink-2)').attr('stroke-width', 1.8).attr('stroke-dasharray', '5 3');
   const rl = o.rows.map((r, i) => ({ i, v: r.roll })).filter(p => p.v != null);
-  if (rl.length > 1) svg.append('path').datum(rl).attr('d', d3.line().x(p => x(p.i) + x.bandwidth() / 2).y(p => y(p.v)).curve(d3.curveMonotoneX)).attr('fill', 'none').style('stroke', bars ? 'var(--ink)' : 'var(--accent)').attr('stroke-width', 2.25).attr('stroke-linejoin', 'round');
+  if (rl.length > 1) svg.append('path').datum(rl).attr('d', d3.line().x(p => x(p.i) + x.bandwidth() / 2).y(p => y(p.v)).curve(d3.curveMonotoneX)).attr('fill', 'none').style('stroke', bars ? 'var(--ink)' : 'var(--red)').attr('stroke-width', 2.25).attr('stroke-linejoin', 'round');
   if (bars) svg.append('g').selectAll('circle').data(o.rows).join('circle').attr('cx', (r, i) => x(i) + x.bandwidth() / 2).attr('cy', r => y(r.g)).attr('r', 3.4).style('fill', 'var(--surface)').style('stroke', 'var(--ink)').attr('stroke-width', 1.6);
   const overflow = W > host.clientWidth + 4;
   if (o.hint) o.hint.hidden = !overflow;
   if (overflow) host.scrollLeft = W;   // wider than the card: open on the most recent matches (scroll left for earlier ones)
-  const hl = svg.append('rect').attr('y', mg.t).attr('height', H - mg.t - mg.b).attr('width', Math.max(step, 3)).style('fill', 'var(--accent)').attr('fill-opacity', 0.12).style('display', 'none').attr('pointer-events', 'none');
+  const hl = svg.append('rect').attr('y', mg.t).attr('height', H - mg.t - mg.b).attr('width', Math.max(step, 3)).style('fill', 'var(--red)').attr('fill-opacity', 0.12).style('display', 'none').attr('pointer-events', 'none');
   svg.append('rect').attr('x', mg.l).attr('y', mg.t).attr('width', W - mg.l - mg.r).attr('height', H - mg.t - mg.b).attr('fill', 'transparent').style('touch-action', 'pan-y')
     .on('pointermove pointerdown', ev => { const i = Math.max(0, Math.min(n - 1, Math.floor((d3.pointer(ev)[0] - mg.l) / step))); hl.style('display', null).attr('x', x(i) - (step - x.bandwidth()) / 2); showTip(o.tip(o.rows[i]), ev.clientX, ev.clientY); })
     .on('pointerleave', ev => { if (ev.pointerType === 'touch') return; hl.style('display', 'none'); hideTip(); });
@@ -912,7 +992,7 @@ function attack(s, d) {
   const trend = trendCard(sel, {
     id: 'xg_trend', chart: 'xg-trend', span: 'span-7', kind: 'bars', tag: 'expected', label: 'xG per match with goals scored and rolling average',
     row: (m, i, sl) => ({ d: m.d, i, v: m.xg, g: m.gf, roll: sl.roll_xg[i], m }),
-    legend: () => [{ cls: '', color: 'var(--accent)', text: 'xG (expected)' }, { cls: 'ring', text: 'Goals (actual)' }, { cls: 'line', color: 'var(--ink)', text: '10-match average xG' }],
+    legend: () => [{ cls: '', color: 'var(--red)', text: 'xG (expected)' }, { cls: 'ring', text: 'Goals (actual)' }, { cls: 'line', color: 'var(--ink)', text: '10-match average xG' }],
     tip: r => `<b>${vsTxt(r.m)}</b><br>xG ${r.v.toFixed(2)} (expected) · goals ${r.g} (actual)${r.roll != null ? `<br>10-match average xG ${r.roll.toFixed(2)}` : ''}`,
     head: ['Match', 'xG (expected)', 'Goals (actual)', '10-match avg xG'], tr: r => [`${r.m.h ? 'H' : 'A'} ${r.m.opp} ${dfmt(dparse(r.m.d))}`, r.v.toFixed(2), r.g, r.roll == null ? 'N/A' : r.roll.toFixed(2)],
     note: rollNote,
@@ -930,7 +1010,7 @@ function defence(s, d) {
   const xga = trendCard(sel, {
     id: 'xga_trend', chart: 'xga-trend', kind: 'bars', tag: 'expected', label: 'xGA per match with goals conceded, rolling average and league average', ref: 'xg_pm',
     row: (m, i, sl) => ({ d: m.d, i, v: m.xga, g: m.ga, roll: sl.roll_xga[i], m }),
-    legend: ref => [{ cls: '', color: 'var(--accent)', text: 'xGA (expected)' }, { cls: 'ring', text: 'Goals conceded (actual)' }, { cls: 'line', color: 'var(--ink)', text: '10-match average xGA' }, ...(ref ? [{ cls: 'dash', text: 'League average per match' }] : [])],
+    legend: ref => [{ cls: '', color: 'var(--red)', text: 'xGA (expected)' }, { cls: 'ring', text: 'Goals conceded (actual)' }, { cls: 'line', color: 'var(--ink)', text: '10-match average xGA' }, ...(ref ? [{ cls: 'dash', text: 'League average per match' }] : [])],
     tip: r => `<b>${vsTxt(r.m)}</b><br>xGA ${r.v.toFixed(2)} (expected) · conceded ${r.g} (actual)${r.roll != null ? `<br>10-match average xGA ${r.roll.toFixed(2)}` : ''}`,
     head: ['Match', 'xGA (expected)', 'Goals conceded (actual)', '10-match avg xGA'], tr: r => [`${r.m.h ? 'H' : 'A'} ${r.m.opp} ${dfmt(dparse(r.m.d))}`, r.v.toFixed(2), r.g, r.roll == null ? 'N/A' : r.roll.toFixed(2)],
     note: rollNote + ' The league average is the mean xG per team per match in the same season.',
@@ -998,13 +1078,13 @@ function miniTrend(host, rows, id, signed) {
   svg.append('g').selectAll('line').data(y.ticks(3)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
   if (signed) svg.append('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y(0)).attr('y2', y(0)).style('stroke', 'var(--ink-2)').attr('stroke-dasharray', '4 3');
   svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(3).tickSize(0).tickPadding(6).tickFormat(d3.format(signed ? '+.1f' : '.2f')))
-    .call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '11px'); });
+    .call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
   const every = W < 380 ? 2 : 1;
   svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).tickValues(rows.map(r => r.se).filter((_, i) => i % every === 0)).tickSize(3).tickFormat(se => se.slice(2)))
-    .call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '10.5px'); });
-  if (pts.length > 1) svg.append('path').datum(pts).attr('d', d3.line().x(r => x(r.se)).y(r => y(r.v))).attr('fill', 'none').style('stroke', 'var(--accent)').attr('stroke-width', 2);
+    .call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  if (pts.length > 1) svg.append('path').datum(pts).attr('d', d3.line().x(r => x(r.se)).y(r => y(r.v))).attr('fill', 'none').style('stroke', 'var(--red)').attr('stroke-width', 2);
   svg.append('g').selectAll('circle').data(pts).join('circle').attr('class', 'pt').attr('cx', r => x(r.se)).attr('cy', r => y(r.v)).attr('r', 4.5)
-    .style('fill', r => r.low ? 'var(--surface)' : 'var(--accent)').style('stroke', 'var(--accent)').attr('stroke-width', 2)
+    .style('fill', r => r.low ? 'var(--surface)' : 'var(--red)').style('stroke', 'var(--red)').attr('stroke-width', 2)
     .on('pointermove pointerdown', (ev, r) => showTip(`<b>${r.se}</b><br>${fmt(id, r.v)} · ${r.min.toLocaleString()} minutes${r.low ? '<br>below the minimum minutes: unreliable' : ''}`, ev.clientX, ev.clientY)).on('pointerleave', leaveTip);
 }
 function profileCard(pid) {
@@ -1037,9 +1117,9 @@ function compareCard(sel, a, b, onChange) {
     body.replaceChildren();
     const A = sel.players.find(p => p.id === a), B = sel.players.find(p => p.id === b);
     if (!A || !B) { body.append(el('div', { class: 'empty' }, 'Pick two players who played in this selection.')); return; }
-    body.append(legend([{ color: 'var(--accent)', text: A.name }, { color: 'var(--s1)', text: B.name }]));
+    body.append(legend([{ color: 'var(--red)', text: A.name }, { color: 'var(--s1)', text: B.name }]));
     CMP_ROWS.forEach(([k, id]) => { const m = Math.max(Math.abs(A[k]), Math.abs(B[k])) || 1;
-      body.append(el('div', { class: 'cmp-row' }, el('div', { class: 'cl' }, R[id].label, info(id)), bar(id, A[k], m, 'var(--accent)', 'a'), bar(id, B[k], m, 'var(--s1)', 'b'))); });
+      body.append(el('div', { class: 'cmp-row' }, el('div', { class: 'cl' }, R[id].label, info(id)), bar(id, A[k], m, 'var(--red)', 'a'), bar(id, B[k], m, 'var(--s1)', 'b'))); });
     body.append(el('p', { class: 'note-small' }, 'Values for the current selection. Compare per-90 rates only between players with a similar number of minutes.'));
   };
   const selA = field('cmp-a', 'Player A', opts, v => { a = +v; onChange(a, b); paint(); });
@@ -1112,16 +1192,16 @@ function raceChart(host, rows, m, ev) {
   const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', `Cumulative xG: Liverpool ${L.total.toFixed(2)}, ${m.opp} ${O.total.toFixed(2)}`);
   svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
   svg.append('line').attr('x1', xs(45)).attr('x2', xs(45)).attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--line-strong)').attr('stroke-dasharray', '3 3');
-  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format('.1f'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
-  svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(xs).tickValues(d3.range(0, maxMin, 15).concat(45).filter((v, i, a) => a.indexOf(v) === i)).tickSize(4).tickFormat(v => v + "'")).call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format('.1f'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
+  svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(xs).tickValues(d3.range(0, maxMin, 15).concat(45).filter((v, i, a) => a.indexOf(v) === i)).tickSize(4).tickFormat(v => v + "'")).call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
   const line = d3.line().x(p => xs(p[0])).y(p => y(p[1]));
   const cumAt = (S, t) => { let last = 0; for (let i = 0; i < S.pts.length; i++) { if (S.pts[i][0] <= t) last = S.pts[i][1]; } return last; };
-  [[O, 'var(--s1)', 'opp'], [L, 'var(--accent)', 'lfc']].forEach(([S, col, cls]) => svg.append('path').datum(S.pts).attr('d', line).attr('fill', 'none').style('stroke', col).attr('stroke-width', 2.5).attr('stroke-linejoin', 'round').attr('class', 'race-' + cls));
-  ev.forEach(e => { const S = e.lfc ? L : O, yy = y(cumAt(S, e.min + 0.001)); svg.append('circle').attr('class', 'goal-mark').attr('cx', xs(e.min)).attr('cy', yy).attr('r', 6).style('fill', e.lfc ? 'var(--accent)' : 'var(--s1)').style('stroke', 'var(--surface)').attr('stroke-width', 2)
+  [[O, 'var(--s1)', 'opp'], [L, 'var(--red)', 'lfc']].forEach(([S, col, cls]) => svg.append('path').datum(S.pts).attr('d', line).attr('fill', 'none').style('stroke', col).attr('stroke-width', 2.5).attr('stroke-linejoin', 'round').attr('class', 'race-' + cls));
+  ev.forEach(e => { const S = e.lfc ? L : O, yy = y(cumAt(S, e.min + 0.001)); svg.append('circle').attr('class', 'goal-mark').attr('cx', xs(e.min)).attr('cy', yy).attr('r', 6).style('fill', e.lfc ? 'var(--red)' : 'var(--s1)').style('stroke', 'var(--surface)').attr('stroke-width', 2)
     .on('pointermove pointerdown', evn => showTip(`<b>${esc(e.name)}${e.og ? ' (own goal)' : ''}</b> · ${e.min}'<br>Goal for ${e.lfc ? 'Liverpool' : esc(m.opp)} (actual)`, evn.clientX, evn.clientY)).on('pointerleave', leaveTip); });
   const yl = y(L.total), yo = y(O.total), gap = Math.abs(yl - yo) < 16 ? 9 : 0, dir = yl <= yo ? -1 : 1;
-  svg.append('text').attr('x', W - mg.r + 8).attr('y', yl + 4 + gap * dir * -1).style('fill', 'var(--ink)').style('font-size', '12.5px').style('font-weight', 600).attr('data-race-final', 'lfc').text(m.xg.toFixed(2)).append('tspan').style('font-weight', 400).style('fill', 'var(--ink-2)').text(' Liverpool');
-  svg.append('text').attr('x', W - mg.r + 8).attr('y', yo + 4 + gap * dir).style('fill', 'var(--ink)').style('font-size', '12.5px').style('font-weight', 600).attr('data-race-final', 'opp').text(m.xga.toFixed(2)).append('tspan').style('font-weight', 400).style('fill', 'var(--ink-2)').text(' ' + (m.opp.length > 13 ? m.opp.slice(0, 12) + '…' : m.opp));
+  svg.append('text').attr('x', W - mg.r + 8).attr('y', yl + 4 + gap * dir * -1).style('fill', 'var(--ink)').style('font-size', '13px').style('font-weight', 600).attr('data-race-final', 'lfc').text(m.xg.toFixed(2)).append('tspan').style('font-weight', 400).style('fill', 'var(--ink-2)').text(' Liverpool');
+  svg.append('text').attr('x', W - mg.r + 8).attr('y', yo + 4 + gap * dir).style('fill', 'var(--ink)').style('font-size', '13px').style('font-weight', 600).attr('data-race-final', 'opp').text(m.xga.toFixed(2)).append('tspan').style('font-weight', 400).style('fill', 'var(--ink-2)').text(' ' + (m.opp.length > 13 ? m.opp.slice(0, 12) + '…' : m.opp));
   svg.append('rect').attr('x', mg.l).attr('y', mg.t).attr('width', W - mg.l - mg.r).attr('height', H - mg.t - mg.b).attr('fill', 'transparent').style('touch-action', 'pan-y')
     .on('pointermove pointerdown', evn => { const t = Math.max(0, Math.min(maxMin, Math.round(xs.invert(d3.pointer(evn)[0])))); showTip(`<b>Minute ${t}</b><br>Liverpool xG ${cumAt(L, t).toFixed(2)}<br>${esc(m.opp)} xG ${cumAt(O, t).toFixed(2)}`, evn.clientX, evn.clientY); })
     .on('pointerleave', leaveTip);
@@ -1135,8 +1215,8 @@ function matchPitch(host, rows, m) {
   const px = r => 105 * (l(r) ? r[SI.x] : 1 - r[SI.x]), py = r => 68 * (l(r) ? r[SI.y] : 1 - r[SI.y]);
   svg.append('g').selectAll('circle').data(shots.slice().sort((a, b) => (isGoal(a) - isGoal(b)) || (b[SI.xg] - a[SI.xg]))).join('circle').attr('class', 'shot').attr('data-team', r => l(r) ? 'lfc' : 'opp')
     .attr('cx', px).attr('cy', py).attr('r', r => (3.5 + 12 * Math.sqrt(r[SI.xg])) / ppm)
-    .style('fill', r => isGoal(r) ? (l(r) ? 'var(--accent)' : 'var(--s1)') : 'var(--ink-2)').attr('fill-opacity', r => isGoal(r) ? 0.95 : 0.16)
-    .style('stroke', r => isGoal(r) ? 'var(--surface)' : (l(r) ? 'var(--accent)' : 'var(--s1)')).attr('stroke-width', r => (isGoal(r) ? 1.5 : 1.6) / ppm)
+    .style('fill', r => isGoal(r) ? (l(r) ? 'var(--goal)' : 'var(--s1)') : 'var(--ink-2)').attr('fill-opacity', r => isGoal(r) ? 0.95 : 0.16)
+    .style('stroke', r => isGoal(r) ? 'var(--surface)' : (l(r) ? 'var(--red)' : 'var(--s1)')).attr('stroke-width', r => (isGoal(r) ? 1.5 : 1.6) / ppm)
     .on('pointermove pointerdown', (ev, r) => showTip(`<b>${esc(SH.players[r[SI.pl]])}</b> · ${r[SI.min]}'<br>${l(r) ? 'Liverpool' : esc(m.opp)} · xG ${r[SI.xg].toFixed(2)} (expected)<br>${RES_L[SH.codes.res[r[SI.res]]]} · ${TYP_L[SH.codes.typ[r[SI.typ]]]} · ${SIT_L[SH.codes.sit[r[SI.sit]]]}`, ev.clientX, ev.clientY)).on('pointerleave', leaveTip);
 }
 function probBar(p) { return el('div', { class: 'pbar' }, [['w', p[0]], ['d', p[1]], ['l', p[2]]].map(([c, v]) => el('span', { class: c, style: `flex:${v} 1 0` }))); }
@@ -1187,10 +1267,10 @@ function matchPage(s, d) {
       el('tbody', {}, sorted.map(r => { const og = SH.codes.res[r[SI.res]] === 'OwnGoal', l = r[SI.fl] === 1;
         return el('tr', {}, el('td', {}, r[SI.min] + "'"), el('td', {}, l ? 'Liverpool' : m.opp), el('td', {}, SH.players[r[SI.pl]]), el('td', {}, r[SI.xg].toFixed(2)), el('td', {}, og ? `Own goal for ${l ? m.opp : 'Liverpool'}` : RES_L[SH.codes.res[r[SI.res]]])); }))));
     body.replaceChildren(score,
-      pageCard('span-7', 'xg_race', 'expected · goals actual', legend([{ cls: 'line', color: 'var(--accent)', text: 'Liverpool xG' }, { cls: 'line', color: 'var(--s1)', text: `${m.opp} xG` }, { cls: 'dot', color: 'var(--ink-2)', text: 'Goal' }]), race,
+      pageCard('span-7', 'xg_race', 'expected · goals actual', legend([{ cls: 'line', color: 'var(--red)', text: 'Liverpool xG' }, { cls: 'line', color: 'var(--s1)', text: `${m.opp} xG` }, { cls: 'dot', color: 'var(--ink-2)', text: 'Goal' }]), race,
         el('p', { class: 'note-small' }, 'Cumulative expected goals by minute; dashed line marks half-time (45\'). Hover for the score of the chances at any minute.')),
       marketPanel(m),
-      pageCard('span-7', 'match_shots', 'goals actual · xG expected', legend([{ cls: 'dot', color: 'var(--accent)', text: 'Liverpool goal' }, { cls: 'dot', color: 'var(--s1)', text: `${m.opp} goal` }, { cls: 'ring', text: 'No goal' }]), pitch,
+      pageCard('span-7', 'match_shots', 'goals actual · xG expected', legend([{ cls: 'dot', color: 'var(--goal)', text: 'Liverpool goal' }, { cls: 'dot', color: 'var(--s1)', text: `${m.opp} goal` }, { cls: 'ring', text: 'No goal' }]), pitch,
         el('p', { class: 'note-small' }, 'Liverpool attack left to right →. The opposition’s shots are rotated to attack ←. Own goals are not shots and are not drawn.')),
       el('section', { class: 'card span-5', 'aria-label': 'Shots list' }, el('h2', {}, 'Shots in order', el('span', { class: 'tag' }, `${rows.filter(r => SH.codes.res[r[SI.res]] !== 'OwnGoal').length} shots`)), list));
     drawRace(); drawPitch2();
@@ -1209,7 +1289,7 @@ const ERA_KEY = s => eraName(s.era) || 'all';
 function seasonRows(s) {                                   // one row per season for the current manager-era filter
   return D.seasons.map(se => { const sl = D.selections[`${se}|${ERA_KEY(s)}`]; return sl ? { se, n: sl.n, ...sl.record, sel: se === s.season } : null; }).filter(Boolean);
 }
-function axisStyle(a) { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); }
+function axisStyle(a) { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); }
 function seasonPointsChart(host, rows) {
   host.innerHTML = '';
   const data = rows.filter(r => r.n >= MIN), n = data.length;
@@ -1220,8 +1300,8 @@ function seasonPointsChart(host, rows) {
   const y = d3.scaleLinear().domain([0, d3.max(data, r => Math.max(r.points, r.xpts_sim, r.xpts_market)) * 1.08 || 10]).nice().range([H - mg.b, mg.t]);
   const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Actual points, xG-simulated points and market-expected points by season');
   svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
-  svg.append('g').selectAll('rect').data(data.filter(r => r.sel)).join('rect').attr('x', r => x0(r.se) - 3).attr('width', x0.bandwidth() + 6).attr('y', mg.t).attr('height', H - mg.t - mg.b).style('fill', 'var(--accent)').attr('fill-opacity', 0.09);
-  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8)).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  svg.append('g').selectAll('rect').data(data.filter(r => r.sel)).join('rect').attr('x', r => x0(r.se) - 3).attr('width', x0.bandwidth() + 6).attr('y', mg.t).attr('height', H - mg.t - mg.b).style('fill', 'var(--red)').attr('fill-opacity', 0.09);
+  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8)).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
   svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x0).tickSize(4).tickFormat(se => se.slice(2))).call(axisStyle);
   const g = svg.append('g').selectAll('g').data(data).join('g').attr('transform', r => `translate(${x0(r.se)},0)`).attr('data-season', r => r.se);
   g.selectAll('rect').data(r => ser.map(([k, name, c]) => ({ k, name, c, v: r[k], r }))).join('rect').attr('class', 'sbar').attr('data-series', d => d.k)
@@ -1249,16 +1329,16 @@ function cumChart(host, sel, vals, o) {
   svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
   (o.runs || []).forEach(r => { svg.append('rect').attr('class', 'run-band').attr('data-dir', r.direction).attr('x', x(r.start_idx)).attr('width', Math.max(2, x(r.end_idx) - x(r.start_idx))).attr('y', mg.t).attr('height', H - mg.t - mg.b)
     .style('fill', r.direction === 'beat' ? 'var(--pos)' : 'var(--neg)').attr('fill-opacity', 0.13);
-    if (x(r.end_idx) - x(r.start_idx) >= 52) svg.append('text').attr('x', x(r.start_idx) + 4).attr('y', mg.t + 12).style('fill', 'var(--ink-2)').style('font-size', '11px').style('font-weight', 600).text(r.direction === 'beat' ? 'beat' : 'lagged'); });   // labels only where they fit; the legend explains the colours
+    if (x(r.end_idx) - x(r.start_idx) >= 52) svg.append('text').attr('x', x(r.start_idx) + 4).attr('y', mg.t + 12).style('fill', 'var(--ink-2)').style('font-size', '12px').style('font-weight', 600).text(r.direction === 'beat' ? 'beat' : 'lagged'); });   // labels only where they fit; the legend explains the colours
   svg.append('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y(0)).attr('y2', y(0)).style('stroke', 'var(--ink-2)').attr('stroke-dasharray', '4 3');
-  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d => d === 0 ? '0' : d3.format(o.yfmt)(d).replace('-', MINUS))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d => d === 0 ? '0' : d3.format(o.yfmt)(d).replace('-', MINUS))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
   const tf = n <= 40 ? d3.timeFormat('%-d %b') : d3.timeFormat("%b '%y"), k = Math.max(1, Math.ceil(n / Math.max(2, Math.floor((W - mg.l - mg.r) / 96))));
   svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).tickValues(d3.range(0, n, k)).tickSize(4).tickFormat(i => tf(dparse(M(sel.idx[i]).d)))).call(axisStyle);
   const pts = vals.map((v, i) => [i, v]);
-  svg.append('path').datum(pts).attr('d', d3.area().x(p => x(p[0])).y0(y(0)).y1(p => y(p[1]))).style('fill', 'var(--accent)').attr('fill-opacity', 0.08);
-  svg.append('path').datum(pts).attr('d', d3.line().x(p => x(p[0])).y(p => y(p[1]))).attr('fill', 'none').style('stroke', 'var(--accent)').attr('stroke-width', 2.25).attr('stroke-linejoin', 'round');
+  svg.append('path').datum(pts).attr('d', d3.area().x(p => x(p[0])).y0(y(0)).y1(p => y(p[1]))).style('fill', 'var(--red)').attr('fill-opacity', 0.08);
+  svg.append('path').datum(pts).attr('d', d3.line().x(p => x(p[0])).y(p => y(p[1]))).attr('fill', 'none').style('stroke', 'var(--red)').attr('stroke-width', 2.25).attr('stroke-linejoin', 'round');
   const cross = svg.append('g').style('display', 'none');
-  cross.append('line').attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--ink-2)'); const dot = cross.append('circle').attr('r', 5).style('fill', 'var(--accent)').style('stroke', 'var(--surface)').attr('stroke-width', 2);
+  cross.append('line').attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--ink-2)'); const dot = cross.append('circle').attr('r', 5).style('fill', 'var(--red)').style('stroke', 'var(--surface)').attr('stroke-width', 2);
   svg.append('rect').attr('x', mg.l).attr('y', mg.t).attr('width', W - mg.l - mg.r).attr('height', H - mg.t - mg.b).attr('fill', 'transparent').style('touch-action', 'pan-y')
     .on('pointermove pointerdown', ev => { const i = Math.max(0, Math.min(n - 1, Math.round(x.invert(d3.pointer(ev)[0])))), m = M(sel.idx[i]);
       cross.style('display', null); cross.select('line').attr('x1', x(i)).attr('x2', x(i)); dot.attr('cx', x(i)).attr('cy', y(vals[i]));
@@ -1287,10 +1367,10 @@ function reliabilityChart(host, cal) {
   const x = d3.scaleLinear().domain([0, 1]).range([mg.l, W - mg.r]), y = d3.scaleLinear().domain([0, 1]).range([H - mg.b, mg.t]);
   const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Reliability plot: forecast probability against observed frequency');
   svg.append('g').selectAll('line').data(d3.range(0, 1.01, 0.2)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
-  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format('.0%'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format('.0%'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
   svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).ticks(5).tickSize(4).tickFormat(d3.format('.0%'))).call(axisStyle);
-  svg.append('text').attr('x', (mg.l + W - mg.r) / 2).attr('y', H - 6).attr('text-anchor', 'middle').style('fill', 'var(--ink-2)').style('font-size', '12px').text('Forecast probability');
-  svg.append('text').attr('transform', `translate(12,${(mg.t + H - mg.b) / 2}) rotate(-90)`).attr('text-anchor', 'middle').style('fill', 'var(--ink-2)').style('font-size', '12px').text('Observed frequency');
+  svg.append('text').attr('x', (mg.l + W - mg.r) / 2).attr('y', H - 6).attr('text-anchor', 'middle').style('fill', 'var(--ink-2)').style('font-size', '13px').text('Forecast probability');
+  svg.append('text').attr('transform', `translate(12,${(mg.t + H - mg.b) / 2}) rotate(-90)`).attr('text-anchor', 'middle').style('fill', 'var(--ink-2)').style('font-size', '13px').text('Observed frequency');
   svg.append('line').attr('x1', x(0)).attr('y1', y(0)).attr('x2', x(1)).attr('y2', y(1)).style('stroke', 'var(--ink-2)').attr('stroke-dasharray', '5 4');
   const series = [['market', 'Market', 'var(--s1)', d3.symbolCircle], ['sim', 'xG simulation', 'var(--s2)', d3.symbolDiamond], ['model', 'External model', 'var(--s3)', d3.symbolTriangle]].filter(([k]) => cal[k]);
   const maxN = d3.max(series.flatMap(([k]) => cal[k].reliability), b => b.n) || 1;
@@ -1327,7 +1407,7 @@ function stripChart(host, sel, hint) {
   const rows = sel.idx.map(i => M(i));
   const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Market and xG-simulated win probability for every match, with actual results');
   svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
-  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format('.0%'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format('.0%'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
   const tf = n <= 40 ? d3.timeFormat('%-d %b') : d3.timeFormat("%b '%y"), k = Math.max(1, Math.ceil(n / Math.max(2, Math.floor((W - mg.l - mg.r) / 96))));
   svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).tickValues(d3.range(0, n, k)).tickSize(4).tickFormat(i => tf(dparse(rows[i].d)))).call(axisStyle);
   svg.append('g').selectAll('rect').data(rows).join('rect').attr('class', 'res-strip').attr('data-r', m => m.r).attr('x', (m, i) => x(i)).attr('width', x.bandwidth()).attr('y', mg.t - 16).attr('height', 9).attr('rx', 2).style('fill', m => RES_FILL[m.r]);
@@ -1369,8 +1449,8 @@ function stakingCards(s, sel) {
     const ext = d3.extent(rows.map(r2 => r2.roi).concat(0)), y = d3.scaleLinear().domain([ext[0] - 0.05, ext[1] + 0.05]).nice().range([H - mg.b, mg.t]);
     const svg = d3.select(rhost).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Flat-stake ROI by season');
     svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
-    svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d => d3.format('+.0%')(d).replace('-', MINUS).replace('+0%', '0%'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
-    svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).tickSize(0).tickPadding(6).tickValues(rows.filter((_, i) => i % (W < 520 ? 2 : 1) === 0).map(r2 => r2.se)).tickFormat(se => se.slice(2))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '11px'); });
+    svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d => d3.format('+.0%')(d).replace('-', MINUS).replace('+0%', '0%'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
+    svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).tickSize(0).tickPadding(6).tickValues(rows.filter((_, i) => i % (W < 520 ? 2 : 1) === 0).map(r2 => r2.se)).tickFormat(se => se.slice(2))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
     svg.append('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y(0)).attr('y2', y(0)).style('stroke', 'var(--ink-2)');
     svg.append('g').selectAll('rect').data(rows).join('rect').attr('class', 'roi-bar').attr('data-season', r2 => r2.se).attr('x', r2 => x(r2.se)).attr('width', x.bandwidth()).attr('y', r2 => Math.min(y(0), y(r2.roi))).attr('height', r2 => Math.max(1, Math.abs(y(r2.roi) - y(0)))).attr('rx', 2)
       .style('fill', r2 => r2.roi >= 0 ? 'var(--pos)' : 'var(--neg)').attr('stroke', r2 => r2.sel ? 'var(--ink)' : 'none').attr('stroke-width', 2)
@@ -1453,7 +1533,13 @@ addEventListener('hashchange', render);
 let rz; new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => { const w = document.body.clientWidth; if (w !== lastW) { lastW = w; redrawers.forEach(f => f()); } }); }).observe(document.body);   // redraw only when the width changes
 buildChrome();
 render();
-window.__tracker = { ready: true, boot: Math.round(performance.now() - T_BOOT), lastRender: window.__tracker && window.__tracker.lastRender };
+window.__tracker = { ready: true, boot: Math.round(performance.now() - T_BOOT), lastRender: window.__tracker && window.__tracker.lastRender,
+  mountTakeaways(list) {                                  // test hook: draw the takeaways card for any list (0-8 tiles) in place of the page
+    const card = takeawaysCard({ takeaways: list }), view = $('#view');
+    view.replaceChildren(el('div', { class: 'grid' }, ...[card].filter(Boolean)));
+    redrawers = card ? [card._span] : [];
+    if (card) card._span();
+  } };
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 </script>

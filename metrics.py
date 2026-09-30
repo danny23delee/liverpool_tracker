@@ -450,8 +450,18 @@ def season_table(m: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame({"n": g.size(), "xg_pm": g.xg.mean(), "xga_pm": g.xga.mean()})
 
 
-def _tk(id_, text, sentiment, **facts):
-    return {"id": id_, "text": text, "sentiment": sentiment, "facts": facts}
+def _signed(v: float, dp: int = 1, suffix: str = "") -> str:
+    """'+6.8' / '−6.8' (true minus sign) for the big number on a takeaway tile."""
+    return f"{'+' if v >= 0 else '−'}{abs(v):.{dp}f}{suffix}"
+
+
+def _tk(id_, text, sentiment, *, tag, headline, direction, bars, **facts):
+    """A takeaway. `text` and `facts` are the sentence and the numbers it cites; the tile fields
+    (`tag`, `headline`, `direction`, `good`, `bars`) present the same numbers for the dashboard and
+    are computed from the same values as the sentence, never separately. `good` follows the metric's
+    higher_is_better (it is the sentiment the sentence was already given)."""
+    return {"id": id_, "text": text, "sentiment": sentiment, "facts": facts, "tag": tag, "headline": headline,
+            "direction": direction, "good": sentiment == "positive", "bars": bars}
 
 
 def takeaways(sel: pd.DataFrame, base: pd.DataFrame | None = None, base_label: str | None = None,
@@ -473,11 +483,14 @@ def takeaways(sel: pd.DataFrame, base: pd.DataFrame | None = None, base_label: s
         pts = int(last.pts.sum())
         w, d, l = (int((last.result == r).sum()) for r in "WDL")
         rec = f"{w}W {d}D {l}L"
+        form_bars = [{"label": f"Last {k}", "value": pts}, {"label": "Available", "value": 3 * k}]
         if pts >= T["form_strong_points"]:
             out.append(_tk("form", f"Strong form: {pts} points from the last {k} matches ({rec})", "positive",
+                           tag="RECENT FORM", headline=f"{pts} pts", direction="up", bars=form_bars,
                            points_last=pts, n=k, wins=w, draws=d, losses=l))
         elif pts <= T["form_poor_points"]:
             out.append(_tk("form", f"Poor form: {pts} points from the last {k} matches ({rec})", "negative",
+                           tag="RECENT FORM", headline=f"{pts} pts", direction="down", bars=form_bars,
                            points_last=pts, n=k, wins=w, draws=d, losses=l))
 
     if is_small_sample(n):
@@ -491,6 +504,8 @@ def takeaways(sel: pd.DataFrame, base: pd.DataFrame | None = None, base_label: s
         out.append(_tk("finishing", f"Finishing {abs(diff):.1f} goals {'above' if above else 'below'} xG "
                        f"({r['goals_from_shots']} goals from {r['xg']:.1f} xG)",
                        "positive" if above else "negative",
+                       tag="GOALS VS XG", headline=_signed(round(diff, 1)), direction="up" if above else "down",
+                       bars=[{"label": "Goals", "value": r["goals_from_shots"]}, {"label": "xG", "value": round(r["xg"], 1)}],
                        goals=r["goals_from_shots"], xg=round(r["xg"], 1), diff=round(abs(diff), 1)))
     # -- results vs market
     dm = r["points_minus_market"]
@@ -499,6 +514,8 @@ def takeaways(sel: pd.DataFrame, base: pd.DataFrame | None = None, base_label: s
         out.append(_tk("market", f"Results {'ahead of' if ahead else 'trailing'} the market by {abs(dm):.1f} points "
                        f"({r['points']} points vs {r['xpts_market']:.1f} market-expected)",
                        "positive" if ahead else "negative",
+                       tag="POINTS VS MARKET", headline=_signed(round(dm, 1)), direction="up" if ahead else "down",
+                       bars=[{"label": "Points", "value": r["points"]}, {"label": "Market", "value": round(r["xpts_market"], 1)}],
                        points=r["points"], market_points=round(r["xpts_market"], 1), diff=round(abs(dm), 1)))
     # -- results vs xG-based points
     dx = r["points_minus_xpts"]
@@ -507,6 +524,8 @@ def takeaways(sel: pd.DataFrame, base: pd.DataFrame | None = None, base_label: s
         out.append(_tk("xpts", f"Points {abs(dx):.1f} {'above' if above else 'below'} xG-based expectation "
                        f"({r['points']} vs {r['xpts_sim']:.1f} xPts)",
                        "positive" if above else "negative",
+                       tag="POINTS VS XPTS", headline=_signed(round(dx, 1)), direction="up" if above else "down",
+                       bars=[{"label": "Points", "value": r["points"]}, {"label": "xPts", "value": round(r["xpts_sim"], 1)}],
                        points=r["points"], xpts=round(r["xpts_sim"], 1), diff=round(abs(dx), 1)))
     # -- vs baseline (xG for / against per match)
     if base is not None and not base.empty and not is_small_sample(len(base)):
@@ -518,6 +537,8 @@ def takeaways(sel: pd.DataFrame, base: pd.DataFrame | None = None, base_label: s
                 out.append(_tk(f"baseline_{mid}", f"{nice} per match {cur:.2f}, {abs(ch['value']) * 100:.0f}% "
                                f"{'higher' if up else 'lower'} than the {base_label} of {b:.2f}",
                                "positive" if ch["sentiment"] == "good" else "negative",
+                               tag=f"{nice} PER MATCH", headline=_signed(round(ch["value"] * 100), 0, "%"), direction="up" if up else "down",
+                               bars=[{"label": "Selection", "value": round(cur, 2)}, {"label": "Baseline", "value": round(b, 2)}],
                                value=round(cur, 2), baseline=round(b, 2), pct=round(abs(ch["value"]) * 100)))
     # -- best/worst since (full single-season selections only)
     if seasons is not None and season and season != "all":
@@ -539,7 +560,17 @@ def takeaways(sel: pd.DataFrame, base: pd.DataFrame | None = None, base_label: s
                 if not good and since is not None:
                     continue
                 scope = f"since {since}" if since else f"in the data (from {prior.index[0]})"
+                # the comparison is the season it is being measured against: the last one as extreme, or
+                # (for a record) the most extreme earlier season
+                if since:
+                    other, other_label = float(prior.loc[since, mid]), since
+                else:
+                    other = float(prior[mid].max() if phrase == "highest" else prior[mid].min())
+                    other_label = "Previous worst" if not good else "Previous best"
                 out.append(_tk(f"extreme_{mid}_{phrase}",
                                f"{nice} per match {cur:.2f} is the {phrase} of any season {scope}",
-                               "positive" if good else "negative", value=round(cur, 2), since=since))
+                               "positive" if good else "negative",
+                               tag=f"{nice} PER MATCH", headline=f"{cur:.2f}", direction="down" if phrase == "lowest" else "up",
+                               bars=[{"label": "Selection", "value": round(cur, 2)}, {"label": other_label, "value": round(other, 2)}],
+                               value=round(cur, 2), since=since))
     return out

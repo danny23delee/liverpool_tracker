@@ -5,3 +5,5 @@ pytest>=8
 playwright>=1.44
 # Only needed behind a corporate TLS-inspecting proxy on Windows (uses the OS certificate store; verification stays on)
 truststore>=0.9; sys_platform == "win32"
+# Used by build.py to resize the crest image (assets/crest.png) before inlining it
+pillow>=10
