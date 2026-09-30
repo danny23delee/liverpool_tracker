@@ -60,6 +60,16 @@ def browser():
         b.close()
 
 
+def _stub_network(page):
+    """Deterministic network: the pinned D3 build is served from the local cache when present (on a fresh CI
+    runner it is fetched from the real CDN, where the page's SRI hash still protects it); fonts get an empty
+    stylesheet because the CSS has fallback stacks."""
+    if D3_LOCAL.exists():
+        page.route("https://cdnjs.cloudflare.com/**", lambda r: r.fulfill(status=200, content_type="application/javascript", body=D3_LOCAL.read_bytes()))
+    page.route("https://fonts.googleapis.com/**", lambda r: r.fulfill(status=200, content_type="text/css", body=""))
+    page.route("https://fonts.gstatic.com/**", lambda r: r.fulfill(status=200, body=b""))
+
+
 def _new_page(browser, width=1440, height=900, scheme="light"):
     ctx = browser.new_context(viewport={"width": width, "height": height}, color_scheme=scheme)
     page = ctx.new_page()
@@ -67,10 +77,7 @@ def _new_page(browser, width=1440, height=900, scheme="light"):
     page.on("console", lambda msg: errors.append(f"console.{msg.type}: {msg.text}") if msg.type in ("error", "warning") else None)
     page.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
     page.on("requestfailed", lambda r: errors.append(f"requestfailed: {r.url}"))
-    if D3_LOCAL.exists():
-        page.route("https://cdnjs.cloudflare.com/**", lambda r: r.fulfill(status=200, content_type="application/javascript", body=D3_LOCAL.read_bytes()))
-    page.route("https://fonts.googleapis.com/**", lambda r: r.fulfill(status=200, content_type="text/css", body=""))
-    page.route("https://fonts.gstatic.com/**", lambda r: r.fulfill(status=200, body=b""))
+    _stub_network(page)
     page.errors = errors
     return ctx, page
 
@@ -970,8 +977,7 @@ def test_mobile_nav_keeps_current_page_visible(browser):
 def test_touch_targets_are_large_enough_on_mobile(browser, data):
     ctx = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True)
     pg = ctx.new_page()
-    pg.route("https://cdnjs.cloudflare.com/**", lambda r: r.fulfill(status=200, content_type="application/javascript", body=D3_LOCAL.read_bytes()))
-    pg.route("https://fonts.googleapis.com/**", lambda r: r.fulfill(status=200, content_type="text/css", body=""))
+    _stub_network(pg)
     pg.goto(DIST.as_uri())
     pg.wait_for_function("window.__tracker && window.__tracker.ready")
     small = []
@@ -993,8 +999,7 @@ def test_touch_targets_are_large_enough_on_mobile(browser, data):
 def test_tooltips_work_on_touch(browser):
     ctx = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True)
     pg = ctx.new_page()
-    pg.route("https://cdnjs.cloudflare.com/**", lambda r: r.fulfill(status=200, content_type="application/javascript", body=D3_LOCAL.read_bytes()))
-    pg.route("https://fonts.googleapis.com/**", lambda r: r.fulfill(status=200, content_type="text/css", body=""))
+    _stub_network(pg)
     pg.goto(DIST.as_uri() + "#/attack?season=2024-25&era=all")
     pg.wait_for_function("window.__tracker && window.__tracker.ready")
     pg.locator("[data-chart=attack] circle.shot").first.scroll_into_view_if_needed()
