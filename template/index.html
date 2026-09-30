@@ -5,14 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Liverpool Performance Tracker</title>
 <meta name="description" content="Liverpool FC Premier League team and player performance since 2014/15, with a betting-market lens: expected goals, market probabilities and results side by side.">
+<meta name="theme-color" content="#c8102e">
+<meta property="og:title" content="Liverpool Performance Tracker">
+<meta property="og:description" content="Expected goals, betting-market probabilities and results side by side, with every number tested against independent calculations.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%23c8102e%27/%3E%3Crect x=%277%27 y=%277%27 width=%275%27 height=%2718%27 rx=%271%27 fill=%27white%27/%3E%3Crect x=%2717%27 y=%277%27 width=%275%27 height=%2718%27 rx=%271%27 fill=%27white%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
 <style>
 :root {
   color-scheme: light;
-  --bg: #f5f4f1; --surface: #ffffff; --surface-2: #eeece8; --ink: #15171c; --ink-2: #4a4f5c; --muted: #6d7280;
+  --bg: #f5f4f1; --surface: #ffffff; --surface-2: #eeece8; --ink: #15171c; --ink-2: #4a4f5c; --muted: #616674;
   --line: #e1dfda; --line-strong: #c9c6bf; --accent: #c8102e; --accent-ink: #ffffff; --accent-soft: rgba(200,16,46,.10);
   --good: #0b6b22; --bad: #b3261e; --neutral: #5b6070; --good-bg: rgba(12,163,12,.12); --bad-bg: rgba(208,59,59,.12);
   --chart-grid: #e6e4df; --shadow: 0 1px 2px rgba(20,20,30,.06), 0 4px 14px rgba(20,20,30,.05);
@@ -23,7 +28,7 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
     --bg: #0e1014; --surface: #171a20; --surface-2: #1f232b; --ink: #f0f1f4; --ink-2: #b9bdc9; --muted: #8c92a2;
-    --line: #2a2f3a; --line-strong: #3a4050; --accent: #f0405c; --accent-ink: #14060a; --accent-soft: rgba(240,64,92,.16);
+    --line: #2a2f3a; --line-strong: #3a4050; --accent: #f4536c; --accent-ink: #14060a; --accent-soft: rgba(244,83,108,.16);
     --good: #4cc766; --bad: #ff7d75; --neutral: #a0a5b4; --good-bg: rgba(76,199,102,.14); --bad-bg: rgba(255,125,117,.14);
     --chart-grid: #262b35; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.3);
   }
@@ -31,7 +36,7 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0e1014; --surface: #171a20; --surface-2: #1f232b; --ink: #f0f1f4; --ink-2: #b9bdc9; --muted: #8c92a2;
-  --line: #2a2f3a; --line-strong: #3a4050; --accent: #f0405c; --accent-ink: #14060a; --accent-soft: rgba(240,64,92,.16);
+  --line: #2a2f3a; --line-strong: #3a4050; --accent: #f4536c; --accent-ink: #14060a; --accent-soft: rgba(244,83,108,.16);
   --good: #4cc766; --bad: #ff7d75; --neutral: #a0a5b4; --good-bg: rgba(76,199,102,.14); --bad-bg: rgba(255,125,117,.14);
   --chart-grid: #262b35; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.3);
 }
@@ -72,9 +77,11 @@ select { appearance: none; background: var(--surface) url("data:image/svg+xml,%3
 .icon-btn { min-height: 38px; min-width: 38px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 12px; }
 .icon-btn:hover { background: var(--surface-2); }
 main { flex: 1; min-width: 0; padding-bottom: 28px; }
+main:focus, main:focus-visible { outline: none; }   /* focus moves here on page change for screen readers; it is not a control */
 .foot { border-top: 1px solid var(--line); padding: 16px 0 calc(22px + env(safe-area-inset-bottom, 0px)); color: var(--muted); font-size: 12px; line-height: 1.6; }
 .foot a { color: var(--ink-2); }
 
+.loading { color: var(--muted); padding: 40px 0; }
 /* ---------- cards ---------- */
 .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: var(--shadow); min-width: 0; }
@@ -97,6 +104,8 @@ main { flex: 1; min-width: 0; padding-bottom: 28px; }
 .delta .arrow { font-size: 10px; margin-right: 3px; }
 .na { color: var(--muted); font-weight: 500; }
 .info { all: unset; cursor: help; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; color: var(--muted); font-size: 13px; line-height: 1; }
+.info { position: relative; }
+.info::after { content: ''; position: absolute; inset: -9px; }   /* invisible 36px touch target around the 18px glyph */
 .info:hover, .info:focus-visible { color: var(--accent); background: var(--accent-soft); }
 .info:focus-visible { outline: 2px solid var(--accent); }
 #tip { position: fixed; z-index: 50; max-width: 300px; padding: 9px 11px; border-radius: 8px; background: var(--ink); color: var(--bg); font-size: 12.5px; line-height: 1.45; pointer-events: none; box-shadow: 0 6px 20px rgba(0,0,0,.25); opacity: 0; transition: opacity .08s; }
@@ -107,7 +116,7 @@ main { flex: 1; min-width: 0; padding-bottom: 28px; }
 .chart-wrap svg { display: block; }
 .chart-note { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
 .empty { color: var(--ink-2); padding: 28px 8px; text-align: center; border: 1px dashed var(--line-strong); border-radius: 10px; }
-details.tbl { margin-top: 10px; font-size: 12.5px; } details.tbl summary { cursor: pointer; color: var(--ink-2); }
+details.tbl { margin-top: 10px; font-size: 12.5px; } details.tbl summary { cursor: pointer; color: var(--ink-2); display: flex; align-items: center; min-height: 32px; }
 .tbl-scroll { max-height: 220px; overflow: auto; margin-top: 8px; border: 1px solid var(--line); border-radius: 8px; }
 table.data { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 table.data th, table.data td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
@@ -192,6 +201,7 @@ table.sq thead th:first-child { z-index: 3; }
 table.sq th:nth-child(2), table.sq td:nth-child(2) { text-align: left; }
 table.sq tbody tr { cursor: pointer; } table.sq tbody tr:hover td { background: var(--surface-2); }
 table.sq tbody tr.sel td { background: var(--accent-soft); }
+table.sq td.empty-cell { text-align: center !important; white-space: normal; padding: 28px 12px; color: var(--ink-2); position: static; box-shadow: none; }
 table.sq .sortbtn { all: unset; cursor: pointer; text-transform: uppercase; }
 table.sq .sortbtn:focus-visible { outline: 2px solid var(--accent); }
 table.sq th[aria-sort="ascending"] .sortbtn::after { content: " ▲"; font-size: 9px; } table.sq th[aria-sort="descending"] .sortbtn::after { content: " ▼"; font-size: 9px; }
@@ -228,7 +238,7 @@ table.sq td .pl { all: unset; cursor: pointer; font-weight: 600; } table.sq td .
 .chip { display: inline-block; padding: 1px 9px; border-radius: 999px; font-weight: 700; font-size: 12px; border: 1px solid var(--line-strong); }
 .chip.W { color: var(--good); border-color: var(--good); background: var(--good-bg); } .chip.L { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); }
 .shot-list { max-height: 420px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
-.shot-list table.data td:nth-child(3) { text-align: left; }
+.shot-list table.data th:nth-child(2), .shot-list table.data td:nth-child(2), .shot-list table.data th:nth-child(3), .shot-list table.data td:nth-child(3) { text-align: left; }
 .hl-row td { font-weight: 600; }
 table.compact th, table.compact td { padding: 6px 6px; font-size: 12.5px; }
 table.compact thead th { font-size: 10.5px; letter-spacing: .02em; }
@@ -258,6 +268,19 @@ table.data tr.best td { font-weight: 600; }
 .prose table.glossary td:nth-child(2) { min-width: 300px; }
 .prose .example { background: var(--surface-2); border-radius: 10px; padding: 4px 16px 10px; margin: 14px 0; }
 .prose .example table.data td, .prose .example table.data th { text-align: right; } .prose .example table.data td:first-child, .prose .example table.data th:first-child { text-align: left; }
+.prose details.sec { border-top: 1px solid var(--line); }
+.prose details.sec:first-of-type { border-top: 0; }
+.prose details.sec > summary, .prose details.sub > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px; padding: 12px 0; border-radius: 6px; }
+.prose details.sub > summary { padding: 8px 0; }
+.prose summary::-webkit-details-marker { display: none; }
+.prose summary::before { content: ""; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform .15s; flex: none; margin: 0 4px 0 2px; }
+.prose details[open] > summary::before { transform: rotate(45deg); }
+.prose summary:hover::before { border-color: var(--accent); }
+.prose details.sec > summary h2, .prose details.sub > summary h3 { margin: 0; }
+.prose details.sub > summary .cnt { color: var(--muted); font-weight: 500; }
+.prose details.sec > :not(summary) { margin-left: 0; }
+.prose .prose-tools { display: flex; gap: 8px; align-items: center; margin: 0 0 8px; flex-wrap: wrap; }
+.prose .prose-tools span { font-size: 12.5px; color: var(--muted); }
 .toc { position: sticky; top: 16px; align-self: start; }
 .toc h2 { margin-bottom: 8px; } .toc ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13.5px; }
 .toc a { color: var(--ink-2); text-decoration: none; } .toc a:hover { color: var(--accent); text-decoration: underline; }
@@ -309,7 +332,7 @@ table.data tr.best td { font-weight: 600; }
         <div class="field"><label for="theme-btn">Theme</label><button class="icon-btn" id="theme-btn" type="button" aria-label="Toggle light or dark theme">◐ <span id="theme-label">Theme</span></button></div>
       </div>
     </header>
-    <main id="main" tabindex="-1"><div id="view"></div></main>
+    <main id="main" tabindex="-1"><div id="view"><p class="loading" role="status">Loading the dashboard…</p></div></main>
     <footer class="foot" id="footer"></footer>
   </div>
 </div>
@@ -317,8 +340,13 @@ table.data tr.best td { font-weight: 600; }
 <noscript><p style="padding:16px">This dashboard needs JavaScript.</p></noscript>
 <script id="data" type="application/json">__DATA_JSON__</script>
 <script>
-(function () {
+function start() {
 'use strict';
+if (typeof d3 === 'undefined') {                       // the pinned D3 build could not be loaded (offline, blocked CDN)
+  document.getElementById('view').innerHTML = '<div class="empty" data-testid="d3-missing"><b>The charts library could not be loaded.</b><br>Check your connection or content blocker and reload this page.</div>';
+  return;
+}
+const T_BOOT = performance.now();
 const D = JSON.parse(document.getElementById('data').textContent);
 const R = D.registry, MATCHES = D.matches, MIN = D.settings.min_sample;
 const $ = (s, r = document) => r.querySelector(s);
@@ -330,7 +358,7 @@ function el(tag, attrs, ...kids) {
     if (v == null || v === false) continue;
     if (k === 'class') n.className = v;
     else if (k === 'html') n.innerHTML = v;
-    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+    else if (k.startsWith('on')) { n.addEventListener(k.slice(2), v); if (k === 'onpointermove') n.addEventListener('pointerdown', v); }
     else n.setAttribute(k, v === true ? '' : v);
   }
   for (const c of kids.flat(Infinity)) { if (c == null || c === false) continue; n.append(c.nodeType ? c : document.createTextNode(String(c))); }
@@ -368,17 +396,19 @@ function showTip(html, x, y) {
   tip.style.top = Math.max(8, Math.min(innerHeight - h - 8, y - h - 12 < 8 ? y + 16 : y - h - 12)) + 'px';
 }
 function hideTip() { tip.classList.remove('on'); }
+const leaveTip = ev => { if (!ev || ev.pointerType !== 'touch') hideTip(); };   // a lifted finger 'leaves' the mark: keep the tip until the next tap
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function info(id) {                         // ⓘ tooltip text comes from the registry, nowhere else
   const m = R[id];
   const b = el('button', { class: 'info', type: 'button', 'aria-label': `About ${m.label}`, 'data-info': id }, 'ⓘ');
   const open = () => { const r = b.getBoundingClientRect(); showTip(`<b>${esc(m.label)}</b><br>${esc(m.description)}<span class="src">Source: ${esc(m.source)}</span>`, r.left + r.width / 2 - 12, r.top); };
-  b.addEventListener('mouseenter', open); b.addEventListener('focus', open);
+  const canHover = matchMedia('(hover: hover)');        // on touch screens a tap toggles instead (mouseenter and focus fire on tap too)
+  b.addEventListener('mouseenter', () => { if (canHover.matches) open(); }); b.addEventListener('focus', () => { if (b.matches(':focus-visible')) open(); });
   b.addEventListener('mouseleave', hideTip); b.addEventListener('blur', hideTip);
   b.addEventListener('click', e => { e.stopPropagation(); tip.classList.contains('on') ? hideTip() : open(); });
   return b;
 }
-document.addEventListener('click', hideTip);
+document.addEventListener('click', ev => { if (!ev.target.closest('svg, .mixbar, .strip')) hideTip(); });
 function mlabel(id, text) { return el('span', { class: 'lbl' }, text || R[id].label, info(id)); }
 function tile(id, valueNode, opts = {}) {
   return el('div', { class: 'tile' }, mlabel(id, opts.label),
@@ -439,6 +469,11 @@ function paintChrome(s) {
   const list = $('#nav-list'); list.innerHTML = '';
   PAGES.forEach((p, i) => list.append(el('li', {}, el('a', { class: 'item', href: hashFor(s, p.id), 'aria-current': p.id === s.page ? 'page' : null },
     el('span', { class: 'num' }, i + 1), p.label))));
+  const nav = $('.nav'), cur = list.querySelector('[aria-current]');
+  if (cur && nav.scrollWidth > nav.clientWidth) {        // scroll the mobile nav only if the current page is not fully in view
+    const r = cur.getBoundingClientRect(), n = nav.getBoundingClientRect();
+    if (r.right > n.right || r.left < n.left) nav.scrollLeft += r.left - n.left - 70;
+  }
   $('#sel-season').value = s.season; $('#sel-era').value = s.era;
   [...$('#sel-era').options].forEach(o => { if (o.value !== 'all') { const has = !!D.selections[`${s.season}|${ERAS.find(e => e.slug === o.value).manager}`]; o.textContent = ERAS.find(e => e.slug === o.value).manager + (has ? '' : ' (no matches)'); } });
 }
@@ -513,12 +548,12 @@ function rollChart(host, pts, label) {
   const dot = cross.append('circle').attr('r', 5).style('fill', 'var(--accent)').style('stroke', 'var(--surface)').attr('stroke-width', 2);
   const bis = d3.bisector(p => p.date).center;
   svg.append('rect').attr('x', mg.l).attr('y', mg.t).attr('width', W - mg.l - mg.r).attr('height', H - mg.t - mg.b).attr('fill', 'transparent').style('touch-action', 'pan-y')
-    .on('pointermove', ev => {
+    .on('pointermove pointerdown', ev => {
       const [px] = d3.pointer(ev), p = pts[bis(pts, x.invert(px))];
       cross.style('display', null); cross.select('line').attr('x1', x(p.date)).attr('x2', x(p.date)); dot.attr('cx', x(p.date)).attr('cy', y(p.v));
       showTip(`<b>${d3.format('+.2f')(p.v).replace('-', MINUS)} xG per match</b><br>10 matches to ${dfmt(p.date)}<br>latest: ${p.h ? 'home' : 'away'} v ${esc(p.opp)}`, ev.clientX, ev.clientY);
     })
-    .on('pointerleave', () => { cross.style('display', 'none'); hideTip(); });
+    .on('pointerleave', ev => { if (ev.pointerType === 'touch') return; cross.style('display', 'none'); hideTip(); });
 }
 function rollCard(sel) {
   const pts = sel.roll.map((v, k) => v == null ? null : { v, m: M(sel.idx[k]) }).filter(Boolean)
@@ -652,13 +687,16 @@ function drawShotMap(host, rows, mode, label) {
   const svg = d3.select(host).append('svg').attr('viewBox', `${vx} -2 ${vw} 72`).attr('role', 'img').attr('aria-label', label);
   drawPitch(svg.append('g'));
   const px = r => 105 * (att ? r[SI.x] : 1 - r[SI.x]), py = r => 68 * (att ? r[SI.y] : 1 - r[SI.y]);
-  const rad = r => (3.5 + 12 * Math.sqrt(r[SI.xg])) / ppm;
+  const dense = rows.length > 800 ? Math.max(0.4, Math.sqrt(800 / rows.length)) : 1;   // many shots: draw every circle smaller so the pitch stays readable
+  const rad = r => dense * (3.5 + 12 * Math.sqrt(r[SI.xg])) / ppm;
   const inView = rows.filter(r => px(r) >= vx && px(r) <= vx + vw);
+  if (!rows.length) svg.append('text').attr('class', 'empty-note').attr('x', vx + vw / 2).attr('y', 36).attr('text-anchor', 'middle').style('fill', 'var(--ink-2)').style('font-size', `${14 / ppm}px`).text('No shots match these filters');
   const sorted = inView.slice().sort((a, b) => (isGoal(a) - isGoal(b)) || (b[SI.xg] - a[SI.xg]));
   svg.append('g').selectAll('circle').data(sorted).join('circle').attr('class', 'shot').attr('cx', px).attr('cy', py).attr('r', rad)
-    .style('fill', r => isGoal(r) ? 'var(--accent)' : 'var(--ink-2)').attr('fill-opacity', r => isGoal(r) ? 0.95 : 0.16)
+    .style('fill', r => isGoal(r) ? 'var(--accent)' : 'var(--ink-2)').attr('fill-opacity', r => isGoal(r) ? 0.95 : (dense < 1 ? 0.1 : 0.16))
     .style('stroke', r => isGoal(r) ? 'var(--surface)' : 'var(--ink-2)').attr('stroke-width', r => (isGoal(r) ? 1.5 : 1.3) / ppm)
-    .on('pointermove', (ev, r) => showTip(shotTip(r), ev.clientX, ev.clientY)).on('pointerleave', hideTip);
+    .on('pointermove pointerdown', (ev, r) => showTip(shotTip(r), ev.clientX, ev.clientY)).on('pointerleave', leaveTip);
+  svg.attr('data-dense', dense < 1 ? dense.toFixed(2) : null);
   return rows.length - inView.length;
 }
 function shotStats(rows) {
@@ -682,7 +720,8 @@ function shotMapCard(sel, mode) {
       (flt.opp === 'all' || M(r[0]).opp === flt.opp));
     const st = shotStats(cur);
     const hid = drawShotMap(host, cur, mode, `${R[id].label}: ${st.n} shots, ${st.goals} goals`);
-    hidden.textContent = hid ? `${hid} ${hid === 1 ? 'shot' : 'shots'} taken from further out than the mapped area ${hid === 1 ? 'is' : 'are'} not drawn but counted in the totals.` : '';
+    const dn = cur.length > 800 ? `Circles are drawn smaller because ${cur.length.toLocaleString()} shots are shown; size still grows with xG. ` : '';
+    hidden.textContent = dn + (hid ? `${hid} ${hid === 1 ? 'shot' : 'shots'} taken from further out than the mapped area ${hid === 1 ? 'is' : 'are'} not drawn but counted in the totals.` : '');
     summary.replaceChildren(
       el('div', { class: 'tile' }, el('div', { class: 'lbl' }, att ? 'Shots shown' : 'Shots faced shown'), el('div', { class: 'val', 'data-stat': 'shots' }, st.n.toLocaleString())),
       el('div', { class: 'tile' }, el('div', { class: 'lbl' }, att ? 'Goals from these shots' : 'Goals conceded from these shots', el('span', { class: 'tag' }, 'actual')), el('div', { class: 'val', 'data-stat': 'goals' }, st.goals)),
@@ -735,7 +774,7 @@ function finishCard(sel) {
     const g = svg.append('g').selectAll('g').data(data).join('g');
     g.append('rect').attr('x', d => d.d >= 0 ? x(0) : x(d.d)).attr('y', d => y(d.name + d.sh)).attr('width', d => Math.max(1, Math.abs(x(d.d) - x(0)))).attr('height', y.bandwidth()).attr('rx', 3)
       .style('fill', d => d.d >= 0 ? 'var(--pos)' : 'var(--neg)')
-      .on('pointermove', (ev, d) => showTip(`<b>${esc(d.name)}</b><br>${d.g} goals from ${d.x.toFixed(1)} xG (expected)<br>${d.sh} shots`, ev.clientX, ev.clientY)).on('pointerleave', hideTip);
+      .on('pointermove pointerdown', (ev, d) => showTip(`<b>${esc(d.name)}</b><br>${d.g} goals from ${d.x.toFixed(1)} xG (expected)<br>${d.sh} shots`, ev.clientX, ev.clientY)).on('pointerleave', leaveTip);
     g.append('text').attr('x', mg.l - 8).attr('y', d => y(d.name + d.sh) + y.bandwidth() / 2 + 4).attr('text-anchor', 'end').style('fill', 'var(--ink)').style('font-size', '12.5px').text(d => label(d.name));
     g.append('text').attr('x', d => d.d >= 0 ? x(d.d) + 6 : x(d.d) - 6).attr('y', d => y(d.name + d.sh) + y.bandwidth() / 2 + 4).attr('text-anchor', d => d.d >= 0 ? 'start' : 'end')
       .style('fill', 'var(--ink)').style('font-size', '12px').style('font-weight', 600).text(d => Math.abs(d.d) < 0.05 ? '0.0' : (d.d >= 0 ? '+' : MINUS) + Math.abs(d.d).toFixed(1));
@@ -775,10 +814,10 @@ function scatterCard(sel, s) {
     }
     const tip = (p, ev) => showTip(`<b>${esc(p.team)}${all ? ' ' + p.se : ''}</b><br>${p.shots_pm.toFixed(1)} shots per match<br>${p.xgps.toFixed(3)} xG per shot (expected)`, ev.clientX, ev.clientY);
     svg.append('g').selectAll('circle').data(others).join('circle').attr('cx', p => x(p.shots_pm)).attr('cy', p => y(p.xgps)).attr('r', all ? 3.5 : 5.5)
-      .style('fill', 'var(--muted)').attr('fill-opacity', all ? 0.4 : 0.55).on('pointermove', tip).on('pointerleave', hideTip);
+      .style('fill', 'var(--muted)').attr('fill-opacity', all ? 0.4 : 0.55).on('pointermove pointerdown', tip).on('pointerleave', leaveTip);
     const lg = svg.append('g');
     lg.selectAll('circle').data(lfc).join('circle').attr('cx', p => x(p.shots_pm)).attr('cy', p => y(p.xgps)).attr('r', 7).style('fill', 'var(--accent)').style('stroke', 'var(--surface)').attr('stroke-width', 2)
-      .on('pointermove', tip).on('pointerleave', hideTip);
+      .on('pointermove pointerdown', tip).on('pointerleave', leaveTip);
     lg.selectAll('text').data(lfc).join('text').attr('x', p => x(p.shots_pm) + 10).attr('y', p => y(p.xgps) + 4).style('fill', 'var(--ink)').style('font-size', '12px').style('font-weight', 600)
       .text(p => all ? "'" + p.se.slice(2, 4) : 'Liverpool');
     tbl.replaceChildren(tableView('View as a table', ['Club', ...(all ? ['Season'] : []), 'Shots per match', 'xG per shot (expected)'],
@@ -800,7 +839,7 @@ function mixCard(sel, side) {
     const t = tot(r);
     const bar = el('div', { class: 'mixbar', style: att ? '' : `width:${(t / r.n) * (100 / (maxTot || 1))}%` }, src.filter(([k]) => r[k].xg > 0).map(([k, name, c]) => el('span', {
       style: `flex:${r[k].xg} 1 0;background:${c}`, 'data-src': k,
-      onpointermove: ev => showTip(`<b>${name}</b><br>${r[k].xg.toFixed(1)} xG (expected) · ${r[k].shots} shots<br>${r[k].goals} goals from these shots`, ev.clientX, ev.clientY), onpointerleave: hideTip })));
+      onpointermove: ev => showTip(`<b>${name}</b><br>${r[k].xg.toFixed(1)} xG (expected) · ${r[k].shots} shots<br>${r[k].goals} goals from these shots`, ev.clientX, ev.clientY), onpointerleave: leaveTip })));
     const nums = att ? src.map(([k, name]) => `${name} ${(t ? r[k].xg / t * 100 : 0).toFixed(0)}%`).join(' · ')
       : src.map(([k, name]) => `${name} ${(r[k].xg / r.n).toFixed(2)}`).join(' · ') + ` · total ${(t / r.n).toFixed(2)}`;
     return el('div', { class: 'mixrow' + (rows.length > 1 ? '' : ' single'), 'data-mix': r.label }, rows.length > 1 && el('span', { class: 'nm' }, r.label), bar, el('span', { class: 'mixnum' }, nums));
@@ -812,7 +851,7 @@ function mixCard(sel, side) {
 }
 
 /* ---- per-match bar/dot trend with rolling line and league reference ---- */
-function matchChart(host, o) {
+function matchChart(host, o) {                              // o.hint: optional element shown only when the chart is wider than its card
   host.innerHTML = '';
   const n = o.rows.length, bars = o.kind === 'bars', bw = bars ? 9 : 7, mg = { t: 14, r: 18, b: 34, l: 44 }, H = 280;
   const W = Math.max(host.clientWidth || 640, mg.l + mg.r + n * bw);
@@ -832,10 +871,13 @@ function matchChart(host, o) {
   const rl = o.rows.map((r, i) => ({ i, v: r.roll })).filter(p => p.v != null);
   if (rl.length > 1) svg.append('path').datum(rl).attr('d', d3.line().x(p => x(p.i) + x.bandwidth() / 2).y(p => y(p.v)).curve(d3.curveMonotoneX)).attr('fill', 'none').style('stroke', bars ? 'var(--ink)' : 'var(--accent)').attr('stroke-width', 2.25).attr('stroke-linejoin', 'round');
   if (bars) svg.append('g').selectAll('circle').data(o.rows).join('circle').attr('cx', (r, i) => x(i) + x.bandwidth() / 2).attr('cy', r => y(r.g)).attr('r', 3.4).style('fill', 'var(--surface)').style('stroke', 'var(--ink)').attr('stroke-width', 1.6);
+  const overflow = W > host.clientWidth + 4;
+  if (o.hint) o.hint.hidden = !overflow;
+  if (overflow) host.scrollLeft = W;   // wider than the card: open on the most recent matches (scroll left for earlier ones)
   const hl = svg.append('rect').attr('y', mg.t).attr('height', H - mg.t - mg.b).attr('width', Math.max(step, 3)).style('fill', 'var(--accent)').attr('fill-opacity', 0.12).style('display', 'none').attr('pointer-events', 'none');
   svg.append('rect').attr('x', mg.l).attr('y', mg.t).attr('width', W - mg.l - mg.r).attr('height', H - mg.t - mg.b).attr('fill', 'transparent').style('touch-action', 'pan-y')
-    .on('pointermove', ev => { const i = Math.max(0, Math.min(n - 1, Math.floor((d3.pointer(ev)[0] - mg.l) / step))); hl.style('display', null).attr('x', x(i) - (step - x.bandwidth()) / 2); showTip(o.tip(o.rows[i]), ev.clientX, ev.clientY); })
-    .on('pointerleave', () => { hl.style('display', 'none'); hideTip(); });
+    .on('pointermove pointerdown', ev => { const i = Math.max(0, Math.min(n - 1, Math.floor((d3.pointer(ev)[0] - mg.l) / step))); hl.style('display', null).attr('x', x(i) - (step - x.bandwidth()) / 2); showTip(o.tip(o.rows[i]), ev.clientX, ev.clientY); })
+    .on('pointerleave', ev => { if (ev.pointerType === 'touch') return; hl.style('display', 'none'); hideTip(); });
 }
 function refsFor(sel, key) {                                     // league average per season segment, in selection order
   const out = [];
@@ -846,8 +888,9 @@ function trendCard(sel, cfg) {
   const rows = sel.idx.map((mi, i) => { const m = M(mi); return cfg.row(m, i, sel); });
   const host = el('div', { class: 'chart-wrap', 'data-chart': cfg.chart });
   const refs = cfg.ref ? refsFor(sel, cfg.ref) : [];
-  const draw = () => matchChart(host, { rows, refs, kind: cfg.kind, label: cfg.label, yfmt: cfg.yfmt, tip: cfg.tip });
-  const card = pageCard(cfg.span || 'span-12', cfg.id, cfg.tag, legend(cfg.legend(refs.length > 0)), host, cfg.note && el('p', { class: 'note-small' }, cfg.note),
+  const hint = el('span', { class: 'scroll-hint', hidden: true }, ' Scroll sideways for earlier matches; the chart opens on the latest.');
+  const draw = () => matchChart(host, { rows, refs, kind: cfg.kind, label: cfg.label, yfmt: cfg.yfmt, tip: cfg.tip, hint });
+  const card = pageCard(cfg.span || 'span-12', cfg.id, cfg.tag, legend(cfg.legend(refs.length > 0)), host, el('p', { class: 'note-small' }, cfg.note, hint),
     tableView('View as a table', cfg.head, rows.map(cfg.tr)));
   card._draw = draw; return card;
 }
@@ -909,7 +952,7 @@ function defence(s, d) {
     el('div', { class: 'strip-wrap' }, legend([{ cls: '', color: 'var(--pos)', text: 'Clean sheet' }, { cls: 'hollow', text: 'Goal conceded' }]),
       el('div', { class: 'strip', 'data-strip': 'clean-sheets' }, sel.idx.map(mi => { const m = M(mi), c = m.ga === 0;
         return el('i', { class: c ? 'cs' : '', role: 'img', 'aria-label': `${c ? 'Clean sheet' : 'Conceded ' + m.ga}, ${vsTxt(m).replace(/&amp;/g, '&')}`, tabindex: '-1',
-          onpointermove: ev => showTip(`<b>${vsTxt(m)}</b><br>${c ? 'Clean sheet' : 'Conceded ' + m.ga}`, ev.clientX, ev.clientY), onpointerleave: hideTip }); }))));
+          onpointermove: ev => showTip(`<b>${vsTxt(m)}</b><br>${c ? 'Clean sheet' : 'Conceded ' + m.ga}`, ev.clientX, ev.clientY), onpointerleave: leaveTip }); }))));
   grid.append(map, side, xga, mixCard(sel, 'against'), cs, ppda, deep);
   const cards = [map, xga, ppda, deep];
   return { node: grid, after: () => cards.forEach(c => c._draw && c._draw()), redraw: cards.map(c => c._draw) };
@@ -957,7 +1000,7 @@ function miniTrend(host, rows, id, signed) {
   if (pts.length > 1) svg.append('path').datum(pts).attr('d', d3.line().x(r => x(r.se)).y(r => y(r.v))).attr('fill', 'none').style('stroke', 'var(--accent)').attr('stroke-width', 2);
   svg.append('g').selectAll('circle').data(pts).join('circle').attr('class', 'pt').attr('cx', r => x(r.se)).attr('cy', r => y(r.v)).attr('r', 4.5)
     .style('fill', r => r.low ? 'var(--surface)' : 'var(--accent)').style('stroke', 'var(--accent)').attr('stroke-width', 2)
-    .on('pointermove', (ev, r) => showTip(`<b>${r.se}</b><br>${fmt(id, r.v)} · ${r.min.toLocaleString()} minutes${r.low ? '<br>below the minimum minutes: unreliable' : ''}`, ev.clientX, ev.clientY)).on('pointerleave', hideTip);
+    .on('pointermove pointerdown', (ev, r) => showTip(`<b>${r.se}</b><br>${fmt(id, r.v)} · ${r.min.toLocaleString()} minutes${r.low ? '<br>below the minimum minutes: unreliable' : ''}`, ev.clientX, ev.clientY)).on('pointerleave', leaveTip);
 }
 function profileCard(pid) {
   const c = CAREER.get(pid), card = el('section', { class: 'card span-7', 'aria-label': 'Player profile', 'data-ref-season': '' },
@@ -1021,9 +1064,10 @@ function playersPage(s, d) {
     const rows = filtered().sort((p, q) => { const x = p[P_UI.sort], y = q[P_UI.sort]; const c = (typeof x === 'string' ? x.localeCompare(y) : x - y) * P_UI.dir; return c || q.min - p.min; });
     tbody.replaceChildren(...rows.map(p => el('tr', { 'data-pid': p.id, class: p.id === selected ? 'sel' : null, onclick: () => choose(p.id) },
       P_COLS.map(c => el('td', {}, c.k === 'name' ? el('button', { class: 'pl', type: 'button', onclick: e => { e.stopPropagation(); choose(p.id); } }, p.name) : c.text ? p[c.k] : num1(c.id, p[c.k]))))));
+    if (!rows.length) tbody.replaceChildren(el('tr', {}, el('td', { colspan: P_COLS.length, class: 'empty-cell', 'data-testid': 'no-players' }, players.length ? 'No players match this search and minutes filter. Try fewer minutes or a different name.' : 'No player minutes in this selection.')));
     count.textContent = `Showing ${rows.length} of ${players.length} players`;
     rolesHost.replaceChildren(...ROLES.map(([k, id, title]) => { const top = rows.slice().sort((p, q) => q[k] - p[k] || q.min - p.min).slice(0, 3);
-      return el('div', { class: 'role', 'data-role': title }, el('h3', {}, title, info(id)),
+      return el('div', { class: 'role', 'data-role': title }, el('h3', {}, title, info(id)), !top.length && el('p', { class: 'note-small' }, 'No players above the filter.'),
         el('ol', {}, top.map((p, i) => el('li', { 'data-rank': i + 1 }, el('span', { class: 'rk' }, i + 1), el('span', { class: 'nm' }, p.name), el('b', {}, num1(id, p[k])), el('small', {}, `${p.min.toLocaleString()} min`))))); }));
     rolesNote.textContent = `Ranked among the ${rows.length} players shown (at least ${P_UI.min} minutes).`;
   }
@@ -1052,9 +1096,10 @@ function matchEvents(rows) {                            // goals in minute order
   return rows.filter(r => ['Goal', 'OwnGoal'].includes(SH.codes.res[r[SI.res]])).map(r => { const og = SH.codes.res[r[SI.res]] === 'OwnGoal';
     return { min: r[SI.min], og, lfc: og ? r[SI.fl] === 0 : r[SI.fl] === 1, name: SH.players[r[SI.pl]] }; }).sort((a, b) => a.min - b.min);
 }
+const W_narrow = host => (host.clientWidth || 560) < 480;
 function raceChart(host, rows, m, ev) {
   host.innerHTML = '';
-  const W = Math.max(host.clientWidth || 560, 300), H = 300, mg = { t: 16, r: 92, b: 34, l: 40 };
+  const W = Math.max(host.clientWidth || 560, 300), H = 300, mg = { t: 16, r: W_narrow(host) ? 92 : 124, b: 34, l: 40 };
   const maxMin = Math.max(95, ...rows.map(r => r[SI.min] + 1)), xs = d3.scaleLinear().domain([0, maxMin]).range([mg.l, W - mg.r]);
   const series = (fl) => { let c = 0; const pts = [[0, 0]]; rows.filter(r => r[SI.fl] === fl && SH.codes.res[r[SI.res]] !== 'OwnGoal').forEach(r => { pts.push([r[SI.min], c]); c += r[SI.xg]; pts.push([r[SI.min], c]); }); pts.push([maxMin, c]); return { pts, total: c }; };
   const L = series(1), O = series(0), top = Math.max(L.total, O.total, 0.5);
@@ -1068,13 +1113,13 @@ function raceChart(host, rows, m, ev) {
   const cumAt = (S, t) => { let last = 0; for (let i = 0; i < S.pts.length; i++) { if (S.pts[i][0] <= t) last = S.pts[i][1]; } return last; };
   [[O, 'var(--s1)', 'opp'], [L, 'var(--accent)', 'lfc']].forEach(([S, col, cls]) => svg.append('path').datum(S.pts).attr('d', line).attr('fill', 'none').style('stroke', col).attr('stroke-width', 2.5).attr('stroke-linejoin', 'round').attr('class', 'race-' + cls));
   ev.forEach(e => { const S = e.lfc ? L : O, yy = y(cumAt(S, e.min + 0.001)); svg.append('circle').attr('class', 'goal-mark').attr('cx', xs(e.min)).attr('cy', yy).attr('r', 6).style('fill', e.lfc ? 'var(--accent)' : 'var(--s1)').style('stroke', 'var(--surface)').attr('stroke-width', 2)
-    .on('pointermove', evn => showTip(`<b>${esc(e.name)}${e.og ? ' (own goal)' : ''}</b> · ${e.min}'<br>Goal for ${e.lfc ? 'Liverpool' : esc(m.opp)} (actual)`, evn.clientX, evn.clientY)).on('pointerleave', hideTip); });
+    .on('pointermove pointerdown', evn => showTip(`<b>${esc(e.name)}${e.og ? ' (own goal)' : ''}</b> · ${e.min}'<br>Goal for ${e.lfc ? 'Liverpool' : esc(m.opp)} (actual)`, evn.clientX, evn.clientY)).on('pointerleave', leaveTip); });
   const yl = y(L.total), yo = y(O.total), gap = Math.abs(yl - yo) < 16 ? 9 : 0, dir = yl <= yo ? -1 : 1;
   svg.append('text').attr('x', W - mg.r + 8).attr('y', yl + 4 + gap * dir * -1).style('fill', 'var(--ink)').style('font-size', '12.5px').style('font-weight', 600).attr('data-race-final', 'lfc').text(m.xg.toFixed(2)).append('tspan').style('font-weight', 400).style('fill', 'var(--ink-2)').text(' Liverpool');
-  svg.append('text').attr('x', W - mg.r + 8).attr('y', yo + 4 + gap * dir).style('fill', 'var(--ink)').style('font-size', '12.5px').style('font-weight', 600).attr('data-race-final', 'opp').text(m.xga.toFixed(2)).append('tspan').style('font-weight', 400).style('fill', 'var(--ink-2)').text(' ' + (m.opp.length > 10 ? m.opp.slice(0, 9) + '…' : m.opp));
+  svg.append('text').attr('x', W - mg.r + 8).attr('y', yo + 4 + gap * dir).style('fill', 'var(--ink)').style('font-size', '12.5px').style('font-weight', 600).attr('data-race-final', 'opp').text(m.xga.toFixed(2)).append('tspan').style('font-weight', 400).style('fill', 'var(--ink-2)').text(' ' + (m.opp.length > 13 ? m.opp.slice(0, 12) + '…' : m.opp));
   svg.append('rect').attr('x', mg.l).attr('y', mg.t).attr('width', W - mg.l - mg.r).attr('height', H - mg.t - mg.b).attr('fill', 'transparent').style('touch-action', 'pan-y')
-    .on('pointermove', evn => { const t = Math.max(0, Math.min(maxMin, Math.round(xs.invert(d3.pointer(evn)[0])))); showTip(`<b>Minute ${t}</b><br>Liverpool xG ${cumAt(L, t).toFixed(2)}<br>${esc(m.opp)} xG ${cumAt(O, t).toFixed(2)}`, evn.clientX, evn.clientY); })
-    .on('pointerleave', hideTip);
+    .on('pointermove pointerdown', evn => { const t = Math.max(0, Math.min(maxMin, Math.round(xs.invert(d3.pointer(evn)[0])))); showTip(`<b>Minute ${t}</b><br>Liverpool xG ${cumAt(L, t).toFixed(2)}<br>${esc(m.opp)} xG ${cumAt(O, t).toFixed(2)}`, evn.clientX, evn.clientY); })
+    .on('pointerleave', leaveTip);
 }
 function matchPitch(host, rows, m) {
   host.innerHTML = '';
@@ -1087,7 +1132,7 @@ function matchPitch(host, rows, m) {
     .attr('cx', px).attr('cy', py).attr('r', r => (3.5 + 12 * Math.sqrt(r[SI.xg])) / ppm)
     .style('fill', r => isGoal(r) ? (l(r) ? 'var(--accent)' : 'var(--s1)') : 'var(--ink-2)').attr('fill-opacity', r => isGoal(r) ? 0.95 : 0.16)
     .style('stroke', r => isGoal(r) ? 'var(--surface)' : (l(r) ? 'var(--accent)' : 'var(--s1)')).attr('stroke-width', r => (isGoal(r) ? 1.5 : 1.6) / ppm)
-    .on('pointermove', (ev, r) => showTip(`<b>${esc(SH.players[r[SI.pl]])}</b> · ${r[SI.min]}'<br>${l(r) ? 'Liverpool' : esc(m.opp)} · xG ${r[SI.xg].toFixed(2)} (expected)<br>${RES_L[SH.codes.res[r[SI.res]]]} · ${TYP_L[SH.codes.typ[r[SI.typ]]]} · ${SIT_L[SH.codes.sit[r[SI.sit]]]}`, ev.clientX, ev.clientY)).on('pointerleave', hideTip);
+    .on('pointermove pointerdown', (ev, r) => showTip(`<b>${esc(SH.players[r[SI.pl]])}</b> · ${r[SI.min]}'<br>${l(r) ? 'Liverpool' : esc(m.opp)} · xG ${r[SI.xg].toFixed(2)} (expected)<br>${RES_L[SH.codes.res[r[SI.res]]]} · ${TYP_L[SH.codes.typ[r[SI.typ]]]} · ${SIT_L[SH.codes.sit[r[SI.sit]]]}`, ev.clientX, ev.clientY)).on('pointerleave', leaveTip);
 }
 function probBar(p) { return el('div', { class: 'pbar' }, [['w', p[0]], ['d', p[1]], ['l', p[2]]].map(([c, v]) => el('span', { class: c, style: `flex:${v} 1 0` }))); }
 function marketPanel(m) {
@@ -1177,7 +1222,7 @@ function seasonPointsChart(host, rows) {
   g.selectAll('rect').data(r => ser.map(([k, name, c]) => ({ k, name, c, v: r[k], r }))).join('rect').attr('class', 'sbar').attr('data-series', d => d.k)
     .attr('x', d => x1(d.k)).attr('width', x1.bandwidth()).attr('y', d => y(d.v)).attr('height', d => y(0) - y(d.v)).attr('rx', 2).style('fill', d => d.c);
   svg.append('g').selectAll('rect').data(data).join('rect').attr('x', r => x0(r.se)).attr('width', x0.bandwidth()).attr('y', mg.t).attr('height', H - mg.t - mg.b).attr('fill', 'transparent')
-    .on('pointermove', (ev, r) => showTip(`<b>${r.se}</b> (${r.n} matches)<br>Actual points ${r.points}<br>xPts (xG simulation) ${r.xpts_sim.toFixed(1)}<br>Market-expected points ${r.xpts_market.toFixed(1)}<br>Actual − market ${(r.points_minus_market >= 0 ? '+' : MINUS) + Math.abs(r.points_minus_market).toFixed(1)}`, ev.clientX, ev.clientY)).on('pointerleave', hideTip);
+    .on('pointermove pointerdown', (ev, r) => showTip(`<b>${r.se}</b> (${r.n} matches)<br>Actual points ${r.points}<br>xPts (xG simulation) ${r.xpts_sim.toFixed(1)}<br>Market-expected points ${r.xpts_market.toFixed(1)}<br>Actual − market ${(r.points_minus_market >= 0 ? '+' : MINUS) + Math.abs(r.points_minus_market).toFixed(1)}`, ev.clientX, ev.clientY)).on('pointerleave', leaveTip);
 }
 function seasonPointsCard(s) {
   const rows = seasonRows(s), host = el('div', { class: 'chart-wrap', 'data-chart': 'season-points' });
@@ -1199,7 +1244,7 @@ function cumChart(host, sel, vals, o) {
   svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
   (o.runs || []).forEach(r => { svg.append('rect').attr('class', 'run-band').attr('data-dir', r.direction).attr('x', x(r.start_idx)).attr('width', Math.max(2, x(r.end_idx) - x(r.start_idx))).attr('y', mg.t).attr('height', H - mg.t - mg.b)
     .style('fill', r.direction === 'beat' ? 'var(--pos)' : 'var(--neg)').attr('fill-opacity', 0.13);
-    svg.append('text').attr('x', x(r.start_idx) + 4).attr('y', mg.t + 12).style('fill', 'var(--ink-2)').style('font-size', '11px').style('font-weight', 600).text(r.direction === 'beat' ? 'beat' : 'lagged'); });
+    if (x(r.end_idx) - x(r.start_idx) >= 52) svg.append('text').attr('x', x(r.start_idx) + 4).attr('y', mg.t + 12).style('fill', 'var(--ink-2)').style('font-size', '11px').style('font-weight', 600).text(r.direction === 'beat' ? 'beat' : 'lagged'); });   // labels only where they fit; the legend explains the colours
   svg.append('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y(0)).attr('y2', y(0)).style('stroke', 'var(--ink-2)').attr('stroke-dasharray', '4 3');
   svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d => d === 0 ? '0' : d3.format(o.yfmt)(d).replace('-', MINUS))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
   const tf = n <= 40 ? d3.timeFormat('%-d %b') : d3.timeFormat("%b '%y"), k = Math.max(1, Math.ceil(n / Math.max(2, Math.floor((W - mg.l - mg.r) / 96))));
@@ -1210,10 +1255,10 @@ function cumChart(host, sel, vals, o) {
   const cross = svg.append('g').style('display', 'none');
   cross.append('line').attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--ink-2)'); const dot = cross.append('circle').attr('r', 5).style('fill', 'var(--accent)').style('stroke', 'var(--surface)').attr('stroke-width', 2);
   svg.append('rect').attr('x', mg.l).attr('y', mg.t).attr('width', W - mg.l - mg.r).attr('height', H - mg.t - mg.b).attr('fill', 'transparent').style('touch-action', 'pan-y')
-    .on('pointermove', ev => { const i = Math.max(0, Math.min(n - 1, Math.round(x.invert(d3.pointer(ev)[0])))), m = M(sel.idx[i]);
+    .on('pointermove pointerdown', ev => { const i = Math.max(0, Math.min(n - 1, Math.round(x.invert(d3.pointer(ev)[0])))), m = M(sel.idx[i]);
       cross.style('display', null); cross.select('line').attr('x1', x(i)).attr('x2', x(i)); dot.attr('cx', x(i)).attr('cy', y(vals[i]));
       showTip(`<b>${o.tip(vals[i])}</b><br>after ${m.h ? 'home' : 'away'} v ${esc(m.opp)}, ${dfmt(dparse(m.d))} (${RES_NAME[m.r]})`, ev.clientX, ev.clientY); })
-    .on('pointerleave', () => { cross.style('display', 'none'); hideTip(); });
+    .on('pointerleave', ev => { if (ev.pointerType === 'touch') return; cross.style('display', 'none'); hideTip(); });
 }
 function runsCard(sel) {
   const runs = sel.runs, host = el('div', { class: 'chart-wrap', 'data-chart': 'cum-market' }), W = D.settings.mispriced;
@@ -1223,7 +1268,7 @@ function runsCard(sel) {
       : el('div', { class: 'tbl-x' }, el('table', { class: 'data compact', 'data-table': 'runs' }, el('thead', {}, el('tr', {}, ['Run', 'From', 'To', 'Games', 'Pts', 'Mkt xPts', 'Diff'].map(h => el('th', {}, h)))),
         el('tbody', {}, runs.map(r => el('tr', { 'data-run': r.direction }, el('td', {}, el('span', { class: 'chip ' + r.direction }, r.direction === 'beat' ? 'Beat' : 'Lagged')), el('td', {}, dfmt(dparse(r.from))), el('td', {}, dfmt(dparse(r.to))),
           el('td', {}, r.n), el('td', {}, r.points), el('td', {}, r.market_points.toFixed(1)), el('td', {}, f1(r.diff)))))));
-  const chartCard = pageCard('span-7', 'cum_market', 'actual − expected', host,
+  const chartCard = pageCard('span-7', 'cum_market', 'actual − expected', legend([{ color: 'var(--pos)', text: 'Beat the market' }, { color: 'var(--neg)', text: 'Lagged the market' }, { cls: 'line', text: 'Cumulative actual − market-expected points' }]), host,
     el('p', { class: 'note-small' }, 'Running total of actual points minus market-expected points. Shaded: mispriced runs.'));
   const vals = sel.cum_market;
   chartCard._draw = () => cumChart(host, sel, vals, { label: 'Cumulative actual points minus market-expected points', yfmt: '+.1f', runs, tip: v => `${f1(v)} points vs the market` });
@@ -1249,7 +1294,7 @@ function reliabilityChart(host, cal) {
     svg.append('path').datum(bins).attr('d', d3.line().x(b => x(b.mean_p)).y(b => y(b.observed))).attr('fill', 'none').style('stroke', col).attr('stroke-width', 1.2).attr('stroke-opacity', 0.6);
     svg.append('g').selectAll('path').data(bins).join('path').attr('class', 'rel-pt').attr('data-series', k).attr('transform', b => `translate(${x(b.mean_p)},${y(b.observed)})`)
       .attr('d', b => d3.symbol().type(sym).size(60 + 220 * (b.n / maxN))()).style('fill', col).style('stroke', 'var(--surface)').attr('stroke-width', 1.5)
-      .on('pointermove', (ev, b) => showTip(`<b>${name}</b><br>forecast ${d3.format('.1%')(b.mean_p)} → happened ${d3.format('.1%')(b.observed)}<br>${b.n} outcomes in the ${d3.format('.0%')(b.lo)}–${d3.format('.0%')(b.hi)} bin`, ev.clientX, ev.clientY)).on('pointerleave', hideTip);
+      .on('pointermove pointerdown', (ev, b) => showTip(`<b>${name}</b><br>forecast ${d3.format('.1%')(b.mean_p)} → happened ${d3.format('.1%')(b.observed)}<br>${b.n} outcomes in the ${d3.format('.0%')(b.lo)}–${d3.format('.0%')(b.hi)} bin`, ev.clientX, ev.clientY)).on('pointerleave', leaveTip);
   });
   return series;
 }
@@ -1270,7 +1315,7 @@ function calibrationCards(sel) {
   c2._draw = () => reliabilityChart(host, cal);
   return [c1, c2];
 }
-function stripChart(host, sel) {
+function stripChart(host, sel, hint) {
   host.innerHTML = '';
   const n = sel.n, bw = 7, mg = { t: 24, r: 14, b: 34, l: 44 }, H = 300, W = Math.max(host.clientWidth || 640, mg.l + mg.r + n * bw);
   const x = d3.scaleBand().domain(d3.range(n)).range([mg.l, W - mg.r]).paddingInner(0.15), y = d3.scaleLinear().domain([0, 1]).range([H - mg.b, mg.t + 10]);
@@ -1283,19 +1328,22 @@ function stripChart(host, sel) {
   svg.append('g').selectAll('rect').data(rows).join('rect').attr('class', 'res-strip').attr('data-r', m => m.r).attr('x', (m, i) => x(i)).attr('width', x.bandwidth()).attr('y', mg.t - 16).attr('height', 9).attr('rx', 2).style('fill', m => RES_FILL[m.r]);
   svg.append('g').selectAll('circle').data(rows).join('circle').attr('class', 'p-mkt').attr('cx', (m, i) => x(i) + x.bandwidth() / 2).attr('cy', m => y(m.mkt[0])).attr('r', 3).style('fill', 'var(--s1)');
   svg.append('g').selectAll('path').data(rows).join('path').attr('class', 'p-sim').attr('transform', (m, i) => `translate(${x(i) + x.bandwidth() / 2},${y(m.sim[0])})`).attr('d', d3.symbol().type(d3.symbolDiamond).size(34)()).style('fill', 'var(--s2)');
+  if (hint) hint.hidden = !(W > host.clientWidth + 4);
+  if (W > host.clientWidth + 4) host.scrollLeft = W;
   svg.append('rect').attr('x', mg.l).attr('y', mg.t - 16).attr('width', W - mg.l - mg.r).attr('height', H - mg.b - mg.t + 16).attr('fill', 'transparent')
-    .on('pointermove', ev => { const i = Math.max(0, Math.min(n - 1, Math.floor((d3.pointer(ev)[0] - mg.l) / x.step()))), m = rows[i];
+    .on('pointermove pointerdown', ev => { const i = Math.max(0, Math.min(n - 1, Math.floor((d3.pointer(ev)[0] - mg.l) / x.step()))), m = rows[i];
       showTip(`<b>${m.h ? 'Home' : 'Away'} v ${esc(m.opp)}, ${dfmt(dparse(m.d))}</b><br>Result: ${RES_NAME[m.r]} (${m.h ? m.gf + '–' + m.ga : m.ga + '–' + m.gf})<br>Market P(win) ${fpct(m.mkt[0])}<br>xG-sim P(win) ${fpct(m.sim[0])}`, ev.clientX, ev.clientY); })
-    .on('pointerleave', hideTip);
+    .on('pointerleave', leaveTip);
 }
 function stripCard(sel) {
   const host = el('div', { class: 'chart-wrap', 'data-chart': 'strip' }), rows = sel.idx.map(i => M(i));
+  const hint = el('span', { class: 'scroll-hint', hidden: true }, ' Scroll sideways for earlier matches; the chart opens on the latest.');
   const card = pageCard('span-12', 'match_strip', 'expected · result actual',
     legend([{ color: 'var(--s1)', cls: 'dot', text: 'Market P(win)' }, { color: 'var(--s2)', text: 'xG-simulation P(win)' }, { color: 'var(--good)', text: 'Win' }, { color: 'var(--line-strong)', text: 'Draw' }, { color: 'var(--bad)', text: 'Loss' }]), host,
-    el('p', { class: 'note-small' }, 'Top row: the actual result of each match (win, draw, loss). Dots: the two win probabilities. The xG simulation uses the match’s own shots.'),
+    el('p', { class: 'note-small' }, 'Top row: the actual result of each match (win, draw, loss). Dots: the two win probabilities. The xG simulation uses the match’s own shots.', hint),
     tableView('View every match as a table', ['Match', 'Result', 'Market W', 'Market D', 'Market L', 'xG-sim W', 'xG-sim D', 'xG-sim L'],
       rows.map(m => [`${m.h ? 'H' : 'A'} ${m.opp} ${dfmt(dparse(m.d))}`, `${RES_NAME[m.r]} ${m.h ? m.gf + '–' + m.ga : m.ga + '–' + m.gf}`, ...m.mkt.map(fpct), ...m.sim.map(fpct)])));
-  card._draw = () => stripChart(host, sel); return card;
+  card._draw = () => stripChart(host, sel, hint); return card;
 }
 function stakingCards(s, sel) {
   const r = sel.record, f2 = v => (v >= 0 ? '+' : MINUS) + Math.abs(v).toFixed(2);
@@ -1321,7 +1369,7 @@ function stakingCards(s, sel) {
     svg.append('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y(0)).attr('y2', y(0)).style('stroke', 'var(--ink-2)');
     svg.append('g').selectAll('rect').data(rows).join('rect').attr('class', 'roi-bar').attr('data-season', r2 => r2.se).attr('x', r2 => x(r2.se)).attr('width', x.bandwidth()).attr('y', r2 => Math.min(y(0), y(r2.roi))).attr('height', r2 => Math.max(1, Math.abs(y(r2.roi) - y(0)))).attr('rx', 2)
       .style('fill', r2 => r2.roi >= 0 ? 'var(--pos)' : 'var(--neg)').attr('stroke', r2 => r2.sel ? 'var(--ink)' : 'none').attr('stroke-width', 2)
-      .on('pointermove', (ev, r2) => showTip(`<b>${r2.se}</b><br>${f2(r2.pnl)} units from ${r2.n} stakes<br>ROI ${fmt('roi', r2.roi).replace('-', MINUS)}`, ev.clientX, ev.clientY)).on('pointerleave', hideTip);
+      .on('pointermove pointerdown', (ev, r2) => showTip(`<b>${r2.se}</b><br>${f2(r2.pnl)} units from ${r2.n} stakes<br>ROI ${fmt('roi', r2.roi).replace('-', MINUS)}`, ev.clientX, ev.clientY)).on('pointerleave', leaveTip);
   };
   return [c1, c2];
 }
@@ -1343,8 +1391,16 @@ function marketPage(s, d) {
 /* ================= Methodology ================= */
 function methodologyPage() {
   const meth = D.methodology;
-  const jump = id => { const t = document.getElementById(id); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  const smooth = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  const jump = id => {                                   // open the section (and any parent) first, then scroll to it
+    const t = document.getElementById(id); if (!t) return;
+    for (let d = t.closest('details'); d; d = d.parentElement && d.parentElement.closest('details')) d.open = true;
+    t.scrollIntoView({ behavior: smooth, block: 'start' });
+  };
+  const setAll = open => article.querySelectorAll('details').forEach(d => { d.open = open; });
   const article = el('article', { class: 'card prose span-9', 'data-ref-season': '', 'data-testid': 'methodology', html: meth.html });
+  article.prepend(el('div', { class: 'prose-tools' }, el('button', { class: 'icon-btn', type: 'button', 'data-testid': 'expand-all', onclick: () => setAll(true) }, 'Expand all'),
+    el('button', { class: 'icon-btn', type: 'button', 'data-testid': 'collapse-all', onclick: () => setAll(false) }, 'Collapse all'), el('span', {}, 'Sections open and close; the contents on the left jump to any section.')));
   article.querySelectorAll('a[data-jump]').forEach(a => { a.href = location.hash; a.addEventListener('click', ev => { ev.preventDefault(); jump(a.dataset.jump.slice(1)); }); });
   const toc = el('nav', { class: 'card toc span-3', 'aria-label': 'On this page' }, el('h2', {}, 'On this page'),
     el('ol', {}, meth.toc.map(t => el('li', {}, el('a', { href: location.hash, 'data-toc': t.id, onclick: ev => { ev.preventDefault(); jump(t.id); } }, t.title)))));
@@ -1355,9 +1411,9 @@ const RENDERERS = { overview, attack, defence, players: playersPage, match: matc
 const TITLES = { overview: 'Overview', attack: 'Attack', defence: 'Defence', players: 'Players', match: 'Match Explorer', market: 'Market Lens', methodology: 'Methodology' };
 
 /* ================= render ================= */
-let redrawers = [];
+let redrawers = [], lastPage = null, lastW = 0;
 function render() {
-  const s = parseHash(), canon = hashFor(s);
+  const t0 = performance.now(), s = parseHash(), canon = hashFor(s);
   if (location.hash !== canon) { history.replaceState(null, '', canon); }
   paintChrome(s);
   const d = describe(s);
@@ -1374,18 +1430,27 @@ function render() {
       ' ', el('a', { href: hashFor({ ...s, era: 'all' }) }, 'Show all managers')));
     return;
   }
-  const out = RENDERERS[s.page](s, d);
-  view.append(out.node);
-  if (out.after) out.after();
-  redrawers = [].concat(out.redraw || []).filter(Boolean);
+  try {
+    const out = RENDERERS[s.page](s, d);
+    view.append(out.node);
+    if (out.after) out.after();
+    redrawers = [].concat(out.redraw || []).filter(Boolean);
+  } catch (err) {                                      // never leave a blank page: say what happened and keep the shell usable
+    console.error(err);
+    view.replaceChildren(el('div', { class: 'empty', 'data-testid': 'render-error' }, 'This page could not be drawn. Try another selection or reload.'));
+  }
   hideTip();
+  if (lastPage !== null && lastPage !== s.page) { window.scrollTo(0, 0); $('#main').focus({ preventScroll: true }); }   // new page: start at the top
+  lastPage = s.page;
+  window.__tracker = { ...(window.__tracker || {}), lastRender: Math.round(performance.now() - t0) };
 }
 addEventListener('hashchange', render);
-let rz; new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => redrawers.forEach(f => f())); }).observe(document.body);
+let rz; new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => { const w = document.body.clientWidth; if (w !== lastW) { lastW = w; redrawers.forEach(f => f()); } }); }).observe(document.body);   // redraw only when the width changes
 buildChrome();
 render();
-window.__tracker = { ready: true };
-})();
+window.__tracker = { ready: true, boot: Math.round(performance.now() - T_BOOT), lastRender: window.__tracker && window.__tracker.lastRender };
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 </script>
 </body>
 </html>

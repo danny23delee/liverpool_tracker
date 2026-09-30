@@ -238,8 +238,9 @@ def glossary_html() -> str:
             f'<tr data-metric-id="{esc(i)}"><td>{esc(M.REGISTRY[i]["label"])}</td><td>{esc(M.REGISTRY[i]["description"])}</td>'
             f'<td>{esc(M.REGISTRY[i]["unit"])}</td><td>{better[M.REGISTRY[i]["higher_is_better"]]}</td>'
             f'<td>{M.REGISTRY[i]["min_sample"]}</td><td>{esc(M.REGISTRY[i]["source"])}</td></tr>' for i in ids)
-        parts.append(f'<h3>{esc(title)}</h3><div class="tbl-x"><table class="data glossary"><thead><tr><th>Metric</th><th>Definition</th><th>Unit</th>'
-                     f'<th>Better when</th><th>Minimum sample</th><th>Source</th></tr></thead><tbody>{rows}</tbody></table></div>')
+        parts.append(f'<details class="sub"><summary><h3>{esc(title)} <span class="cnt">({len(ids)})</span></h3></summary>'
+                     '<div class="tbl-x"><table class="data glossary"><thead><tr><th>Metric</th><th>Definition</th><th>Unit</th>'
+                     f'<th>Better when</th><th>Minimum sample</th><th>Source</th></tr></thead><tbody>{rows}</tbody></table></div></details>')
     return "".join(parts)
 
 
@@ -319,9 +320,12 @@ def _inline(t: str) -> str:
 
 def md_to_html(md: str) -> tuple[str, list[dict]]:
     """A deliberately small markdown converter: ## / ### headings ({#id} optional), paragraphs, lists,
-    pipe tables, fenced code, **bold**, *italic*, `code`, links, and {{name}} block placeholders."""
+    fenced code, **bold**, *italic*, `code`, links, and {{name}} block placeholders. Every ## section is
+    wrapped in a collapsible <details class="sec"> whose <summary> holds the heading; only the first
+    section starts open."""
     out, toc, i, lines = [], [], 0, md.splitlines()
     para: list[str] = []
+    in_section = False
 
     def flush():
         if para:
@@ -337,9 +341,14 @@ def md_to_html(md: str) -> tuple[str, list[dict]]:
             flush()
             title, hid = m.group(2), m.group(3) or _re.sub(r"[^a-z0-9]+", "-", m.group(2).lower()).strip("-")
             level = len(m.group(1))
-            out.append(f'<h{level} id="{hid}">{_inline(title)}</h{level}>')
             if level == 2:
+                if in_section:
+                    out.append("</details>")
+                out.append(f'<details class="sec"{" open" if not toc else ""}><summary><h2 id="{hid}">{_inline(title)}</h2></summary>')
+                in_section = True
                 toc.append({"id": hid, "title": title})
+            else:
+                out.append(f'<h{level} id="{hid}">{_inline(title)}</h{level}>')
             i += 1; continue
         if ln.strip().startswith("```"):
             flush(); j = i + 1; buf = []
@@ -356,6 +365,8 @@ def md_to_html(md: str) -> tuple[str, list[dict]]:
             out.append("<ul>" + "".join(f"<li>{_inline(x)}</li>" for x in items) + "</ul>"); continue
         para.append(ln.strip()); i += 1
     flush()
+    if in_section:
+        out.append("</details>")
     return "\n".join(out), toc
 
 

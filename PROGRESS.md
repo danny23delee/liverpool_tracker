@@ -116,3 +116,34 @@
 - **Fixed after review:** a clipped runs table, overlapping ROI axis labels, result colours in the strip that clashed with the market series, a "+0.0" axis tick.
 - **Inaccuracy caught in my own text:** the M1 docstring said Understat's team xG is lower than the shot sum in "~14%" of team-matches; the measured figure is 17% (158 of 922). The Methodology page now computes that share from the data instead of hard-coding it.
 - **Open:** M7 polish and M8 ship remain. The Methodology page is long (the glossary is 89 rows); a collapsible glossary may help in M7.
+
+## M7 Polish: done (2026-09-30)
+- **Methodology is collapsible (requested):** every section is a `<details>` (only the first starts open), the seven glossary groups are collapsible too with metric counts, and there are "Expand all / Collapse all" buttons. The contents links open a collapsed section before scrolling, and never touch the hash route. Test-verified.
+- **Resilience:**
+  - The page shell paints before D3 arrives (D3 is `defer`red, with a loading message).
+  - If D3 can't load, a clear message replaces a blank page.
+  - A page that throws while drawing shows an error card, keeps the nav working and still logs the error (tested by deliberately corrupting a payload).
+  - Added a favicon and theme-colour/Open Graph tags.
+- **Empty states:**
+  - A shot map with no matching shots explains itself.
+  - Player search or minutes filters with no results say so, and role leaders say "No players above the filter".
+  - "N/A" is shown instead of a divide-by-zero.
+  - An era with no matches in a season gets an empty state (from M3).
+- **Mobile pass:**
+  - The current page stays visible in the horizontal nav (scrolls only if needed).
+  - ⓘ has a 36 px invisible touch target, and every button, select, input and summary is at least 32 px tall (tested on all pages).
+  - Tooltips work on touch (tap to show, stay after the finger lifts, tap elsewhere to dismiss; `hover: none` devices toggle ⓘ on tap).
+  - Long per-match charts open on the latest matches with a scroll hint (only shown when they overflow).
+  - New page → scroll to top and focus moved to `main` (no outline); changing season does not jump.
+  - No horizontal overflow at 390, 768, 1024 and 1280 on any page.
+- **Accessibility/contrast:** text tokens are tested for WCAG AA (4.5:1) against all three surfaces in both themes; two tokens failed and were adjusted (light "muted" text, dark accent).
+- **Performance (measured, Chrome, local):** boot 245 ms, DOMContentLoaded 328 ms, JS heap ≈ 10 MB, `dist/index.html` 1.55 MB (377 KB gzipped, so GitHub Pages will serve ~0.4 MB). Slowest page renders: Defence (all seasons) 468 ms, Attack (all seasons) 386 ms (6-8k SVG circles); every other page under 60 ms. Budgets in the test are deliberately looser (boot 1.5 s, render 2.5 s). Charts redraw only when the width changes.
+- **Visual QA from screenshots** (1440, 768, 390; light and dark; every page; heavy "all seasons" variants). Fixed:
+  - a stray red focus outline around the page after navigation;
+  - unreadable 7,700-shot overplot (circles scale down when more than 800 shots are shown and the page says so);
+  - overlapping "beat/lagged" labels on 17 runs (labels only where they fit, plus a legend);
+  - a clipped opponent name on the xG race chart;
+  - mis-aligned shot-list columns;
+  - a noisy scroll hint on charts that don't scroll.
+- **Verified (111 tests):** all previous tests plus collapsible methodology, loading state, D3 failure, render failure, empty filters, scroll behaviour, mobile nav, touch targets, touch tooltips, tablet overflow, contrast and performance budgets.
+- **Open:** M8 (GitHub Actions weekly build, deploy gated on tests; README as portfolio write-up with screenshots).
