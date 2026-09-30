@@ -70,3 +70,12 @@ Market source actually used: Pinnacle close for 2014/15-2024/25 (all 38) and 21 
 
 ## External model hook (built in M2, scored in M6)
 Drop a CSV at `data/external/model_probs.csv` (path in `config/settings.json`). Columns: `match_id` (Understat id) **or** `date` (yyyy-mm-dd, local match date) + `home_team` + `away_team` (canonical Understat names), plus `p_home`, `p_draw`, `p_away` (each in [0,1], row sums to 1 ± 1e-3). Rows that fail validation raise; matches with no row are simply not scored. `metrics.attach_external_model` maps probabilities to Liverpool orientation (`mo_w/d/l`), and `metrics.calibration` reports Brier/log loss for it next to market and xG-sim.
+
+## Three different xG totals in Understat (found in M4)
+For Liverpool 2023/24 the same season has three xG totals: 94.79 (team match history, `xg_reported`), 97.11 (sum of the match payload shots, used as `xg`) and 103.11 (getTeamData `statistics.situation`).
+- The 6.0 gap between the last two is exactly the number of opponent own goals: the team statistics treat each own goal as a 1.0-xG "goal" shot for the beneficiary (and count it against the culprit). Own goals for a team = team goals − goals by the team's own players (team payload `players`). `team_seasons.shots_shotlevel` / `xg_shotlevel` remove them; the ETL test proves they equal Liverpool's summed shots exactly for all 13 seasons.
+- League averages of "against" measures equal league averages of "for" measures (every shot is for one club and against another), so league xGA reference lines use the corrected "for" figures.
+- The gap between the first two (team history vs shots) remains as documented in M1.
+
+## Shot map conventions (M4)
+Understat X/Y are 0-1 from the shooter's view, X→1 = the goal being attacked. Attack map: (105·X, 68·Y) on a 105×68 m pitch, attacking left to right, drawn from x = 36 m. Defence map: opposition shots are rotated 180° ((105·(1−X), 68·(1−Y))) so Liverpool always attack left to right and defend the left goal, drawn up to x = 69 m. Shots outside the drawn area (long shots) are not plotted but are counted in the totals, and the page says how many.

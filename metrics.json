@@ -357,6 +357,86 @@
   "source": "Understat shots"
  },
  {
+  "id": "xg_per_shot_pooled",
+  "label": "xG per shot (pooled)",
+  "description": "Total xG divided by total shots over the selection: average shot quality, comparable with league clubs (own goals excluded).",
+  "unit": "rate",
+  "higher_is_better": true,
+  "format": ".3f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "shot_map",
+  "label": "Shot map",
+  "description": "Every Liverpool shot in the selection, drawn on a 105 x 68 m pitch attacking left to right. Circle size grows with the shot xG; filled red circles are goals. Own goals are not shots and are not drawn.",
+  "unit": "count",
+  "higher_is_better": null,
+  "format": ",d",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "shots_conceded_map",
+  "label": "Shots conceded map",
+  "description": "Every shot Liverpool faced. Opposition coordinates are flipped so that Liverpool defend the left goal and attack left to right, as on the attack map. Circle size grows with xG; filled red circles are goals conceded from shots.",
+  "unit": "count",
+  "higher_is_better": null,
+  "format": ",d",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "vol_vs_quality",
+  "label": "Shot volume vs shot quality",
+  "description": "Shots per match against xG per shot (pooled) for each club in the league, with Liverpool highlighted and dashed league averages. Up and to the right means more and better chances.",
+  "unit": "rate",
+  "higher_is_better": null,
+  "format": ".2f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xg_mix",
+  "label": "Threat source mix",
+  "description": "Share of Liverpool xG by source: open play, set pieces (corners, indirect and direct free kicks) and penalties.",
+  "unit": "pct",
+  "higher_is_better": null,
+  "format": ".0%",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xga_mix",
+  "label": "Open play vs set piece xGA",
+  "description": "xG conceded per match split into open play, set pieces (corners, indirect and direct free kicks) and penalties. Lower is better.",
+  "unit": "rate",
+  "higher_is_better": false,
+  "format": ".2f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xg_trend",
+  "label": "xG per match trend",
+  "description": "Expected goals (bars) against actual goals (dots) in each match, with a rolling 10-match average of xG.",
+  "unit": "rate",
+  "higher_is_better": true,
+  "format": ".2f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
+  "id": "xga_trend",
+  "label": "xGA per match trend",
+  "description": "Expected goals conceded (bars) against actual goals conceded (dots) in each match, with a rolling 10-match average and the league average per match.",
+  "unit": "rate",
+  "higher_is_better": false,
+  "format": ".2f",
+  "min_sample": 10,
+  "source": "Understat shots"
+ },
+ {
   "id": "win_rate",
   "label": "Win rate",
   "description": "Share of matches won.",

@@ -82,7 +82,7 @@ main { flex: 1; min-width: 0; padding-bottom: 28px; }
 .card h2 .tag { font-size: 11px; letter-spacing: .03em; text-transform: none; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--muted); }
 .card h2 .tag.expected { border-style: dashed; }
 .span-12 { grid-column: span 12; } .span-8 { grid-column: span 8; } .span-7 { grid-column: span 7; }
-.span-5 { grid-column: span 5; } .span-4 { grid-column: span 4; }
+.span-6 { grid-column: span 6; } .span-5 { grid-column: span 5; } .span-4 { grid-column: span 4; }
 .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 18px; }
 .tiles.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .tile .lbl { font-size: 12.5px; color: var(--muted); font-weight: 500; line-height: 1.3; min-height: 20px; }
@@ -134,8 +134,47 @@ table.data tbody tr:last-child td { border-bottom: 0; }
 .cap { font-size: 12px; color: var(--muted); margin: 12px 0 0; }
 .stub { max-width: 620px; }
 
+/* ---------- attack / defence ---------- */
+:root { --pos: #2a78d6; --neg: #e34948; --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --pitch: #efeeea; --pitch-line: #b9b5ac; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --pos: #3987e5; --neg: #e66767; --s1: #3987e5; --s2: #d95926; --s3: #199e70; --pitch: #1d2129; --pitch-line: #4a5162; } }
+:root[data-theme="dark"] { --pos: #3987e5; --neg: #e66767; --s1: #3987e5; --s2: #d95926; --s3: #199e70; --pitch: #1d2129; --pitch-line: #4a5162; }
+.filters { display: flex; flex-wrap: wrap; gap: 10px 14px; margin: 0 0 14px; }
+.filters .field { flex: 0 1 148px; } .filters select { width: 100%; min-width: 0; padding: 6px 28px 6px 10px; min-height: 34px; }
+.seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 6px 12px; cursor: pointer; font-size: 12.5px; color: var(--ink-2); min-height: 32px; }
+.seg button + button { border-left: 1px solid var(--line-strong); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); margin: 0 0 10px; align-items: center; }
+.legend .it { display: inline-flex; align-items: center; gap: 6px; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.sw.ring { border-radius: 50%; background: var(--surface); border: 2px solid var(--ink); width: 11px; height: 11px; }
+.sw.hollow { background: transparent; border: 2px solid var(--pos); }
+.lbl .tag { margin-left: 6px; font-size: 11px; font-weight: 600; padding: 0 7px; border-radius: 999px; border: 1px solid var(--line-strong); }
+.sw.dot { border-radius: 50%; } .sw.line { height: 0; border-top: 2.5px solid var(--accent); border-radius: 0; width: 16px; }
+.sw.dash { height: 0; border-top: 2px dashed var(--ink-2); border-radius: 0; width: 16px; }
+.pitch-wrap svg { width: 100%; height: auto; display: block; }
+.stat-list { display: grid; gap: 12px; }
+.stat-list .tile .val { font-size: 26px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 18px; }
+.kpi .val { font: 700 26px/1.1 var(--font-display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.kpi .chg { font-size: 12.5px; margin-top: 2px; min-height: 18px; }
+.mix { display: grid; gap: 10px; }
+.mixrow { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 4px 12px; align-items: center; font-size: 12.5px; }
+.mixrow.single { grid-template-columns: minmax(0, 1fr); }
+.mixrow .nm { color: var(--ink-2); font-weight: 500; }
+.mixbar { display: flex; gap: 2px; height: 22px; }
+.mixbar span { display: block; min-width: 2px; border-radius: 3px; }
+.mixnum { font-variant-numeric: tabular-nums; color: var(--ink-2); grid-column: 1 / -1; }
+.strip { display: flex; flex-wrap: wrap; gap: 4px; }
+.strip i { width: 15px; height: 15px; border-radius: 3px; border: 2px solid var(--pos); display: block; }
+.strip i.cs { background: var(--pos); }
+.strip-wrap { margin-top: 12px; }
+.note-small { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+.cols-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .cols-2 { grid-template-columns: minmax(0, 1fr); } .mixrow { grid-template-columns: 60px minmax(0, 1fr); } .mixrow.single { grid-template-columns: minmax(0, 1fr); } }
+
 /* ---------- responsive ---------- */
-@media (max-width: 1100px) { .span-8, .span-7, .span-5, .span-4 { grid-column: span 12; } }
+@media (max-width: 1100px) { .span-8, .span-7, .span-6, .span-5, .span-4 { grid-column: span 12; } }
 @media (max-width: 860px) {
   .shell { grid-template-columns: minmax(0, 1fr); }
   .nav { position: static; height: auto; flex-direction: row; align-items: center; gap: 12px; padding: 10px 14px; border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
@@ -440,18 +479,355 @@ function overview(s, d) {
   return { node: grid, after: () => roll._draw && roll._draw(), redraw: roll._draw };
 }
 
+/* ================= shared chart pieces ================= */
+const dshort = d3.timeFormat("%-d %b '%y");
+function pageCard(cls, id, tag, ...kids) {           // card whose title and ⓘ come from the registry
+  return el('section', { class: `card ${cls}`, 'aria-label': R[id].label },
+    el('h2', {}, R[id].label, info(id), tag && el('span', { class: 'tag' + (tag === 'expected' || tag === 'not actual' ? ' expected' : '') }, tag)), ...kids);
+}
+function legend(items) {
+  return el('div', { class: 'legend' }, items.map(i => el('span', { class: 'it' }, el('span', { class: 'sw ' + (i.cls || ''), style: i.color ? `background:${i.color};border-color:${i.color}` : null }), i.text)));
+}
+function field(id, label, options, onchange) {
+  const sel = el('select', { id }, options.map(([v, t]) => el('option', { value: v }, t)));
+  sel.addEventListener('change', () => onchange(sel.value));
+  return el('div', { class: 'field' }, el('label', { for: id }, label), sel);
+}
+function seg(options, value, onchange) {
+  const wrap = el('div', { class: 'seg', role: 'group' });
+  const paint = v => [...wrap.children].forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v));
+  options.forEach(([v, t]) => wrap.append(el('button', { type: 'button', 'data-v': v, onclick: () => { paint(v); onchange(v); } }, t)));
+  paint(value); return wrap;
+}
+function tableView(summary, head, rows) {
+  return el('details', { class: 'tbl' }, el('summary', {}, summary),
+    el('div', { class: 'tbl-scroll' }, el('table', { class: 'data' }, el('thead', {}, el('tr', {}, head.map(h => el('th', {}, h)))),
+      el('tbody', {}, rows.map(r => el('tr', {}, r.map(c => el('td', {}, c))))))));
+}
+function kpiRow(sel, s, ids, extra) {
+  const note = sel.baseline_label ? el('p', { class: 'note-small', 'data-baseline': '' }, 'Change vs baseline: ', sel.baseline_label, '.')
+    : el('p', { class: 'note-small' }, s.season === 'all' ? 'No baseline for a multi-season selection.' : 'No baseline for the first season in the data.');
+  return el('div', {}, el('div', { class: 'kpis' }, ids.map(id => { const r = sel.rates[id];
+    return el('div', { class: 'kpi' }, mlabel(id), el('div', { class: 'val', 'data-metric': id }, fmt(id, r.v).replace('-', MINUS)), el('div', { class: 'chg' }, deltaNode(r.c, id))); })), note);
+}
+
+/* ================= shots ================= */
+const SH = D.shots, SI = Object.fromEntries(SH.cols.map((c, i) => [c, i]));
+const RES_L = { Goal: 'Goal', SavedShot: 'Saved', BlockedShot: 'Blocked', MissedShots: 'Missed', ShotOnPost: 'Hit the post', OwnGoal: 'Own goal' };
+const SIT_L = { OpenPlay: 'Open play', FromCorner: 'Corner', SetPiece: 'Set piece', DirectFreekick: 'Direct free kick', Penalty: 'Penalty' };
+const TYP_L = { RightFoot: 'Right foot', LeftFoot: 'Left foot', Head: 'Head', OtherBodyPart: 'Other body part' };
+let SBM = null;
+function shotsFor(sel, fl) {                         // shots (own goals excluded) in the selection's matches; fl 1 = Liverpool, 0 = opposition
+  if (!SBM) { SBM = new Map(); for (const r of SH.rows) { let a = SBM.get(r[0]); if (!a) SBM.set(r[0], a = []); a.push(r); } }
+  const out = [];
+  for (const mi of sel.idx) { const a = SBM.get(mi); if (a) for (const r of a) if (r[SI.fl] === fl && SH.codes.res[r[SI.res]] !== 'OwnGoal') out.push(r); }
+  return out;
+}
+const isGoal = r => SH.codes.res[r[SI.res]] === 'Goal';
+function drawPitch(g) {                              // 105 x 68 m, attacking left to right
+  const L = 'var(--pitch-line)', w = 0.35;
+  g.append('rect').attr('x', 0).attr('y', 0).attr('width', 105).attr('height', 68).attr('rx', 0.6).style('fill', 'var(--pitch)').style('stroke', L).attr('stroke-width', w);
+  const line = (x1, y1, x2, y2) => g.append('line').attr('x1', x1).attr('y1', y1).attr('x2', x2).attr('y2', y2).style('stroke', L).attr('stroke-width', w);
+  const rect = (x, y, wd, h) => g.append('rect').attr('x', x).attr('y', y).attr('width', wd).attr('height', h).style('fill', 'none').style('stroke', L).attr('stroke-width', w);
+  line(52.5, 0, 52.5, 68);
+  g.append('circle').attr('cx', 52.5).attr('cy', 34).attr('r', 9.15).style('fill', 'none').style('stroke', L).attr('stroke-width', w);
+  g.append('circle').attr('cx', 52.5).attr('cy', 34).attr('r', 0.45).style('fill', L);
+  const dx = 9.15 * Math.cos(Math.asin(7.32 / 9.15)), dy = 7.32;
+  for (const right of [false, true]) {
+    const x0 = right ? 105 - 16.5 : 0, xs = right ? 105 - 11 : 11;
+    rect(x0, 13.84, 16.5, 40.32); rect(right ? 105 - 5.5 : 0, 24.84, 5.5, 18.32);
+    rect(right ? 105 : -2, 30.34, 2, 7.32);
+    g.append('circle').attr('cx', xs).attr('cy', 34).attr('r', 0.4).style('fill', L);
+    const sx = right ? xs - dx : xs + dx;
+    g.append('path').attr('d', `M${sx},${34 - dy} A9.15,9.15 0 0 ${right ? 0 : 1} ${sx},${34 + dy}`).style('fill', 'none').style('stroke', L).attr('stroke-width', w);
+  }
+}
+function shotTip(r) {
+  const m = M(r[0]);
+  return `<b>${esc(SH.players[r[SI.pl]])}</b> · ${r[SI.min]}'<br>xG ${r[SI.xg].toFixed(2)} (expected) · ${RES_L[SH.codes.res[r[SI.res]]]}<br>${TYP_L[SH.codes.typ[r[SI.typ]]]} · ${SIT_L[SH.codes.sit[r[SI.sit]]]}<br>${m.h ? 'Home' : 'Away'} v ${esc(m.opp)}, ${dfmt(dparse(m.d))}`;
+}
+function drawShotMap(host, rows, mode, label) {
+  host.innerHTML = '';
+  const att = mode === 'attack', vx = att ? 36 : -4, vw = 73;
+  const ppm = Math.max(host.clientWidth || 640, 300) / vw;
+  const svg = d3.select(host).append('svg').attr('viewBox', `${vx} -2 ${vw} 72`).attr('role', 'img').attr('aria-label', label);
+  drawPitch(svg.append('g'));
+  const px = r => 105 * (att ? r[SI.x] : 1 - r[SI.x]), py = r => 68 * (att ? r[SI.y] : 1 - r[SI.y]);
+  const rad = r => (3.5 + 12 * Math.sqrt(r[SI.xg])) / ppm;
+  const inView = rows.filter(r => px(r) >= vx && px(r) <= vx + vw);
+  const sorted = inView.slice().sort((a, b) => (isGoal(a) - isGoal(b)) || (b[SI.xg] - a[SI.xg]));
+  svg.append('g').selectAll('circle').data(sorted).join('circle').attr('class', 'shot').attr('cx', px).attr('cy', py).attr('r', rad)
+    .style('fill', r => isGoal(r) ? 'var(--accent)' : 'var(--ink-2)').attr('fill-opacity', r => isGoal(r) ? 0.95 : 0.16)
+    .style('stroke', r => isGoal(r) ? 'var(--surface)' : 'var(--ink-2)').attr('stroke-width', r => (isGoal(r) ? 1.5 : 1.3) / ppm)
+    .on('pointermove', (ev, r) => showTip(shotTip(r), ev.clientX, ev.clientY)).on('pointerleave', hideTip);
+  return rows.length - inView.length;
+}
+function shotStats(rows) {
+  const n = rows.length, goals = rows.filter(isGoal).length, xg = d3.sum(rows, r => r[SI.xg]);
+  return { n, goals, xg, xgps: n ? xg / n : null, diff: goals - xg };
+}
+function shotMapCard(sel, mode) {
+  const att = mode === 'attack', id = att ? 'shot_map' : 'shots_conceded_map';
+  const all = shotsFor(sel, att ? 1 : 0);
+  const flt = { player: 'all', sit: 'all', typ: 'all', res: 'all', opp: 'all' };
+  const cnt = new Map(); if (att) all.forEach(r => cnt.set(r[SI.pl], (cnt.get(r[SI.pl]) || 0) + 1));
+  const players = [...cnt].sort((a, b) => b[1] - a[1]).map(([p]) => [String(p), SH.players[p]]);
+  const opps = [...new Set(sel.idx.map(i => M(i).opp))].sort().map(o => [o, o]);
+  const host = el('div', { class: 'pitch-wrap', 'data-chart': mode });
+  const summary = el('div', { class: 'stat-list' });
+  const tblHost = el('div'), hidden = el('p', { class: 'note-small', 'data-testid': 'hidden-shots' });
+  let cur = all;
+  const draw = () => {
+    cur = all.filter(r => (flt.player === 'all' || String(r[SI.pl]) === flt.player) && (flt.sit === 'all' || SH.codes.sit[r[SI.sit]] === flt.sit) &&
+      (flt.typ === 'all' || SH.codes.typ[r[SI.typ]] === flt.typ) && (flt.res === 'all' || SH.codes.res[r[SI.res]] === flt.res) &&
+      (flt.opp === 'all' || M(r[0]).opp === flt.opp));
+    const st = shotStats(cur);
+    const hid = drawShotMap(host, cur, mode, `${R[id].label}: ${st.n} shots, ${st.goals} goals`);
+    hidden.textContent = hid ? `${hid} ${hid === 1 ? 'shot' : 'shots'} taken from further out than the mapped area ${hid === 1 ? 'is' : 'are'} not drawn but counted in the totals.` : '';
+    summary.replaceChildren(
+      el('div', { class: 'tile' }, el('div', { class: 'lbl' }, att ? 'Shots shown' : 'Shots faced shown'), el('div', { class: 'val', 'data-stat': 'shots' }, st.n.toLocaleString())),
+      el('div', { class: 'tile' }, el('div', { class: 'lbl' }, att ? 'Goals from these shots' : 'Goals conceded from these shots', el('span', { class: 'tag' }, 'actual')), el('div', { class: 'val', 'data-stat': 'goals' }, st.goals)),
+      el('div', { class: 'tile' }, mlabel(att ? 'xg' : 'xga', att ? 'xG of these shots' : 'xGA of these shots'), el('div', { class: 'val exp', 'data-stat': 'xg' }, st.xg.toFixed(1))),
+      el('div', { class: 'tile' }, mlabel('xg_per_shot_pooled'), el('div', { class: 'val exp', 'data-stat': 'xgps' }, st.xgps == null ? 'N/A' : st.xgps.toFixed(3))),
+      el('div', { class: 'tile' }, el('div', { class: 'lbl' }, att ? 'Goals minus xG' : 'Goals conceded minus xGA'), el('div', { class: 'val exp', 'data-stat': 'diff' }, (st.diff >= 0 ? '+' : MINUS) + Math.abs(st.diff).toFixed(1))));
+    const top = cur.slice().sort((a, b) => b[SI.xg] - a[SI.xg]).slice(0, 200);
+    tblHost.replaceChildren(tableView(`View the ${top.length} largest shots as a table`, ['Player', 'Minute', 'xG (expected)', 'Outcome', 'Body part', 'Source', 'Match'],
+      top.map(r => [SH.players[r[SI.pl]], r[SI.min], r[SI.xg].toFixed(2), RES_L[SH.codes.res[r[SI.res]]], TYP_L[SH.codes.typ[r[SI.typ]]], SIT_L[SH.codes.sit[r[SI.sit]]], `${M(r[0]).h ? 'H' : 'A'} ${M(r[0]).opp} ${dfmt(dparse(M(r[0]).d))}`])));
+  };
+  const opts = (codes, labels) => [['all', 'All'], ...codes.filter(c => c !== 'OwnGoal').map(c => [c, labels[c]])];
+  const filters = el('div', { class: 'filters' },
+    att ? field('f-player', 'Player', [['all', 'All players'], ...players], v => { flt.player = v; draw(); }) : field('f-opp', 'Opponent', [['all', 'All opponents'], ...opps], v => { flt.opp = v; draw(); }),
+    field('f-sit', 'Situation', opts(SH.codes.sit, SIT_L), v => { flt.sit = v; draw(); }),
+    field('f-typ', 'Body part', opts(SH.codes.typ, TYP_L), v => { flt.typ = v; draw(); }),
+    field('f-res', 'Outcome', opts(SH.codes.res, RES_L), v => { flt.res = v; draw(); }));
+  const key = el('div', { class: 'legend' },
+    el('span', { class: 'it' }, el('span', { class: 'sw dot', style: 'background:var(--accent)' }), 'Goal'), el('span', { class: 'it' }, el('span', { class: 'sw ring' }), 'No goal'),
+    el('span', { class: 'it' }, 'Circle size grows with xG (expected)'));
+  const card = el('section', { class: 'card span-8', 'aria-label': R[id].label },
+    el('h2', {}, R[id].label, info(id), el('span', { class: 'tag' }, 'goals actual · xG expected')), filters, key, host,
+    el('p', { class: 'note-small' }, att ? 'Liverpool attack left to right →. Own goals are not shots and are not drawn. Coordinates are the shooter’s view from Understat.' : '← Liverpool defend the left goal. Opposition coordinates are rotated to match. Own goals by Liverpool players are not shots and are not drawn.'), hidden, tblHost);
+  const side = el('section', { class: 'card span-4', 'aria-label': 'Filtered shot summary' }, el('h2', {}, 'For the shots shown'), summary);
+  draw(); card._draw = () => { drawShotMap(host, cur, mode, `${R[id].label}: ${cur.length} shots`); };
+  return { card, side };
+}
+
+/* ---- goals minus xG by player ---- */
+function finishCard(sel) {
+  const MIN_SH = 5;
+  let np = false;
+  const host = el('div', { class: 'chart-wrap', 'data-chart': 'finishing' }), tbl = el('div');
+  const rows = () => sel.players.filter(p => p.sh >= MIN_SH).map(p => ({ name: p.name, g: np ? p.npg : p.g, x: np ? p.npxg : p.xg, sh: p.sh }))
+    .map(p => ({ ...p, d: p.g - p.x })).sort((a, b) => b.d - a.d);
+  const draw = () => {
+    let all = rows(), data = all.length > 24 ? [...all.slice(0, 12), ...all.slice(-12)] : all;
+    host.innerHTML = '';
+    if (!data.length) { host.append(el('div', { class: 'empty' }, `No player has taken ${MIN_SH} or more shots in this selection.`)); tbl.replaceChildren(); return; }
+    const W = Math.max(host.clientWidth || 520, 300), narrow = W < 480, rh = 26, mg = { t: 8, r: 52, b: 26, l: narrow ? 112 : 140 }, H = data.length * rh + mg.t + mg.b;
+    const label = n => { if (narrow) { const p = n.split(' '); n = p.length > 1 ? p[0][0] + '. ' + p.slice(1).join(' ') : n; } return n.length > (narrow ? 16 : 20) ? n.slice(0, narrow ? 15 : 19) + '…' : n; };
+    const ext = d3.extent(data, d => d.d), lo = Math.min(0, ext[0]), hi = Math.max(0, ext[1]);
+    const x = d3.scaleLinear().domain([lo - 0.6, hi + 0.6]).nice().range([mg.l, W - mg.r]);
+    const y = d3.scaleBand().domain(data.map(d => d.name + d.sh)).range([mg.t, H - mg.b]).padding(0.28);
+    const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img')
+      .attr('aria-label', `${np ? 'Non-penalty goals minus npxG' : 'Goals minus xG'} by player`);
+    svg.append('g').selectAll('line').data(x.ticks(5)).join('line').attr('x1', d => x(d)).attr('x2', d => x(d)).attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--chart-grid)');
+    svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).ticks(5).tickSize(0).tickPadding(8).tickFormat(d => d3.format('+d')(d) === '+0' ? '0' : d3.format('+d')(d)))
+      .call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+    svg.append('line').attr('x1', x(0)).attr('x2', x(0)).attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--ink-2)').attr('stroke-width', 1.25);
+    const g = svg.append('g').selectAll('g').data(data).join('g');
+    g.append('rect').attr('x', d => d.d >= 0 ? x(0) : x(d.d)).attr('y', d => y(d.name + d.sh)).attr('width', d => Math.max(1, Math.abs(x(d.d) - x(0)))).attr('height', y.bandwidth()).attr('rx', 3)
+      .style('fill', d => d.d >= 0 ? 'var(--pos)' : 'var(--neg)')
+      .on('pointermove', (ev, d) => showTip(`<b>${esc(d.name)}</b><br>${d.g} goals from ${d.x.toFixed(1)} xG (expected)<br>${d.sh} shots`, ev.clientX, ev.clientY)).on('pointerleave', hideTip);
+    g.append('text').attr('x', mg.l - 8).attr('y', d => y(d.name + d.sh) + y.bandwidth() / 2 + 4).attr('text-anchor', 'end').style('fill', 'var(--ink)').style('font-size', '12.5px').text(d => label(d.name));
+    g.append('text').attr('x', d => d.d >= 0 ? x(d.d) + 6 : x(d.d) - 6).attr('y', d => y(d.name + d.sh) + y.bandwidth() / 2 + 4).attr('text-anchor', d => d.d >= 0 ? 'start' : 'end')
+      .style('fill', 'var(--ink)').style('font-size', '12px').style('font-weight', 600).text(d => Math.abs(d.d) < 0.05 ? '0.0' : (d.d >= 0 ? '+' : MINUS) + Math.abs(d.d).toFixed(1));
+    tbl.replaceChildren(tableView('View as a table', ['Player', 'Shots', np ? 'Non-penalty goals' : 'Goals', np ? 'npxG (expected)' : 'xG (expected)', 'Difference'],
+      all.map(d => [d.name, d.sh, d.g, d.x.toFixed(2), Math.abs(d.d) < 0.005 ? '0.00' : (d.d >= 0 ? '+' : MINUS) + Math.abs(d.d).toFixed(2)])));
+  };
+  const card = pageCard('span-7', 'goals_minus_xg', 'actual − expected',
+    el('div', { class: 'filters' }, seg([['all', 'All shots'], ['np', 'Excluding penalties']], 'all', v => { np = v === 'np'; draw(); })),
+    legend([{ cls: '', color: 'var(--pos)', text: 'Scoring above xG' }, { cls: '', color: 'var(--neg)', text: 'Scoring below xG' }]),
+    host, el('p', { class: 'note-small' }, `Players with at least ${MIN_SH} shots. Goals exclude own goals. With more than 24 players, the 12 highest and 12 lowest are drawn; the table lists everyone.`), tbl);
+  draw(); card._draw = draw; return card;
+}
+
+/* ---- shot volume vs quality (league context) ---- */
+function scatterCard(sel, s) {
+  const host = el('div', { class: 'chart-wrap', 'data-chart': 'scatter' }), tbl = el('div');
+  const all = s.season === 'all';
+  const others = (all ? D.seasons : [s.season]).flatMap(se => D.league[se].teams.filter(t => t.team !== 'Liverpool').map(t => ({ ...t, se })));
+  const lfc = sel.lfc_points.map(p => ({ team: 'Liverpool', se: p.label, shots_pm: p.shots_pm, xgps: p.xgps, n: p.n }));
+  const avg = all ? null : D.league[s.season].avg;
+  const draw = () => {
+    host.innerHTML = '';
+    const W = Math.max(host.clientWidth || 520, 300), H = 340, mg = { t: 14, r: 20, b: 44, l: 54 };
+    const pts = [...others, ...lfc];
+    const xe = d3.extent(pts, p => p.shots_pm), ye = d3.extent(pts, p => p.xgps);
+    const x = d3.scaleLinear().domain([xe[0] - 1, xe[1] + 1]).nice().range([mg.l, W - mg.r]);
+    const y = d3.scaleLinear().domain([ye[0] - 0.005, ye[1] + 0.005]).nice().range([H - mg.b, mg.t]);
+    const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Shots per match against xG per shot, Liverpool and league clubs');
+    svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
+    svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format('.3f'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+    svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).ticks(6).tickSize(4).tickFormat(d3.format('.0f'))).call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+    svg.append('text').attr('x', (mg.l + W - mg.r) / 2).attr('y', H - 6).attr('text-anchor', 'middle').style('fill', 'var(--ink-2)').style('font-size', '12px').text('Shots per match');
+    svg.append('text').attr('transform', `translate(14,${(mg.t + H - mg.b) / 2}) rotate(-90)`).attr('text-anchor', 'middle').style('fill', 'var(--ink-2)').style('font-size', '12px').text('xG per shot (expected)');
+    if (avg) {
+      svg.append('line').attr('x1', x(avg.shots_pm)).attr('x2', x(avg.shots_pm)).attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--ink-2)').attr('stroke-dasharray', '4 3');
+      svg.append('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y(avg.xgps)).attr('y2', y(avg.xgps)).style('stroke', 'var(--ink-2)').attr('stroke-dasharray', '4 3');
+    }
+    const tip = (p, ev) => showTip(`<b>${esc(p.team)}${all ? ' ' + p.se : ''}</b><br>${p.shots_pm.toFixed(1)} shots per match<br>${p.xgps.toFixed(3)} xG per shot (expected)`, ev.clientX, ev.clientY);
+    svg.append('g').selectAll('circle').data(others).join('circle').attr('cx', p => x(p.shots_pm)).attr('cy', p => y(p.xgps)).attr('r', all ? 3.5 : 5.5)
+      .style('fill', 'var(--muted)').attr('fill-opacity', all ? 0.4 : 0.55).on('pointermove', tip).on('pointerleave', hideTip);
+    const lg = svg.append('g');
+    lg.selectAll('circle').data(lfc).join('circle').attr('cx', p => x(p.shots_pm)).attr('cy', p => y(p.xgps)).attr('r', 7).style('fill', 'var(--accent)').style('stroke', 'var(--surface)').attr('stroke-width', 2)
+      .on('pointermove', tip).on('pointerleave', hideTip);
+    lg.selectAll('text').data(lfc).join('text').attr('x', p => x(p.shots_pm) + 10).attr('y', p => y(p.xgps) + 4).style('fill', 'var(--ink)').style('font-size', '12px').style('font-weight', 600)
+      .text(p => all ? "'" + p.se.slice(2, 4) : 'Liverpool');
+    tbl.replaceChildren(tableView('View as a table', ['Club', ...(all ? ['Season'] : []), 'Shots per match', 'xG per shot (expected)'],
+      pts.slice().sort((a, b) => b.xgps - a.xgps).map(p => [p.team, ...(all ? [p.se] : []), p.shots_pm.toFixed(1), p.xgps.toFixed(3)])));
+  };
+  const card = pageCard('span-5', 'vol_vs_quality', 'expected',
+    legend([{ cls: 'dot', color: 'var(--accent)', text: all ? 'Liverpool, by season' : 'Liverpool' }, { cls: 'dot', color: 'var(--muted)', text: all ? 'Other clubs, every season' : 'Other clubs' }, ...(avg ? [{ cls: 'dash', text: 'League average' }] : [])]),
+    host, el('p', { class: 'note-small' }, s.era !== 'all' ? 'Liverpool point is the selected manager era; league clubs are full seasons.' : 'Shots exclude own goals; xG per shot is total xG divided by total shots.'), tbl);
+  draw(); card._draw = draw; return card;
+}
+
+/* ---- source mix (attack share of xG; defence xGA per match) ---- */
+function mixCard(sel, side) {
+  const rows = sel.mix[side], att = side === 'for', id = att ? 'xg_mix' : 'xga_mix';
+  const src = [['open', 'Open play', 'var(--s1)'], ['set', 'Set pieces', 'var(--s2)'], ['pen', 'Penalties', 'var(--s3)']];
+  const tot = r => src.reduce((a, [k]) => a + r[k].xg, 0);
+  const maxTot = d3.max(rows, r => tot(r) / r.n);
+  const body = el('div', { class: 'mix' }, rows.map(r => {
+    const t = tot(r);
+    const bar = el('div', { class: 'mixbar', style: att ? '' : `width:${(t / r.n) * (100 / (maxTot || 1))}%` }, src.filter(([k]) => r[k].xg > 0).map(([k, name, c]) => el('span', {
+      style: `flex:${r[k].xg} 1 0;background:${c}`, 'data-src': k,
+      onpointermove: ev => showTip(`<b>${name}</b><br>${r[k].xg.toFixed(1)} xG (expected) · ${r[k].shots} shots<br>${r[k].goals} goals from these shots`, ev.clientX, ev.clientY), onpointerleave: hideTip })));
+    const nums = att ? src.map(([k, name]) => `${name} ${(t ? r[k].xg / t * 100 : 0).toFixed(0)}%`).join(' · ')
+      : src.map(([k, name]) => `${name} ${(r[k].xg / r.n).toFixed(2)}`).join(' · ') + ` · total ${(t / r.n).toFixed(2)}`;
+    return el('div', { class: 'mixrow' + (rows.length > 1 ? '' : ' single'), 'data-mix': r.label }, rows.length > 1 && el('span', { class: 'nm' }, r.label), bar, el('span', { class: 'mixnum' }, nums));
+  }));
+  const tbl = tableView('View as a table', ['Group', 'Source', 'xG (expected)', 'Shots', 'Goals from shots'],
+    rows.flatMap(r => src.map(([k, name]) => [rows.length > 1 ? r.label : 'Selection', name, r[k].xg.toFixed(1), r[k].shots, r[k].goals])));
+  return pageCard('span-5', id, 'expected', legend(src.map(([, name, c]) => ({ color: c, text: name }))), body,
+    el('p', { class: 'note-small' }, att ? 'Share of Liverpool xG by source. Hover a segment for shots and goals.' : 'Expected goals conceded per match by source. Bar length is comparable across rows.'), tbl);
+}
+
+/* ---- per-match bar/dot trend with rolling line and league reference ---- */
+function matchChart(host, o) {
+  host.innerHTML = '';
+  const n = o.rows.length, bars = o.kind === 'bars', bw = bars ? 9 : 7, mg = { t: 14, r: 18, b: 34, l: 44 }, H = 280;
+  const W = Math.max(host.clientWidth || 640, mg.l + mg.r + n * bw);
+  const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', o.label);
+  const x = d3.scaleBand().domain(d3.range(n)).range([mg.l, W - mg.r]).paddingInner(bars ? 0.22 : 0);
+  const vals = o.rows.flatMap(r => [r.v, r.g, r.roll]).concat(o.refs.map(r => r.v)).filter(v => v != null);
+  const lo = bars ? 0 : Math.min(...vals) * 0.9, hi = Math.max(...vals) * 1.08 || 1;
+  const y = d3.scaleLinear().domain([lo, hi]).nice().range([H - mg.b, mg.t]);
+  svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
+  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format(o.yfmt || '.1f'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  const step = x.step(), k = Math.max(1, Math.ceil(n / Math.max(2, Math.floor((W - mg.l - mg.r) / 96)))), tf = n <= 40 ? d3.timeFormat('%-d %b') : d3.timeFormat("%b '%y");
+  const ticks = d3.range(0, n, k);
+  svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).tickValues(ticks).tickSize(4).tickFormat(i => tf(dparse(o.rows[i].d)))).call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '12px'); });
+  if (bars) svg.append('g').selectAll('rect').data(o.rows).join('rect').attr('class', 'bar').attr('x', (r, i) => x(i)).attr('width', x.bandwidth()).attr('y', r => y(r.v)).attr('height', r => y(0) - y(r.v)).attr('rx', 2).style('fill', 'var(--accent)').attr('fill-opacity', 0.82);
+  else svg.append('g').selectAll('circle').data(o.rows.filter(r => r.v != null)).join('circle').attr('cx', r => x(r.i) + x.bandwidth() / 2).attr('cy', r => y(r.v)).attr('r', 2.6).style('fill', 'var(--ink-2)').attr('fill-opacity', 0.5);
+  for (const rf of o.refs) svg.append('line').attr('x1', x(rf.i0)).attr('x2', x(rf.i1) + x.bandwidth()).attr('y1', y(rf.v)).attr('y2', y(rf.v)).style('stroke', 'var(--ink-2)').attr('stroke-width', 1.8).attr('stroke-dasharray', '5 3');
+  const rl = o.rows.map((r, i) => ({ i, v: r.roll })).filter(p => p.v != null);
+  if (rl.length > 1) svg.append('path').datum(rl).attr('d', d3.line().x(p => x(p.i) + x.bandwidth() / 2).y(p => y(p.v)).curve(d3.curveMonotoneX)).attr('fill', 'none').style('stroke', bars ? 'var(--ink)' : 'var(--accent)').attr('stroke-width', 2.25).attr('stroke-linejoin', 'round');
+  if (bars) svg.append('g').selectAll('circle').data(o.rows).join('circle').attr('cx', (r, i) => x(i) + x.bandwidth() / 2).attr('cy', r => y(r.g)).attr('r', 3.4).style('fill', 'var(--surface)').style('stroke', 'var(--ink)').attr('stroke-width', 1.6);
+  const hl = svg.append('rect').attr('y', mg.t).attr('height', H - mg.t - mg.b).attr('width', Math.max(step, 3)).style('fill', 'var(--accent)').attr('fill-opacity', 0.12).style('display', 'none').attr('pointer-events', 'none');
+  svg.append('rect').attr('x', mg.l).attr('y', mg.t).attr('width', W - mg.l - mg.r).attr('height', H - mg.t - mg.b).attr('fill', 'transparent').style('touch-action', 'pan-y')
+    .on('pointermove', ev => { const i = Math.max(0, Math.min(n - 1, Math.floor((d3.pointer(ev)[0] - mg.l) / step))); hl.style('display', null).attr('x', x(i) - (step - x.bandwidth()) / 2); showTip(o.tip(o.rows[i]), ev.clientX, ev.clientY); })
+    .on('pointerleave', () => { hl.style('display', 'none'); hideTip(); });
+}
+function refsFor(sel, key) {                                     // league average per season segment, in selection order
+  const out = [];
+  sel.idx.forEach((mi, i) => { const se = M(mi).s, last = out[out.length - 1]; if (last && last.se === se) last.i1 = i; else out.push({ se, i0: i, i1: i, v: D.league[se].avg[key] }); });
+  return out;
+}
+function trendCard(sel, cfg) {
+  const rows = sel.idx.map((mi, i) => { const m = M(mi); return cfg.row(m, i, sel); });
+  const host = el('div', { class: 'chart-wrap', 'data-chart': cfg.chart });
+  const refs = cfg.ref ? refsFor(sel, cfg.ref) : [];
+  const draw = () => matchChart(host, { rows, refs, kind: cfg.kind, label: cfg.label, yfmt: cfg.yfmt, tip: cfg.tip });
+  const card = pageCard(cfg.span || 'span-12', cfg.id, cfg.tag, legend(cfg.legend(refs.length > 0)), host, cfg.note && el('p', { class: 'note-small' }, cfg.note),
+    tableView('View as a table', cfg.head, rows.map(cfg.tr)));
+  card._draw = draw; return card;
+}
+const vsTxt = m => `${m.h ? 'Home' : 'Away'} v ${esc(m.opp)}, ${dfmt(dparse(m.d))}`;
+const rollNote = 'Rolling average uses the latest 10 matches and needs at least 10 in the selection.';
+
+/* ================= Attack page ================= */
+function attack(s, d) {
+  const sel = d.sel, grid = el('div', { class: 'grid' });
+  grid.append(el('section', { class: 'card span-12', 'aria-label': 'Attacking output' }, el('h2', {}, 'Attacking output'),
+    kpiRow(sel, s, ['xg_pm', 'npxg_pm', 'goals_pm', 'shots_pm', 'xg_per_shot'])));
+  const { card: map, side } = shotMapCard(sel, 'attack');
+  const fin = finishCard(sel), sc = scatterCard(sel, s);
+  const trend = trendCard(sel, {
+    id: 'xg_trend', chart: 'xg-trend', span: 'span-7', kind: 'bars', tag: 'expected', label: 'xG per match with goals scored and rolling average',
+    row: (m, i, sl) => ({ d: m.d, i, v: m.xg, g: m.gf, roll: sl.roll_xg[i], m }),
+    legend: () => [{ cls: '', color: 'var(--accent)', text: 'xG (expected)' }, { cls: 'ring', text: 'Goals (actual)' }, { cls: 'line', color: 'var(--ink)', text: '10-match average xG' }],
+    tip: r => `<b>${vsTxt(r.m)}</b><br>xG ${r.v.toFixed(2)} (expected) · goals ${r.g} (actual)${r.roll != null ? `<br>10-match average xG ${r.roll.toFixed(2)}` : ''}`,
+    head: ['Match', 'xG (expected)', 'Goals (actual)', '10-match avg xG'], tr: r => [`${r.m.h ? 'H' : 'A'} ${r.m.opp} ${dfmt(dparse(r.m.d))}`, r.v.toFixed(2), r.g, r.roll == null ? 'N/A' : r.roll.toFixed(2)],
+    note: rollNote,
+  });
+  grid.append(map, side, fin, mixCard(sel, 'for'), sc, trend);
+  return { node: grid, after: () => [map, fin, sc, trend].forEach(c => c._draw && c._draw()), redraw: [map, fin, sc, trend].map(c => c._draw).filter(Boolean) };
+}
+
+/* ================= Defence page ================= */
+function defence(s, d) {
+  const sel = d.sel, grid = el('div', { class: 'grid' });
+  grid.append(el('section', { class: 'card span-12', 'aria-label': 'Defensive output' }, el('h2', {}, 'Defensive output'),
+    kpiRow(sel, s, ['xga_pm', 'goals_against_pm', 'shots_against_pm', 'ppda', 'clean_sheet_rate'])));
+  const { card: map, side } = shotMapCard(sel, 'defence');
+  const xga = trendCard(sel, {
+    id: 'xga_trend', chart: 'xga-trend', kind: 'bars', tag: 'expected', label: 'xGA per match with goals conceded, rolling average and league average', ref: 'xg_pm',
+    row: (m, i, sl) => ({ d: m.d, i, v: m.xga, g: m.ga, roll: sl.roll_xga[i], m }),
+    legend: ref => [{ cls: '', color: 'var(--accent)', text: 'xGA (expected)' }, { cls: 'ring', text: 'Goals conceded (actual)' }, { cls: 'line', color: 'var(--ink)', text: '10-match average xGA' }, ...(ref ? [{ cls: 'dash', text: 'League average per match' }] : [])],
+    tip: r => `<b>${vsTxt(r.m)}</b><br>xGA ${r.v.toFixed(2)} (expected) · conceded ${r.g} (actual)${r.roll != null ? `<br>10-match average xGA ${r.roll.toFixed(2)}` : ''}`,
+    head: ['Match', 'xGA (expected)', 'Goals conceded (actual)', '10-match avg xGA'], tr: r => [`${r.m.h ? 'H' : 'A'} ${r.m.opp} ${dfmt(dparse(r.m.d))}`, r.v.toFixed(2), r.g, r.roll == null ? 'N/A' : r.roll.toFixed(2)],
+    note: rollNote + ' The league average is the mean xG per team per match in the same season.',
+  });
+  const ppda = trendCard(sel, {
+    id: 'ppda', chart: 'ppda-trend', span: 'span-6', kind: 'dots', tag: 'lower = more pressing', label: 'PPDA per match with rolling average and league average', ref: 'ppda', yfmt: '.0f',
+    row: (m, i, sl) => ({ d: m.d, i, v: m.ppda, roll: sl.roll_ppda[i], m }),
+    legend: ref => [{ cls: 'dot', color: 'var(--ink-2)', text: 'Single match' }, { cls: 'line', text: '10-match average' }, ...(ref ? [{ cls: 'dash', text: 'League average' }] : [])],
+    tip: r => `<b>${vsTxt(r.m)}</b><br>PPDA ${r.v == null ? 'N/A' : r.v.toFixed(1)}${r.roll != null ? `<br>10-match average ${r.roll.toFixed(1)}` : ''}`,
+    head: ['Match', 'PPDA', '10-match average'], tr: r => [`${r.m.h ? 'H' : 'A'} ${r.m.opp} ${dfmt(dparse(r.m.d))}`, r.v == null ? 'N/A' : r.v.toFixed(1), r.roll == null ? 'N/A' : r.roll.toFixed(1)],
+    note: 'Passes the opposition are allowed per defensive action of Liverpool in their attacking 40%. Lower means more intense pressing. ' + rollNote,
+  });
+  const deep = trendCard(sel, {
+    id: 'deep_allowed_pm', chart: 'deep-trend', span: 'span-6', kind: 'dots', tag: 'lower is better', label: 'Deep completions allowed per match with rolling average and league average', ref: 'deep_pm', yfmt: '.0f',
+    row: (m, i, sl) => ({ d: m.d, i, v: m.deepa, roll: sl.roll_deepa[i], m }),
+    legend: ref => [{ cls: 'dot', color: 'var(--ink-2)', text: 'Single match' }, { cls: 'line', text: '10-match average' }, ...(ref ? [{ cls: 'dash', text: 'League average' }] : [])],
+    tip: r => `<b>${vsTxt(r.m)}</b><br>${r.v} deep completions allowed${r.roll != null ? `<br>10-match average ${r.roll.toFixed(1)}` : ''}`,
+    head: ['Match', 'Deep completions allowed', '10-match average'], tr: r => [`${r.m.h ? 'H' : 'A'} ${r.m.opp} ${dfmt(dparse(r.m.d))}`, r.v, r.roll == null ? 'N/A' : r.roll.toFixed(1)],
+    note: rollNote,
+  });
+  const cs = el('section', { class: 'card span-7', 'aria-label': 'Clean sheets' }, el('h2', {}, R.clean_sheets.label, info('clean_sheets'), el('span', { class: 'tag' }, 'actual')),
+    el('div', { class: 'tiles c2' }, tile('clean_sheets', fmt('clean_sheets', sel.record.clean_sheets)),
+      el('div', { class: 'tile' }, mlabel('clean_sheet_rate'), el('div', { class: 'val' }, fmt('clean_sheet_rate', sel.rates.clean_sheet_rate.v)), el('div', { class: 'sub' }, deltaNode(sel.rates.clean_sheet_rate.c, 'clean_sheet_rate')))),
+    el('div', { class: 'strip-wrap' }, legend([{ cls: '', color: 'var(--pos)', text: 'Clean sheet' }, { cls: 'hollow', text: 'Goal conceded' }]),
+      el('div', { class: 'strip', 'data-strip': 'clean-sheets' }, sel.idx.map(mi => { const m = M(mi), c = m.ga === 0;
+        return el('i', { class: c ? 'cs' : '', role: 'img', 'aria-label': `${c ? 'Clean sheet' : 'Conceded ' + m.ga}, ${vsTxt(m).replace(/&amp;/g, '&')}`, tabindex: '-1',
+          onpointermove: ev => showTip(`<b>${vsTxt(m)}</b><br>${c ? 'Clean sheet' : 'Conceded ' + m.ga}`, ev.clientX, ev.clientY), onpointerleave: hideTip }); }))));
+  grid.append(map, side, xga, mixCard(sel, 'against'), cs, ppda, deep);
+  const cards = [map, xga, ppda, deep];
+  return { node: grid, after: () => cards.forEach(c => c._draw && c._draw()), redraw: cards.map(c => c._draw) };
+}
+
 /* ================= placeholder pages (later milestones) ================= */
 function stub(title, milestone) {
   return () => ({ node: el('div', { class: 'card stub' }, el('h2', {}, title), el('p', {}, `This page is planned for milestone ${milestone} and is not built yet.`)) });
 }
 const RENDERERS = {
-  overview, attack: stub('Attack', 'M4'), defence: stub('Defence', 'M4'), players: stub('Players', 'M5'),
+  overview, attack, defence, players: stub('Players', 'M5'),
   match: stub('Match Explorer', 'M5'), market: stub('Market Lens', 'M6'), methodology: stub('Methodology', 'M6'),
 };
 const TITLES = { overview: 'Overview', attack: 'Attack', defence: 'Defence', players: 'Players', match: 'Match Explorer', market: 'Market Lens', methodology: 'Methodology' };
 
 /* ================= render ================= */
-let redraw = null;
+let redrawers = [];
 function render() {
   const s = parseHash(), canon = hashFor(s);
   if (location.hash !== canon) { history.replaceState(null, '', canon); }
@@ -464,7 +840,7 @@ function render() {
   const badges = $('#badges'); badges.innerHTML = '';
   if (d.sel && d.sel.small && s.page !== 'methodology') badges.append(el('span', { class: 'badge warn', 'data-testid': 'small-sample', title: `Fewer than ${MIN} matches: treat rates with caution and note that significance-based takeaways are suppressed.` },
     `Small sample: ${d.sel.n} ${d.sel.n === 1 ? 'match' : 'matches'} (under ${MIN})`));
-  const view = $('#view'); view.innerHTML = ''; redraw = null;
+  const view = $('#view'); view.innerHTML = ''; redrawers = [];
   const pageNeedsData = !['methodology'].includes(s.page);
   if (pageNeedsData && !d.sel) {
     view.append(el('div', { class: 'empty', 'data-testid': 'empty' },
@@ -475,11 +851,11 @@ function render() {
   const out = RENDERERS[s.page](s, d);
   view.append(out.node);
   if (out.after) out.after();
-  redraw = out.redraw || null;
+  redrawers = [].concat(out.redraw || []).filter(Boolean);
   hideTip();
 }
 addEventListener('hashchange', render);
-let rz; new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => redraw && redraw()); }).observe(document.body);
+let rz; new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => redrawers.forEach(f => f())); }).observe(document.body);
 buildChrome();
 render();
 window.__tracker = { ready: true };

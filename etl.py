@@ -184,8 +184,12 @@ def build_team_seasons(leagues: dict[int, dict], team_matches: pd.DataFrame) -> 
     for s, lg in leagues.items():
         for t in lg["teams"].values():
             f = RAW / "understat" / f"team_{t['title'].replace(' ', '_')}_{s}.json"
-            stats = json.loads(f.read_text(encoding="utf-8"))["statistics"]["situation"]
+            payload = json.loads(f.read_text(encoding="utf-8"))
+            stats = payload["statistics"]["situation"]
             row = dict(season_start=s, team=t["title"])
+            # Understat's team statistics count opponent own goals as 1.0-xG "goal shots". Own goals
+            # for = team goals - goals by the team's own players (own goals excluded from player goals).
+            row["og_for"] = int(t_goals(lg, t["title"]) - sum(int(p["goals"]) for p in payload["players"]))
             for sit, v in stats.items():
                 row[f"shots_{sit}"] = v["shots"]
                 row[f"xg_{sit}"] = v["xG"]
@@ -197,7 +201,16 @@ def build_team_seasons(leagues: dict[int, dict], team_matches: pd.DataFrame) -> 
     sit_cols = [c for c in ex.columns if c.startswith("shots_") and not c.startswith("shots_against_")]
     out["shots"] = out[sit_cols].sum(axis=1)
     out["shots_against"] = out[[c for c in ex.columns if c.startswith("shots_against_")]].sum(axis=1)
+    # shot-level 'for' figures with own-goal pseudo-shots (1.0 xG each) removed
+    out["shots_shotlevel"] = out["shots"] - out["og_for"]
+    out["xg_shotlevel"] = out[[c for c in ex.columns if c.startswith("xg_")]].sum(axis=1) - out["og_for"]
     return out
+
+
+def t_goals(lg: dict, title: str) -> int:
+    """Goals scored (incl. own goals) by a team over the played matches of a league payload."""
+    tid = next(k for k, v in lg["teams"].items() if v["title"] == title)
+    return sum(int(h["scored"]) for h in lg["teams"][tid]["history"])
 
 
 def build_shots_rosters(leagues: dict[int, dict]) -> tuple[pd.DataFrame, pd.DataFrame]:
