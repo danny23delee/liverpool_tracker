@@ -1321,6 +1321,8 @@ def test_drawer_is_a_bottom_sheet_on_mobile(browser):
 
 # ------------------------------------------------------------------ Redesign: crest and sidebar
 def test_crest_renders_at_sidebar_size_and_is_used_once(page):
+    if not (ROOT / "assets" / "crest.png").exists():
+        pytest.skip("no crest supplied: the fallback bar is tested separately")
     info = page.evaluate("""() => { const i = document.querySelector('.brand img.crest'), r = i.getBoundingClientRect(), cs = getComputedStyle(i);
         return {alt: i.alt, w: r.width, h: r.height, natural: [i.naturalWidth, i.naturalHeight], src: i.src.slice(0, 22), fit: cs.objectFit, images: document.images.length,
                 favicon: document.querySelector('link[rel=icon]').href.slice(0, 40), bg: getComputedStyle(document.body).backgroundImage}; }""")

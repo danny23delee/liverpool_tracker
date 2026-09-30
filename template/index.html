@@ -364,9 +364,14 @@ table.data tr.best td { font-weight: 600; }
 .dmix .mixnum { font-size: 13px; }
 .row.r-half { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .chart-fill > .empty { position: absolute; inset: 0; display: grid; place-items: center; }
+.card > .empty.fill { display: grid; place-items: center; }   /* an empty state grows to the card so nothing floats in a void */
 .cs-body { display: flex; flex-wrap: wrap; gap: 24px 56px; align-items: flex-start; }
 .cs-body .tiles { flex: 0 0 min(100%, 380px); }
 .cs-body .strip-wrap { flex: 1 1 320px; margin-top: 4px; }
+
+.tbl-x.fill { overflow: auto; max-height: 440px; }                 /* a table that absorbs spare card height by stretching its rows (and scrolls when long) */
+.tbl-x.fill > table { min-height: 100%; }
+.tbl-x.fill td { vertical-align: middle; }
 
 /* ---------- responsive ---------- */
 @media (max-width: 1100px) { .row.r-half { grid-template-columns: minmax(0, 1fr); } }
@@ -1389,7 +1394,7 @@ function seasonPointsCard(s) {
 }
 function cumChart(host, sel, vals, o) {
   host.innerHTML = '';
-  const n = vals.length, W = Math.max(host.clientWidth || 640, 320), H = 280, mg = { t: 16, r: 18, b: 34, l: 50 };
+  const n = vals.length, W = Math.max(host.clientWidth || 640, 320), H = Math.max(host.clientHeight || 280, 260), mg = { t: 16, r: 18, b: 34, l: 50 };   // fills its card
   const x = d3.scaleLinear().domain([0, n - 1 || 1]).range([mg.l, W - mg.r]);
   const ext = d3.extent(vals.concat(0)), pad = (ext[1] - ext[0]) * 0.12 || 1;
   const y = d3.scaleLinear().domain([ext[0] - pad, ext[1] + pad]).nice().range([H - mg.b, mg.t]);
@@ -1414,11 +1419,11 @@ function cumChart(host, sel, vals, o) {
     .on('pointerleave', ev => { if (ev.pointerType === 'touch') return; cross.style('display', 'none'); hideTip(); });
 }
 function runsCard(sel) {
-  const runs = sel.runs, host = el('div', { class: 'chart-wrap', 'data-chart': 'cum-market' }), W = D.settings.mispriced;
+  const runs = sel.runs, host = el('div', { class: 'chart-fill fill', style: '--minh: 280px', 'data-chart': 'cum-market' }), W = D.settings.mispriced;
   const f1 = v => (v >= 0 ? '+' : MINUS) + Math.abs(v).toFixed(1);
-  const list = sel.n < W.window ? el('div', { class: 'empty' }, `Mispriced runs need at least ${W.window} matches; this selection has ${sel.n}.`)
-    : !runs.length ? el('div', { class: 'empty', 'data-testid': 'no-runs' }, `No ${W.window}-match stretch beat or lagged the market by ${W.threshold_points} points or more.`)
-      : el('div', { class: 'tbl-x' }, el('table', { class: 'data compact', 'data-table': 'runs' }, el('thead', {}, el('tr', {}, ['Run', 'From', 'To', 'Games', 'Pts', 'Mkt xPts', 'Diff'].map(h => el('th', {}, h)))),
+  const list = sel.n < W.window ? el('div', { class: 'empty fill' }, `Mispriced runs need at least ${W.window} matches; this selection has ${sel.n}.`)
+    : !runs.length ? el('div', { class: 'empty fill', 'data-testid': 'no-runs' }, `No ${W.window}-match stretch beat or lagged the market by ${W.threshold_points} points or more.`)
+      : el('div', { class: 'tbl-x fill' }, el('table', { class: 'data compact', 'data-table': 'runs' }, el('thead', {}, el('tr', {}, ['Run', 'From', 'To', 'Games', 'Pts', 'Mkt xPts', 'Diff'].map(h => el('th', {}, h)))),
         el('tbody', {}, runs.map(r => el('tr', { 'data-run': r.direction }, el('td', {}, el('span', { class: 'chip ' + r.direction }, r.direction === 'beat' ? 'Beat' : 'Lagged')), el('td', {}, dfmt(dparse(r.from))), el('td', {}, dfmt(dparse(r.to))),
           el('td', {}, r.n), el('td', {}, r.points), el('td', {}, r.market_points.toFixed(1)), el('td', {}, f1(r.diff)))))));
   const chartCard = pageCard('span-6', 'cum_market', 'actual − expected', legend([{ color: 'var(--pos)', text: 'Beat the market' }, { color: 'var(--neg)', text: 'Lagged the market' }, { cls: 'line', text: 'Cumulative actual − market-expected points' }]), host,
@@ -1454,7 +1459,7 @@ function reliabilityChart(host, cal) {
 function calibrationCards(sel) {
   const cal = sel.cal, rows = [['market', 'Market (closing odds, de-vigged)'], ['sim', 'xG simulation (post-match chances)'], ['model', 'External model']].filter(([k]) => cal[k]);
   const best = k => Math.min(...rows.map(([r]) => cal[r][k]));
-  const table = el('div', { class: 'tbl-x' }, el('table', { class: 'data', 'data-table': 'calibration' }, el('thead', {}, el('tr', {}, [el('th', {}, 'Forecast'), el('th', { class: 'num' }, 'Brier score'), el('th', { class: 'num' }, 'Log loss'), el('th', { class: 'num' }, 'Matches')])),
+  const table = el('div', { class: 'tbl-x fill' }, el('table', { class: 'data', 'data-table': 'calibration' }, el('thead', {}, el('tr', {}, [el('th', {}, 'Forecast'), el('th', { class: 'num' }, 'Brier score'), el('th', { class: 'num' }, 'Log loss'), el('th', { class: 'num' }, 'Matches')])),
     el('tbody', {}, rows.map(([k, name]) => el('tr', { 'data-cal': k }, el('td', {}, name), el('td', { class: 'num' + (cal[k].brier === best('brier') ? ' best' : ''), 'data-v': 'brier' }, cal[k].brier.toFixed(3)),
       el('td', { class: 'num', 'data-v': 'log_loss' }, cal[k].log_loss.toFixed(3)), el('td', { class: 'num' }, cal[k].n))),
       el('tr', { 'data-cal': 'naive' }, el('td', {}, 'Naive: always the selection’s own W/D/L rates'), el('td', { class: 'num', 'data-v': 'brier' }, cal.naive.brier.toFixed(3)), el('td', { class: 'num', 'data-v': 'log_loss' }, cal.naive.log_loss.toFixed(3)), el('td', { class: 'num' }, cal.n)))));
@@ -1500,7 +1505,7 @@ function stripCard(sel) {
 }
 function stakingCards(s, sel) {
   const r = sel.record, f2 = v => (v >= 0 ? '+' : MINUS) + Math.abs(v).toFixed(2);
-  const host = el('div', { class: 'chart-wrap', 'data-chart': 'pnl' }), rhost = el('div', { class: 'chart-wrap', 'data-chart': 'roi' });
+  const host = el('div', { class: 'chart-fill fill', style: '--minh: 260px', 'data-chart': 'pnl' }), rhost = el('div', { class: 'chart-fill fill', style: '--minh: 260px', 'data-chart': 'roi' });
   const rows = seasonRows(s).filter(x => x.n >= MIN);
   const c1 = pageCard('span-7', 'pnl_cum', 'retrospective', el('span', { class: 'badge retro', 'data-testid': 'retro-badge' }, 'Retrospective analysis, not a strategy'),
     el('div', { class: 'tiles c3', style: 'margin:12px 0' }, el('div', { class: 'tile' }, el('div', { class: 'lbl' }, 'Stakes (1 unit each)'), el('div', { class: 'val', 'data-metric': 'stakes' }, sel.n)),
@@ -1512,7 +1517,7 @@ function stakingCards(s, sel) {
   c2.setAttribute('data-ref-season', '');
   c2._draw = () => {
     rhost.innerHTML = '';
-    const W = Math.max(rhost.clientWidth || 320, 300), H = 250, mg = { t: 12, r: 12, b: 30, l: 50 };
+    const W = Math.max(rhost.clientWidth || 320, 300), H = Math.max(rhost.clientHeight || 250, 240), mg = { t: 12, r: 12, b: 30, l: 50 };
     const x = d3.scaleBand().domain(rows.map(r2 => r2.se)).range([mg.l, W - mg.r]).padding(0.25);
     const ext = d3.extent(rows.map(r2 => r2.roi).concat(0)), y = d3.scaleLinear().domain([ext[0] - 0.05, ext[1] + 0.05]).nice().range([H - mg.b, mg.t]);
     const svg = d3.select(rhost).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Flat-stake ROI by season');
