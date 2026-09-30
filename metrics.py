@@ -566,7 +566,7 @@ def takeaways(sel: pd.DataFrame, base: pd.DataFrame | None = None, base_label: s
                     other, other_label = float(prior.loc[since, mid]), since
                 else:
                     other = float(prior[mid].max() if phrase == "highest" else prior[mid].min())
-                    other_label = "Previous worst" if not good else "Previous best"
+                    other_label = "Prior worst" if not good else "Prior best"
                 out.append(_tk(f"extreme_{mid}_{phrase}",
                                f"{nice} per match {cur:.2f} is the {phrase} of any season {scope}",
                                "positive" if good else "negative",

@@ -89,6 +89,7 @@ button, select, input { font: inherit; color: inherit; }
 .topbar { display: flex; flex-wrap: wrap; gap: 16px 28px; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
 .titles { min-width: 0; flex: 1 1 360px; }
 h1 { margin: 0; font: 700 clamp(36px, 7vw, 60px)/1 var(--font-display); letter-spacing: .01em; text-transform: uppercase; }
+h1.long { font-size: clamp(30px, 4vw, 46px); }
 .subtitle { margin: 10px 0 0; color: var(--ink-2); font-size: 16px; }
 .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2); }
@@ -233,13 +234,13 @@ table.sq td .pl { all: unset; cursor: pointer; font-weight: 600; } table.sq td .
 .profile-head { display: flex; flex-wrap: wrap; gap: 6px 24px; align-items: baseline; margin-bottom: 18px; }
 .profile-head h3 { margin: 0; font: 700 34px/1.1 var(--font-display); letter-spacing: .02em; text-transform: uppercase; }
 .profile-head p { margin: 0; color: var(--ink-2); font-size: 15px; }
-.minis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; margin-bottom: 16px; }
+.minis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 18px 24px; margin-bottom: 16px; }
 .mini { display: flex; flex-direction: column; } .mini .chart-fill { --minh: 150px; }
 .mini h4 { margin: 0 0 6px; font: 600 15px/1.3 var(--font-body); color: var(--ink-2); display: flex; align-items: center; gap: 5px; }
-.cmp { display: flex; flex-direction: column; gap: 14px; flex: 1 1 auto; justify-content: space-between; }
-.cmp-row .cl { font-size: 14px; color: var(--muted); margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.cmp { display: flex; flex-direction: column; gap: 10px; flex: 1 1 auto; justify-content: space-between; }
+.cmp-row .cl { font-size: 14px; color: var(--muted); margin-bottom: 3px; display: flex; align-items: center; gap: 5px; }
 .cmp-bar { display: grid; grid-template-columns: minmax(0, 1fr) 60px; gap: 10px; align-items: center; margin-bottom: 4px; font-size: 14px; }
-.cmp-bar .track { position: relative; height: 14px; background: var(--surface-2); border-radius: 4px; }
+.cmp-bar .track { position: relative; height: 12px; background: var(--surface-2); border-radius: 4px; }
 .cmp-bar .fill { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
 .cmp-bar .zero { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--ink-2); }
 .cmp-bar b { text-align: right; font-variant-numeric: tabular-nums; }
@@ -317,7 +318,7 @@ table.data tr.best td { font-weight: 600; }
 .take.good .take-num, .take.good .take-arrow { color: var(--good); } .take.bad .take-num, .take.bad .take-arrow { color: var(--bad); }
 .take-text { margin: 0; font-size: 16px; line-height: 1.4; color: var(--ink); }
 .take-bars { display: grid; gap: 8px; margin-top: auto; padding-top: 14px; }
-.take-bar { display: grid; grid-template-columns: 76px minmax(0, 1fr) 46px; gap: 10px; align-items: center; font-size: 14px; }
+.take-bar { display: grid; grid-template-columns: 84px minmax(0, 1fr) 46px; gap: 10px; align-items: center; font-size: 14px; }
 .take-bar .bl { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .take-bar .track { height: 8px; border-radius: 4px; background: transparent; display: block; }
 .take-bar i { display: block; height: 100%; border-radius: 4px; }
@@ -396,7 +397,7 @@ table.data tr.best td { font-weight: 600; }
   .minis { grid-template-columns: minmax(0, 1fr); }
   .score-card { grid-template-columns: minmax(0, 1fr); text-align: left; } .score-card .tm.away, .score-card .tm.away ul, .score-card .sc { text-align: left; }
 }
-@media (max-width: 600px) { .roles { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) { .roles { grid-template-columns: minmax(0, 1fr); } .brand-text { display: none; } }   /* the crest alone keeps the top bar to one row of pages */
 @media (max-width: 480px) {
   .content { padding: 18px 16px 0; }
   .card { padding: 18px 16px; border-radius: 14px; }
@@ -545,7 +546,7 @@ const hashFor = (s, page) => {
   return `#/${page}?season=${s.season}&era=${s.era}` + (EXTRA[page] || []).filter(k => s.x && s.x[k]).map(k => `&${k}=${encodeURIComponent(s.x[k])}`).join('');
 };
 function go(s) { const h = hashFor(s); if (location.hash === h) render(); else location.hash = h; }
-function setHeader(title, sub) { $('#title').textContent = title; $('#subtitle').textContent = sub; document.title = `${title} · Liverpool Performance Tracker`; }
+function setHeader(title, sub) { $('#title').textContent = title; $('#title').classList.toggle('long', title.length > 30); $('#subtitle').textContent = sub; document.title = `${title} · Liverpool Performance Tracker`; }
 const eraName = slugv => slugv === 'all' ? null : ERAS.find(e => e.slug === slugv).manager;
 const selKey = s => `${s.season}|${eraName(s.era) || 'all'}`;
 
@@ -1136,7 +1137,7 @@ function setExtras(obj) {                               // page-internal state -
 }
 function miniTrend(host, rows, id, signed) {
   host.innerHTML = '';
-  const W = Math.max(host.clientWidth || 300, 240), H = 150, mg = { t: 10, r: 12, b: 24, l: 42 };
+  const W = Math.max(host.clientWidth || 300, 240), H = Math.max(host.clientHeight || 150, 150), mg = { t: 10, r: 12, b: 26, l: 46 };   // fills its slot
   const pts = rows.filter(r => r.v != null);
   const x = d3.scalePoint().domain(rows.map(r => r.se)).range([mg.l, W - mg.r]).padding(0.3);
   const ext = d3.extent(pts, r => r.v), lo = signed ? Math.min(0, ext[0]) : 0, hi = Math.max(signed ? 0 : 0.01, ext[1]), pad = (hi - lo) * 0.12 || 0.1;
@@ -1161,9 +1162,9 @@ function profileCard(pid) {
   const tot = k => d3.sum(c.rows, r => r[k]), poss = [...new Set(c.rows.map(r => r.pos).filter(p => p !== 'Sub'))];
   card.append(el('div', { class: 'profile-head', 'data-profile': pid }, el('h3', {}, c.name),
     el('p', {}, `${c.rows.length} ${c.rows.length === 1 ? 'season' : 'seasons'} in the data · ${tot('apps')} appearances · ${tot('min').toLocaleString()} minutes · ${tot('g')} goals · ${tot('ast')} assists (actual)${poss.length ? ' · ' + poss.join(', ') : ''}`)));
-  const minis = el('div', { class: 'minis' }), draws = [];
+  const minis = el('div', { class: 'minis fill' }), draws = [];
   [['npxg90', 'npxg_p90', false], ['xa90', 'xa_p90', false], ['build90', 'xgbuildup_p90', false], ['fin', 'npg_minus_npxg', true]].forEach(([k, id, signed]) => {
-    const host = el('div', { class: 'chart-wrap', 'data-mini': id });
+    const host = el('div', { class: 'chart-fill', 'data-mini': id });
     draws.push(() => miniTrend(host, c.rows.map(r => ({ se: r.se, v: r[k], min: r.min, low: r.min < R[id].min_sample })), id, signed));
     minis.append(el('div', { class: 'mini' }, el('h4', {}, R[id].label, info(id)), host));
   });
@@ -1251,7 +1252,7 @@ function matchEvents(rows) {                            // goals in minute order
 const W_narrow = host => (host.clientWidth || 560) < 480;
 function raceChart(host, rows, m, ev) {
   host.innerHTML = '';
-  const W = Math.max(host.clientWidth || 560, 300), H = 300, mg = { t: 16, r: W_narrow(host) ? 92 : 124, b: 34, l: 40 };
+  const W = Math.max(host.clientWidth || 560, 300), H = Math.max(host.clientHeight || 300, 300), mg = { t: 16, r: W_narrow(host) ? 92 : 124, b: 34, l: 44 };   // fills its card
   const maxMin = Math.max(95, ...rows.map(r => r[SI.min] + 1)), xs = d3.scaleLinear().domain([0, maxMin]).range([mg.l, W - mg.r]);
   const series = (fl) => { let c = 0; const pts = [[0, 0]]; rows.filter(r => r[SI.fl] === fl && SH.codes.res[r[SI.res]] !== 'OwnGoal').forEach(r => { pts.push([r[SI.min], c]); c += r[SI.xg]; pts.push([r[SI.min], c]); }); pts.push([maxMin, c]); return { pts, total: c }; };
   const L = series(1), O = series(0), top = Math.max(L.total, O.total, 0.5);
@@ -1293,7 +1294,7 @@ function marketPanel(m) {
   const src = { pinnacle_close: 'Pinnacle closing odds', market_avg_close: 'market-average closing odds (Pinnacle unavailable)', betfair_exchange_close: 'Betfair Exchange closing odds' }[m.src] || m.src;
   const row = (title, p, note) => el('div', { class: 'prob-row' }, el('div', { class: 'pl' }, el('span', {}, title), el('span', {}, `Win ${fpct(p[0])} · Draw ${fpct(p[1])} · Loss ${fpct(p[2])}`)), probBar(p), note && el('div', { class: 'note-small' }, note));
   const home = m.h, o = m.o;
-  return pageCard('span-5', 'match_probs', 'expected',
+  return pageCard('span-6', 'match_probs', 'expected',
     row(`Market (${names[dv]} de-vig)`, mk, `Source: ${src}. Bookmaker margin ${fpct(m.ovr)}.`),
     row('xG simulation (this match’s shots)', sim, 'Post-match view of the chances created, not a forecast.'),
     el('div', { class: 'prob-row' }, el('div', { class: 'pl' }, el('span', {}, 'Actual result'), el('span', {}, el('span', { class: 'chip ' + m.r, 'data-testid': 'actual-result' }, { W: 'Win', D: 'Draw', L: 'Loss' }[m.r]), ` ${m.pts} ${m.pts === 1 ? 'point' : 'points'}`))),
@@ -1326,7 +1327,7 @@ function matchPage(s, d) {
         el('div', { class: 'tm' }, home, el('small', {}, el('span', { 'data-testid': 'xg-home' }, `xG ${xgH.toFixed(2)}`), ' (expected)'), evList('home')),
         el('div', { class: 'sc', 'data-testid': 'scoreline' }, `${hg}–${ag}`, el('small', {}, `${dfmt(dparse(m.d))} · Premier League · ${m.h ? 'Home' : 'Away'} · ${m.r === 'W' ? 'Win' : m.r === 'D' ? 'Draw' : 'Loss'}`)),
         el('div', { class: 'tm away' }, away, el('small', {}, el('span', { 'data-testid': 'xg-away' }, `xG ${xgA.toFixed(2)}`), ' (expected)'), evList('away'))));
-    const race = el('div', { class: 'chart-wrap', 'data-chart': 'race' }), pitch = el('div', { class: 'pitch-wrap', 'data-chart': 'match-pitch' });
+    const race = el('div', { class: 'chart-fill fill', style: '--minh: 320px', 'data-chart': 'race' }), pitch = el('div', { class: 'pitch-wrap', 'data-chart': 'match-pitch' });
     const drawRace = () => raceChart(race, rows, m, ev), drawPitch2 = () => matchPitch(pitch, rows, m);
     redraws.length = 0; redraws.push(drawRace, drawPitch2);
     const sorted = rows.slice().sort((a, b) => a[SI.min] - b[SI.min] || a[SI.xg] - b[SI.xg]);
@@ -1334,12 +1335,12 @@ function matchPage(s, d) {
       el('tbody', {}, sorted.map(r => { const og = SH.codes.res[r[SI.res]] === 'OwnGoal', l = r[SI.fl] === 1;
         return el('tr', {}, el('td', {}, r[SI.min] + "'"), el('td', {}, l ? 'Liverpool' : m.opp), el('td', {}, SH.players[r[SI.pl]]), el('td', {}, r[SI.xg].toFixed(2)), el('td', {}, og ? `Own goal for ${l ? m.opp : 'Liverpool'}` : RES_L[SH.codes.res[r[SI.res]]])); }))));
     body.replaceChildren(score,
-      pageCard('span-7', 'xg_race', 'expected · goals actual', legend([{ cls: 'line', color: 'var(--red)', text: 'Liverpool xG' }, { cls: 'line', color: 'var(--s1)', text: `${m.opp} xG` }, { cls: 'dot', color: 'var(--ink-2)', text: 'Goal' }]), race,
+      pageCard('span-6', 'xg_race', 'expected · goals actual', legend([{ cls: 'line', color: 'var(--red)', text: 'Liverpool xG' }, { cls: 'line', color: 'var(--s1)', text: `${m.opp} xG` }, { cls: 'dot', color: 'var(--ink-2)', text: 'Goal' }]), race,
         el('p', { class: 'note-small' }, 'Cumulative expected goals by minute; dashed line marks half-time (45\'). Hover for the score of the chances at any minute.')),
       marketPanel(m),
-      pageCard('span-7', 'match_shots', 'goals actual · xG expected', legend([{ cls: 'dot', color: 'var(--goal)', text: 'Liverpool goal' }, { cls: 'dot', color: 'var(--s1)', text: `${m.opp} goal` }, { cls: 'ring', text: 'No goal' }]), pitch,
+      pageCard('span-6', 'match_shots', 'goals actual · xG expected', legend([{ cls: 'dot', color: 'var(--goal)', text: 'Liverpool goal' }, { cls: 'dot', color: 'var(--s1)', text: `${m.opp} goal` }, { cls: 'ring', text: 'No goal' }]), el('div', { class: 'stage' }, pitch),
         el('p', { class: 'note-small' }, 'Liverpool attack left to right →. The opposition’s shots are rotated to attack ←. Own goals are not shots and are not drawn.')),
-      el('section', { class: 'card span-5', 'aria-label': 'Shots list' }, el('h2', {}, 'Shots in order', el('span', { class: 'tag' }, `${rows.filter(r => SH.codes.res[r[SI.res]] !== 'OwnGoal').length} shots`)), list));
+      el('section', { class: 'card span-6', 'aria-label': 'Shots list' }, el('h2', {}, 'Shots in order', el('span', { class: 'tag' }, `${rows.filter(r => SH.codes.res[r[SI.res]] !== 'OwnGoal').length} shots`)), list));
     drawRace(); drawPitch2();
     const title = `Match Explorer: ${home} ${hg}–${ag} ${away}`;
     setHeader(title, `${dfmt(dparse(m.d))} · ${describe(parseHash()).sub}`);
@@ -1420,17 +1421,17 @@ function runsCard(sel) {
       : el('div', { class: 'tbl-x' }, el('table', { class: 'data compact', 'data-table': 'runs' }, el('thead', {}, el('tr', {}, ['Run', 'From', 'To', 'Games', 'Pts', 'Mkt xPts', 'Diff'].map(h => el('th', {}, h)))),
         el('tbody', {}, runs.map(r => el('tr', { 'data-run': r.direction }, el('td', {}, el('span', { class: 'chip ' + r.direction }, r.direction === 'beat' ? 'Beat' : 'Lagged')), el('td', {}, dfmt(dparse(r.from))), el('td', {}, dfmt(dparse(r.to))),
           el('td', {}, r.n), el('td', {}, r.points), el('td', {}, r.market_points.toFixed(1)), el('td', {}, f1(r.diff)))))));
-  const chartCard = pageCard('span-7', 'cum_market', 'actual − expected', legend([{ color: 'var(--pos)', text: 'Beat the market' }, { color: 'var(--neg)', text: 'Lagged the market' }, { cls: 'line', text: 'Cumulative actual − market-expected points' }]), host,
+  const chartCard = pageCard('span-6', 'cum_market', 'actual − expected', legend([{ color: 'var(--pos)', text: 'Beat the market' }, { color: 'var(--neg)', text: 'Lagged the market' }, { cls: 'line', text: 'Cumulative actual − market-expected points' }]), host,
     el('p', { class: 'note-small' }, 'Running total of actual points minus market-expected points. Shaded: mispriced runs.'));
   const vals = sel.cum_market;
   chartCard._draw = () => cumChart(host, sel, vals, { label: 'Cumulative actual points minus market-expected points', yfmt: '+.1f', runs, tip: v => `${f1(v)} points vs the market` });
-  const listCard = pageCard('span-5', 'mispriced_runs', 'actual − expected', list,
+  const listCard = pageCard('span-6', 'mispriced_runs', 'actual − expected', list,
     el('p', { class: 'note-small' }, `A run is any ${W.window} consecutive matches returning at least ${W.threshold_points.toFixed(1)} points more (beat) or fewer (lagged) than the closing odds implied; overlapping windows are merged.`));
   return [chartCard, listCard];
 }
 function reliabilityChart(host, cal) {
   host.innerHTML = '';
-  const W = Math.min(Math.max(host.clientWidth || 420, 280), 520), H = W, mg = { t: 12, r: 14, b: 42, l: 46 };
+  const W = Math.max(host.clientWidth || 420, 280), H = Math.max(host.clientHeight || 330, 300), mg = { t: 12, r: 14, b: 42, l: 46 };   // fills its card
   const x = d3.scaleLinear().domain([0, 1]).range([mg.l, W - mg.r]), y = d3.scaleLinear().domain([0, 1]).range([H - mg.b, mg.t]);
   const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Reliability plot: forecast probability against observed frequency');
   svg.append('g').selectAll('line').data(d3.range(0, 1.01, 0.2)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
@@ -1457,7 +1458,7 @@ function calibrationCards(sel) {
     el('tbody', {}, rows.map(([k, name]) => el('tr', { 'data-cal': k }, el('td', {}, name), el('td', { class: 'num' + (cal[k].brier === best('brier') ? ' best' : ''), 'data-v': 'brier' }, cal[k].brier.toFixed(3)),
       el('td', { class: 'num', 'data-v': 'log_loss' }, cal[k].log_loss.toFixed(3)), el('td', { class: 'num' }, cal[k].n))),
       el('tr', { 'data-cal': 'naive' }, el('td', {}, 'Naive: always the selection’s own W/D/L rates'), el('td', { class: 'num', 'data-v': 'brier' }, cal.naive.brier.toFixed(3)), el('td', { class: 'num', 'data-v': 'log_loss' }, cal.naive.log_loss.toFixed(3)), el('td', { class: 'num' }, cal.n)))));
-  const host = el('div', { class: 'chart-wrap', 'data-chart': 'reliability' });
+  const host = el('div', { class: 'chart-fill fill', style: '--minh: 330px', 'data-chart': 'reliability' });
   const c1 = pageCard('span-5', 'calibration', 'lower is better', table,
     el('p', { class: 'mkt-note' }, 'A fixed one-third forecast scores 0.667 (Brier) and 1.099 (log loss). The xG simulation is built from the match’s own shots, so it explains the result rather than predicting it: expect it to score better than the market.'),
     !cal.model && el('p', { class: 'mkt-note', 'data-testid': 'no-model' }, 'No external model is loaded. See “Plugging in your own model” on the Methodology page.'));
