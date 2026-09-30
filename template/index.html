@@ -414,6 +414,42 @@ table.data tr.best td { font-weight: 600; }
   table.data th, table.data td { padding: 8px 6px; font-size: 14px; }
   table.data thead th { font-size: 11px; }
 }
+/* ---------- Liverpool identity layer: red sidebar, Kop-seat masthead with scarf stripes, cream record card, champions trim ---------- */
+.nav { background: var(--accent); border-right: 0; color: #fff; isolation: isolate; overflow-x: hidden; }
+.nav::before { content: "ANFIELD"; position: absolute; left: 2px; bottom: 0; z-index: -1; writing-mode: vertical-rl; transform: rotate(180deg);
+  font: 700 min(190px, 16vh)/.85 var(--font-display); letter-spacing: 6px; color: rgba(255,255,255,.10); white-space: nowrap; pointer-events: none; user-select: none; }
+.nav::after { content: ""; position: absolute; right: 0; bottom: 14vh; width: 232px; height: min(520px, 46vh); z-index: -1; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 248 520' fill='none' stroke='rgba(255,255,255,0.16)' stroke-width='3'%3E%3Ccircle cx='248' cy='260' r='150'/%3E%3Cline x1='248' y1='0' x2='248' y2='520'/%3E%3Crect x='128' y='130' width='140' height='260'/%3E%3Crect x='198' y='200' width='70' height='120'/%3E%3C/svg%3E") no-repeat right center / auto 100%; }
+.nav :focus-visible { outline-color: #fff; }
+.brand-text, .brand-text small { color: #fff; } .brand-text small { opacity: .9; }
+.brand-mark { background: var(--accent); box-shadow: 0 0 0 2px #fff; }   /* stays brand red (tested); the ring keeps it visible on the red sidebar */
+.crest { background: #fff; border-radius: 10px; padding: 3px; }
+.nav a.item { color: #fff; } .nav a.item:hover { background: rgba(255,255,255,.16); color: #fff; }
+.nav a.item[aria-current="page"] { background: #fff; color: var(--accent); }
+.nav .num { color: rgba(255,255,255,.88); } .nav a.item[aria-current="page"] .num { color: var(--accent); }
+.nav-foot { color: rgba(255,255,255,.92); }
+.topbar { position: relative; padding: 28px 32px; margin-bottom: 56px; border-radius: 16px 16px 0 0; color: #fff; background-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='44'%3E%3Cg fill='%23a80d27'%3E%3Crect x='4' y='1' width='16' height='9' rx='3'/%3E%3Crect x='2' y='11' width='20' height='9' rx='3'/%3E%3Crect x='16' y='23' width='16' height='9' rx='3'/%3E%3Crect x='-8' y='23' width='16' height='9' rx='3'/%3E%3Crect x='14' y='33' width='20' height='9' rx='3'/%3E%3Crect x='-10' y='33' width='20' height='9' rx='3'/%3E%3C/g%3E%3C/svg%3E"); }
+.topbar::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 32px; pointer-events: none;
+  background: linear-gradient(#fff 0 6px, var(--accent) 6px 12px, #fff 12px 18px, transparent 18px) top / 100% 18px no-repeat,
+              repeating-linear-gradient(90deg, var(--accent) 0 7px, transparent 7px 12px) bottom / 100% 14px no-repeat; }
+.topbar h1, .topbar .subtitle { color: #fff; }
+.topbar .field label { color: #fff; }
+.topbar select { background: #8f0b21 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='white' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 12px center; color: #fff; border-color: rgba(255,255,255,.7); }
+.topbar select option { background: #8f0b21; color: #fff; }
+.topbar .icon-btn { background: #8f0b21; color: #fff; border-color: rgba(255,255,255,.7); } .topbar .icon-btn:hover { background: #7a0a1c; }
+.topbar .badge { background: #fff; color: #1a0c0e; border-color: #fff; }
+.topbar :focus-visible { outline-color: #fff; }
+.card.record { --surface: #f6efe7; --surface-2: #efe4d8; --ink: #1a1214; --ink-2: #4a3b3e; --muted: #5a4a4d; --line: #e0d0c2; --line-strong: #c9b6a6;
+  --good: #187a4e; --bad: #c2410c; --red: #a30d25; --bar-cmp: #b99aa0; --accent-soft: rgba(163,13,37,.10); background: var(--surface); border-color: var(--surface); color: var(--ink); }
+.card.record h2 { color: #a30d25; }
+.card.record .val[data-metric="points"] { color: #c8102e; }
+.card.record.champ { border-color: #d4af37; box-shadow: inset 0 0 0 3px #d4af37, inset 0 0 0 9px var(--surface), inset 0 0 0 10px #d4af37; }
+.champ-chip { margin-left: auto; padding: 3px 12px; border-radius: 4px; background: #d4af37; color: #2a1a00; font: 700 13px/1.4 var(--font-display); letter-spacing: .14em; text-transform: uppercase; }
+@media (max-width: 860px) {
+  .nav { overflow-x: auto; } .nav::before, .nav::after { display: none; }
+  .topbar { padding: 20px 20px; margin-bottom: 52px; }
+}
 @media print { .nav, .controls { display: none; } }
 </style>
 </head>
@@ -620,10 +656,13 @@ function wdlBar(r) {                                     // proportional win / d
     el('div', { class: 'wdl-labels' }, el('span', {}, `${r.wins} ${r.wins === 1 ? 'win' : 'wins'}`), el('span', {}, `${r.draws} ${r.draws === 1 ? 'draw' : 'draws'}`),
       el('span', {}, `${r.losses} ${r.losses === 1 ? 'defeat' : 'defeats'} · ${n} played`)));
 }
-function recordCard(sel) {
-  const r = sel.record;
-  return el('section', { class: 'card', 'aria-label': 'Record' },
-    el('h2', {}, 'Record', el('span', { class: 'tag' }, 'actual')),
+function isChampion(s) {                                 // whole season, all managers, and Liverpool finished strictly top (computed in build.py from the league table)
+  return s.season !== 'all' && s.era === 'all' && !!D.league[s.season] && D.league[s.season].champion === 'Liverpool';
+}
+function recordCard(sel, s) {
+  const r = sel.record, champ = isChampion(s);
+  return el('section', { class: 'card record' + (champ ? ' champ' : ''), 'aria-label': 'Record' },
+    el('h2', {}, 'Record', el('span', { class: 'tag' }, 'actual'), champ && el('span', { class: 'champ-chip', 'data-testid': 'champions' }, 'League champions')),
     el('div', { class: 'tiles' },
       tile('wins', fmt('wins', r.wins)), tile('draws', fmt('draws', r.draws)), tile('losses', fmt('losses', r.losses)),
       tile('points', fmt('points', r.points)),
@@ -748,7 +787,7 @@ function baselineCard(sel, s) {
 function overview(s, d) {
   const sel = d.sel, roll = rollCard(sel), tk = takeawaysCard(sel);
   const grid = el('div', { class: 'grid' },
-    ...[el('div', { class: 'row r-a' }, recordCard(sel), expectedCard(sel)), el('div', { class: 'row r-b' }, roll, lastFiveCard(sel, s)), tk, baselineCard(sel, s)].filter(Boolean));
+    ...[el('div', { class: 'row r-a' }, recordCard(sel, s), expectedCard(sel)), el('div', { class: 'row r-b' }, roll, lastFiveCard(sel, s)), tk, baselineCard(sel, s)].filter(Boolean));
   return { node: grid, after: () => { roll._draw && roll._draw(); tk && tk._span(); }, redraw: [roll._draw, tk && tk._span].filter(Boolean) };
 }
 
