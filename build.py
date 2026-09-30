@@ -232,7 +232,8 @@ def glossary_html() -> str:
     groups = [(t, [i for i in ids if i in M.REGISTRY]) for t, ids in GLOSSARY_GROUPS]
     scfg = style.load_config()
     groups.append(("Style of play (proxy scores, not good or bad)",
-                   [p["index_id"] for p in scfg["phases"].values()] + list(scfg["axes"]) + list(scfg["kpis"])))
+                   ["style_section", "style_phase_defence", "style_phase_buildup", "style_phase_attack"]
+                   + [p["index_id"] for p in scfg["phases"].values()] + list(scfg["axes"]) + list(scfg["kpis"])))
     for _, ids in groups:
         seen.update(ids)
     rest = [i for i in M.REGISTRY if i not in seen]
@@ -393,8 +394,18 @@ def methodology_payload(e: pd.DataFrame, shots: pd.DataFrame) -> dict:
     return {"html": html, "toc": toc}
 
 
+def style_payload(style_raw: pd.DataFrame | None) -> dict | None:
+    """Style-of-play scores for the dashboard (aggregates only). Reads the optional external KPI CSV silently."""
+    if style_raw is None:
+        style_raw = pd.read_parquet(PROCESSED / "style_raw.parquet")
+    cfg = style.load_config()
+    ext = style.load_external(None, cfg, style_raw)
+    liv = style_raw[style_raw.club == "Liverpool"].set_index("season").matches.to_dict()
+    return style.payload(style.compute(style_raw, cfg, ext), cfg, matches={k: int(v) for k, v in liv.items()})
+
+
 def dashboard(e: pd.DataFrame, fixtures: pd.DataFrame, shots: pd.DataFrame, rosters: pd.DataFrame,
-              ts: pd.DataFrame, tm: pd.DataFrame) -> dict:
+              ts: pd.DataFrame, tm: pd.DataFrame, style_raw: pd.DataFrame | None = None) -> dict:
     seasons = sorted(e.season.unique())
     eras = [x["manager"] for x in M.ERAS if (e.era == x["manager"]).any()]
     st = M.season_table(e)
@@ -419,6 +430,7 @@ def dashboard(e: pd.DataFrame, fixtures: pd.DataFrame, shots: pd.DataFrame, rost
         "methodology": methodology_payload(e, shots),
         "shots": shots_payload(e, shots),
         "league": league_payload(ts, tm),
+        "style": style_payload(style_raw),
         "selections": selections,
     }
 

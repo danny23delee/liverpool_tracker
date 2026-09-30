@@ -213,9 +213,10 @@ def payload(result: dict, cfg: dict, club: str = "Liverpool", matches: dict[str,
                 rank = competition_rank((sign * col).dropna()) if col.notna().any() else None
                 kpis.append({"id": k, "liv": None if pd.isna(col.get(club)) else round(float(col[club]), 6), "mean": round(float(col.mean()), 6),
                              "rank": None if rank is None or club not in rank.index else int(rank[club]), "n": int(col.notna().sum())})
+            clubs = sorted(r["values"].index)           # strip-plot arrays are aligned with this list (null = no score)
             axes[aid] = {"status": "computed", "origin": r["origin"][aid], "n": int(res["scores"].notna().sum()), "kpis": kpis,
-                         "scores": {c: round(float(v), 2) for c, v in res["scores"].items()},
-                         "ranks": {c: int(v) for c, v in res["ranks"].items()},
+                         "scores": [None if c not in res["scores"].index else round(float(res["scores"][c]), 2) for c in clubs],
+                         "ranks": [None if c not in res["ranks"].index else int(res["ranks"][c]) for c in clubs],
                          "liv": None if liv is None or pd.isna(liv) else {"score": round(float(liv), 2), "rank": int(res["ranks"][club])}}
             series[aid][season] = None if liv is None or pd.isna(liv) else round(float(liv), 2)
         indices = {}
@@ -224,12 +225,20 @@ def payload(result: dict, cfg: dict, club: str = "Liverpool", matches: dict[str,
             row = r["indices"][iid].loc[club] if club in r["indices"][iid].index else None
             score = None if row is None or pd.isna(row["score"]) else round(float(row["score"]), 2)
             prev = prev_idx.get(iid)
+            # the change is the difference of the two displayed (whole-number) scores, so the page never shows 72 -> 67 as "+6"
             indices[iid] = {"score": score, "n_axes": None if row is None else int(row["n_axes"]), "partial": bool(row["partial"]) if row is not None else False,
-                            "change": None if score is None or prev is None else round(score - prev, 2)}
+                            "change": None if score is None or prev is None else math.floor(score + 0.5) - math.floor(prev + 0.5)}
             series[iid][season] = score
             prev_idx[iid] = score
-        per_season[season] = {"n_clubs": r["n_clubs"], "matches": (matches or {}).get(season), "axes": axes, "indices": indices}
-    return {"seasons": per_season, "series": series}
+        per_season[season] = {"n_clubs": r["n_clubs"], "matches": (matches or {}).get(season), "clubs": sorted(r["values"].index),
+                              "axes": axes, "indices": indices}
+    structure = {"transform": cfg["transform"], "club": club,
+                 "phases": {k: {"label": p["label"], "index_id": p["index_id"], "axes": p["axes"]} for k, p in cfg["phases"].items()},
+                 "axes": {a: {"phase": x["phase"], "label": x["label"], "left": x["left"], "right": x["right"], "status": x["status"],
+                              "confidence": x["confidence"], "kpis": x["kpis"], "external_kpis": x["external_kpis"],
+                              "unavailable_reason": x.get("unavailable_reason")} for a, x in cfg["axes"].items()},
+                 "kpis": {k: {"sign": m["sign"], "available": m["available"]} for k, m in cfg["kpis"].items()}}
+    return {"cfg": structure, "seasons": per_season, "series": series}
 
 
 # ================================================================== shot-location classifiers
