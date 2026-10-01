@@ -1416,10 +1416,10 @@ def test_style_sections_match_build_json(browser, data, theme, width, height):
         go(pg, "overview", season)
         assert pg.locator(".style-card").count() == 0                                  # Overview is unchanged
         go(pg, "attack", season)
-        assert [e.get_attribute("data-phase") for e in pg.locator(".style-card").all()] == ["buildup", "attack"]
+        assert [e.get_attribute("data-phase") for e in pg.locator(".style-card").all()] == ["attack"]
         go(pg, "defence", season)
         assert [e.get_attribute("data-phase") for e in pg.locator(".style-card").all()] == ["defence"]
-        for route, phases in (("attack", ("buildup", "attack")), ("defence", ("defence",))):
+        for route, phases in (("attack", ("attack",)), ("defence", ("defence",))):
             go(pg, route, season)
             rows = _rows(pg)
             assert [r["id"] for r in rows] == [a for ph in phases for a in cfg["phases"][ph]["axes"]]
@@ -1454,7 +1454,6 @@ def test_style_components_use_no_good_bad_colours_or_arrows(browser):
         pg.evaluate("t => { document.documentElement.dataset.theme = t }", theme)
         for route in ("attack", "defence"):
             go(pg, route, "2024-25")
-            pg.evaluate("document.querySelectorAll('.axis-exp').forEach(b => b.click())")
             bad = pg.evaluate("""() => {
               const tok = n => { const d = document.createElement('i'); d.style.color = `var(--${n})`; document.body.append(d); const c = getComputedStyle(d).color; d.remove(); return c; };
               const banned = ['good', 'bad', 'pos', 'neg', 'teal', 'teal-text'].map(tok);
@@ -1491,19 +1490,27 @@ def test_style_changes_with_season_and_era(page, data):
     assert page.locator(".spark .band").count() > 0 and page.errors == []
 
 
-def test_style_expanders_are_keyboard_buttons(page):
-    go(page, "attack", "2024-25")
-    btn = page.locator("[data-axis=style_att_tempo] .axis-exp")
-    assert btn.evaluate("e => e.tagName") == "BUTTON" and btn.get_attribute("aria-expanded") == "false"
-    assert btn.bounding_box()["height"] >= 44
-    panel = page.locator("#kpi-style_att_tempo")
-    assert not panel.is_visible()
-    btn.focus()
-    page.keyboard.press("Enter")
-    assert btn.get_attribute("aria-expanded") == "true" and panel.is_visible()
-    assert panel.locator("tbody tr").count() == 2
-    page.keyboard.press("Space")
-    assert btn.get_attribute("aria-expanded") == "false" and not panel.is_visible()
+def test_attack_style_card_matches_the_defence_card_layout(browser):
+    """Attack has no Build-up card; its Attack style card is full width under the shot map, like Defence's, with each KPI table beside its row."""
+    ctx, pg = _new_page(browser, 1440, 900)
+    pg.goto(DIST.as_uri())
+    pg.wait_for_function("window.__tracker && window.__tracker.ready")
+    boxes = {}
+    for route in ("attack", "defence"):
+        go(pg, route, "2024-25")
+        assert pg.locator("[data-phase=buildup]").count() == 0 and pg.locator("text=Build-up style").count() == 0
+        assert pg.locator(".axis-exp").count() == 0
+        card = pg.locator(".style-card")
+        assert card.count() == 1
+        stage = pg.locator("section:has([data-chart=" + ("attack" if route == "attack" else "defence") + "])").first.bounding_box()
+        boxes[route] = (card.bounding_box(), stage)
+        assert abs(boxes[route][0]["x"] - stage["x"]) < 1 and abs(boxes[route][0]["width"] - stage["width"]) < 1   # same left edge and width as the shot map above it
+        assert boxes[route][0]["y"] > stage["y"] + stage["height"] - 1
+        for row in card.locator(".axis:not(.off)").all():
+            tbl, track = row.locator(".kpi-tbl").bounding_box(), row.locator(".track").bounding_box()
+            assert tbl["x"] > track["x"] + track["width"] - 1 and tbl["y"] < track["y"] + track["height"] and track["y"] < tbl["y"] + tbl["height"]   # the table sits beside the track (their vertical ranges overlap)
+    assert abs(boxes["attack"][0]["width"] - boxes["defence"][0]["width"]) < 1
+    ctx.close()
 
 
 def test_style_small_sample_badge_and_table_alternatives(page):

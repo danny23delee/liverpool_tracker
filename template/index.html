@@ -449,10 +449,6 @@ button.badge { cursor: help; min-height: 0; position: relative; } button.badge::
 .spark .pt { fill: var(--ink-2); } .spark .pt.sel { fill: var(--red); stroke: var(--surface); stroke-width: 1.5; }
 .axis.off { opacity: .92; } .axis.off .axis-name { color: var(--ink-2); }
 .axis-na { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; } .axis-ends { margin: 0; color: var(--muted); font-size: 13px; }
-.axis-exp { all: unset; box-sizing: border-box; cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; gap: 8px; color: var(--red); font-size: 14px; }
-.axis-exp::before { content: '+'; width: 1em; text-align: center; font-weight: 700; } .axis-exp[aria-expanded="true"]::before { content: '−'; }
-.axis-exp:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; border-radius: 4px; }
-.axis-panel { margin-top: -4px; } .axis-panel[hidden] { display: none; }
 .kpi-tbl { max-height: none; overflow-x: auto; } .kpi-tbl table { width: 100%; font-size: 14px; }
 .kpi-tbl th.num, .kpi-tbl td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .k-name { display: block; } .k-dir { display: block; color: var(--muted); font-size: 12.5px; } .na-row td { color: var(--muted); }
@@ -1218,12 +1214,7 @@ function axisRow(aid, S, scope, mode) {
   const main = el('div', { class: 'axis-main' }, el('div', { class: 'axis-head' }, name, badge, pip, read),
     el('div', { class: 'axis-body' }, track, el('div', { class: 'spark-wrap' }, sparkline(aid, scope, a.label))));
   row.append(main);
-  const tbl = kpiTable(a, ax, S);
-  if (mode === 'beside') { row.append(el('div', { class: 'axis-aside' }, tbl)); return row; }
-  const id = `kpi-${aid}`, btn = el('button', { class: 'axis-exp', type: 'button', 'aria-expanded': 'false', 'aria-controls': id }, 'How this is measured');
-  const panel = el('div', { class: 'axis-panel', id, hidden: true }, tbl);
-  btn.addEventListener('click', () => { const open = btn.getAttribute('aria-expanded') !== 'true'; btn.setAttribute('aria-expanded', open); panel.hidden = !open; });
-  main.append(btn); row.append(panel);
+  row.append(el('div', { class: 'axis-aside' }, kpiTable(a, ax, S)));        // the KPI table stays visible beside (or, on narrow screens, under) each row
   return row;
 }
 function styleCard(phase, s, mode, cls) {
@@ -1260,8 +1251,7 @@ function attack(s, d) {
     head: ['Match', 'xG (expected)', 'Goals (actual)', '10-match avg xG'], tr: r => [`${r.m.h ? 'H' : 'A'} ${r.m.opp} ${dfmt(dparse(r.m.d))}`, r.v.toFixed(2), r.g, r.roll == null ? 'N/A' : r.roll.toFixed(2)],
     note: rollNote,
   });
-  const style = el('div', { class: 'row r-half style-row' }, styleCard('buildup', s, 'expander', ''), styleCard('attack', s, 'expander', ''));
-  const grid = el('div', { class: 'grid' }, kpi, map, style, el('div', { class: 'row r-half' }, fin, sc), trend);
+  const grid = el('div', { class: 'grid' }, kpi, map, styleCard('attack', s, 'beside'), el('div', { class: 'row r-half' }, fin, sc), trend);
   const cards = [map, fin, sc, trend];
   return { node: grid, after: () => cards.forEach(c => c._draw && c._draw()), redraw: cards.map(c => c._draw).filter(Boolean) };
 }

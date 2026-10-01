@@ -32,7 +32,7 @@ selection, and every metric has an ⓘ tooltip whose text comes from one registr
 | Page | Contents |
 |---|---|
 | **Overview** | Record (actual) beside xPts, market-expected points and xG (expected), rolling 10-match xG difference, last five results, rule-based takeaways, and a vs-baseline panel that always names its baseline. |
-| **Attack** | Shot map (player / situation / body part / outcome filters, circle size grows with xG), goals minus xG by player, threat source mix, shot volume vs quality against every league club, per-match xG trend, plus Build-up and Attack style cards (proxy scores). |
+| **Attack** | Shot map (player / situation / body part / outcome filters, circle size grows with xG), goals minus xG by player, threat source mix, shot volume vs quality against every league club, per-match xG trend, plus an Attack style card (proxy scores). |
 | **Defence** | Shots-conceded map, xGA trend against the league average, open-play vs set-piece xGA, PPDA, deep completions allowed, clean sheets, plus a Defence style card (proxy scores). |
 | **Players** | Searchable, sortable squad table with per-90 values and a minimum-minutes filter, role leaders (Finisher, Shot Threat, Creator, Build-up, Involvement), player profile with season-over-season trends, two-player comparison. |
 | **Match Explorer** | Any match: scoreline and scorers, xG race chart, both teams' shot maps, de-vigged pre-match market probabilities next to the exact xG-simulated probabilities. |
