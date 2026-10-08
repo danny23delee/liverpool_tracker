@@ -110,3 +110,19 @@ def test_every_tracked_club_is_named_the_way_understat_names_it():
     assert mapping["Man City"] == "Manchester City" and mapping["Man United"] == "Manchester United"
     for c in M.CLUBS.values():
         assert re.fullmatch(r"[A-Za-z ]+", c["canonical"])
+
+
+def test_crest_files_are_found_by_slug_or_alias_in_any_case(tmp_path, monkeypatch):
+    from PIL import Image
+    monkeypatch.setattr(build, "ROOT", tmp_path)
+    (tmp_path / "assets").mkdir()
+    cc = {**M.CLUBS["arsenal"]}
+    assert build.crest_path(cc) == tmp_path / cc["crest"] and not build.crest_path(cc).exists()   # nothing supplied: the monogram is used
+    Image.new("RGBA", (10, 14), (0, 0, 0, 0)).save(tmp_path / "assets" / "Arsenal_FC.png")
+    assert build.crest_path(cc).name == "Arsenal_FC.png"
+    (tmp_path / "assets" / "crests").mkdir()
+    Image.new("RGBA", (10, 14), (0, 0, 0, 0)).save(tmp_path / "assets" / "crests" / "arsenal.png")
+    assert build.crest_path(cc) == tmp_path / "assets" / "crests" / "arsenal.png"                 # the configured path wins
+    for slug, name in (("chelsea", "chelsea.PNG"), ("manchester-united", "ManUtd.png"), ("manchester-city", "mancity.png")):
+        Image.new("RGBA", (10, 14), (0, 0, 0, 0)).save(tmp_path / "assets" / name)
+        assert build.crest_path(M.CLUBS[slug]).name == name
