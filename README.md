@@ -193,7 +193,7 @@ Shot-level and player data: [Understat](https://understat.com). Results and odds
 [football-data.co.uk](https://www.football-data.co.uk). Charts: [D3](https://d3js.org). This is an independent portfolio
 project and is not affiliated with or endorsed by Liverpool FC, the Premier League, Understat or football-data.co.uk. The
 only club imagery is the Liverpool crest, an image supplied by the project owner (`assets/crest.png`), shown in the sidebar and
-the club switcher. The other four clubs use an **original monogram badge** (initials on a shield in the club colours, generated in
+the club switcher. The other four clubs use the crest PNGs in `assets/` (`Arsenal_FC.png`, `Chelsea.png`, `ManUtd.png`, `ManCity.png`, supplied by the project owner, white backgrounds removed and margins trimmed); a club without a file falls back to an **original monogram badge** (initials on a shield in the club colours, generated in
 `build.py`); to use an official crest instead, drop a transparent PNG at `assets/crests/<club>.png` (for example
 `assets/crests/arsenal.png`) and rebuild: it is resized and inlined exactly like Liverpool's. If the Liverpool file is absent the
 site shows a plain red bar instead. No player photos or other licensed

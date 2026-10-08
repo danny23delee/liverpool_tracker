@@ -48,7 +48,11 @@
      "s3": "#7aa7e6",
      "bar_cmp": "#7a5a60"
     }
-   }
+   },
+   "crest_aliases": [
+    "Arsenal_FC",
+    "Arsenal"
+   ]
   },
   {
    "slug": "chelsea",
@@ -84,7 +88,11 @@
      "s3": "#9aa6b8",
      "bar_cmp": "#566580"
     }
-   }
+   },
+   "crest_aliases": [
+    "Chelsea",
+    "Chelsea_FC"
+   ]
   },
   {
    "slug": "manchester-united",
@@ -120,7 +128,12 @@
      "s3": "#d6d6d6",
      "bar_cmp": "#7a5a60"
     }
-   }
+   },
+   "crest_aliases": [
+    "ManUtd",
+    "Man_Utd",
+    "ManchesterUnited"
+   ]
   },
   {
    "slug": "manchester-city",
@@ -156,7 +169,12 @@
      "s3": "#c7d3ea",
      "bar_cmp": "#566580"
     }
-   }
+   },
+   "crest_aliases": [
+    "ManCity",
+    "Man_City",
+    "ManchesterCity"
+   ]
   }
  ]
 }

@@ -575,7 +575,19 @@ def _b64(b: bytes) -> str:
 
 
 def crest_path(cc: dict) -> Path:
-    return ROOT / cc["crest"]
+    """The club's crest image: the configured path, else a file in assets/ or assets/crests/ named after the club
+    (the slug or one of `crest_aliases`, any letter case, .png), else the configured path (which may not exist: the
+    generated monogram is used then)."""
+    want = {cc["slug"].lower(), *(a.lower() for a in cc.get("crest_aliases", []))}
+    configured = ROOT / cc["crest"]
+    if configured.exists():
+        return configured
+    for folder in (ROOT / "assets" / "crests", ROOT / "assets"):
+        if folder.is_dir():
+            for f in sorted(folder.iterdir()):
+                if f.suffix.lower() == ".png" and f.stem.lower() in want:
+                    return f
+    return configured
 
 
 def crest_uri(path: Path, height: int) -> str:
