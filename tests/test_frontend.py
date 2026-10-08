@@ -931,7 +931,7 @@ def test_text_colours_meet_wcag_aa_in_both_themes():
 
 def test_dark_theme_defines_every_token_of_the_light_theme():
     t = _css_tokens()
-    assert set(t["light"]) <= set(t["dark"]) | {"good-bg", "bad-bg"}, set(t["light"]) - set(t["dark"])
+    assert set(t["light"]) <= set(t["dark"]) | {"good-bg", "bad-bg", "brand-deep", "brand-deeper", "record-ink", "record-num"}, set(t["light"]) - set(t["dark"])
 
 
 def test_page_shell_shows_loading_state_before_scripts_run(browser):

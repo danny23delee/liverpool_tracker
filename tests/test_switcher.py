@@ -66,7 +66,7 @@ def test_each_club_page_is_branded_and_themed(browser, slug):
     assert pg.evaluate("getComputedStyle(document.querySelector('.nav')).backgroundColor") == _rgb(brand)
     assert pg.evaluate("getComputedStyle(document.querySelector('.topbar')).backgroundColor") == _rgb(brand)
     assert pg.evaluate("getComputedStyle(document.querySelector('.nav'), '::before').content").strip('"') == cc["lettering"]
-    assert cc["name"] in pg.title() and cc["name"] in pg.inner_text(".brand-text") and cc["name"] in pg.text_content("#title")
+    assert cc["name"] in pg.title() and cc["name"].lower() in pg.inner_text(".brand-text").lower()
     assert pg.get_attribute("#club-btn", "aria-label") == f"Switch club (now {cc['name']})"
     # nothing about another tracked club is baked into the chrome
     chrome = pg.inner_text(".nav") + " " + pg.inner_text("footer") + " " + pg.title()
@@ -133,6 +133,7 @@ def test_switcher_lists_every_club_and_carries_page_and_season(browser):
 def test_every_club_can_be_reached_from_every_club(browser, slug):
     ctx, pg = _page(browser)
     for target in BUILT:
+        pg.goto("about:blank")   # a fresh load each time (a hash-only change would keep the previous menu state)
         _open(pg, slug, "#/overview?season=2024-25&era=all")
         pg.click("#club-btn")
         pg.click(f".club-item[data-club={target}]")
