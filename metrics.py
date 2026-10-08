@@ -37,7 +37,17 @@ def load_settings() -> dict:
 
 SETTINGS = load_settings()
 REGISTRY: dict[str, dict] = {m["id"]: m for m in json.loads((ROOT / "metrics.json").read_text(encoding="utf-8"))}
-ERAS: list[dict] = json.loads((ROOT / "config" / "eras.json").read_text(encoding="utf-8"))
+CLUBS_CFG: dict = json.loads((ROOT / "config" / "clubs.json").read_text(encoding="utf-8"))
+CLUBS: dict[str, dict] = {c["slug"]: c for c in CLUBS_CFG["clubs"]}
+DEFAULT_CLUB: str = CLUBS_CFG["default"]
+
+
+def load_eras(slug: str) -> list[dict]:
+    """Manager eras (date-keyed, inclusive) for a club from config/eras/<slug>.json."""
+    return json.loads((ROOT / "config" / "eras" / f"{slug}.json").read_text(encoding="utf-8"))
+
+
+ERAS: list[dict] = load_eras(DEFAULT_CLUB)   # the default club's eras (kept for callers that predate multi-club)
 
 
 # ================================================================== change vs baseline
@@ -173,18 +183,20 @@ DEVIG = {"proportional": devig_proportional, "shin": devig_shin}
 _SET_PIECE = {"FromCorner", "SetPiece", "DirectFreekick"}
 
 
-def assign_era(kickoff: pd.Series) -> pd.Series:
+def assign_era(kickoff: pd.Series, eras: list[dict] | None = None) -> pd.Series:
     d = kickoff.dt.tz_localize(None).dt.normalize() if kickoff.dt.tz is not None else kickoff.dt.normalize()
     out = pd.Series(["Unknown"] * len(d), index=d.index, dtype=object)
-    for e in ERAS:
+    for e in (ERAS if eras is None else eras):
         lo = pd.Timestamp(e["from"])
         hi = pd.Timestamp(e["to"]) if e["to"] else pd.Timestamp.max
         out[(d >= lo) & (d <= hi)] = e["manager"]
     return out
 
 
-def enrich_matches(matches: pd.DataFrame, shots: pd.DataFrame) -> pd.DataFrame:
-    """Add shot-derived stats, exact xG-simulated probabilities/xPts, de-vigged market
+def enrich_matches(matches: pd.DataFrame, shots: pd.DataFrame, club: str = LIV, eras: list[dict] | None = None) -> pd.DataFrame:
+    """`club` is the Understat team title the matches belong to (the "for" side everywhere below).
+
+    Add shot-derived stats, exact xG-simulated probabilities/xPts, de-vigged market
     probabilities (both methods + the configured default), market xPts and flat-stake P&L."""
     m = matches.sort_values("kickoff_utc").reset_index(drop=True).copy()
     s = shots[shots.result != "OwnGoal"]  # own goals are not shots-with-a-probability
@@ -195,7 +207,7 @@ def enrich_matches(matches: pd.DataFrame, shots: pd.DataFrame) -> pd.DataFrame:
     empty = s.iloc[0:0]
     for mid, opp in zip(m.match_id, m.opponent):
         g = groups.get(mid, empty)
-        lv, op = g[g.team == LIV], g[g.team == opp]
+        lv, op = g[g.team == club], g[g.team == opp]
         cols["shots_for"].append(len(lv))
         cols["shots_against"].append(len(op))
         cols["goals_shots"].append(int((lv.result == "Goal").sum()))
@@ -212,7 +224,7 @@ def enrich_matches(matches: pd.DataFrame, shots: pd.DataFrame) -> pd.DataFrame:
     m["xg_per_shot"] = np.where(m.shots_for > 0, m.xg / m.shots_for.where(m.shots_for > 0), np.nan)
     m["clean_sheet"] = m.ga == 0
 
-    # ---- market: home/draw/away odds -> Liverpool win/draw/loss, both de-vig methods
+    # ---- market: home/draw/away odds -> the club's win/draw/loss, both de-vig methods
     for name, fn in DEVIG.items():
         probs = np.array([fn([h, d, a]) for h, d, a in zip(m.mkt_h, m.mkt_d, m.mkt_a)])
         home = m.is_home.values
@@ -226,8 +238,8 @@ def enrich_matches(matches: pd.DataFrame, shots: pd.DataFrame) -> pd.DataFrame:
     m["odds_win"] = np.where(m.is_home, m.mkt_h, m.mkt_a)
     m["overround"] = 1 / m.mkt_h + 1 / m.mkt_d + 1 / m.mkt_a - 1
     m["pnl"] = np.where(m.result == "W", m.odds_win - 1.0, -1.0)  # hypothetical flat 1-unit stake
-    m["era"] = assign_era(m.kickoff_utc)
-    return attach_external_model(m, load_external_model())
+    m["era"] = assign_era(m.kickoff_utc, eras)
+    return attach_external_model(m, load_external_model(), club)
 
 
 # ================================================================== external model hook
@@ -249,8 +261,8 @@ def load_external_model(path: str | Path | None = None) -> pd.DataFrame | None:
     return df
 
 
-def attach_external_model(matches: pd.DataFrame, ext: pd.DataFrame | None) -> pd.DataFrame:
-    """Adds mo_w/mo_d/mo_l (Liverpool orientation; NaN where the model has no row)."""
+def attach_external_model(matches: pd.DataFrame, ext: pd.DataFrame | None, club: str = LIV) -> pd.DataFrame:
+    """Adds mo_w/mo_d/mo_l (the club's orientation; NaN where the model has no row)."""
     m = matches.copy()
     for k in ("mo_w", "mo_d", "mo_l"):
         m[k] = np.nan
@@ -261,8 +273,8 @@ def attach_external_model(matches: pd.DataFrame, ext: pd.DataFrame | None) -> pd
         key = m.match_id
     else:
         e = ext.assign(_k=list(zip(pd.to_datetime(ext.date).dt.normalize(), ext.home_team, ext.away_team))).set_index("_k")
-        home = np.where(m.is_home, LIV, m.opponent)
-        away = np.where(m.is_home, m.opponent, LIV)
+        home = np.where(m.is_home, club, m.opponent)
+        away = np.where(m.is_home, m.opponent, club)
         key = pd.Series(list(zip(m.fd_date.dt.normalize(), home, away)), index=m.index)
     if e.index.duplicated().any():
         raise ValueError("external model CSV has duplicate match keys")

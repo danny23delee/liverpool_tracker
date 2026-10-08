@@ -5,13 +5,25 @@ Google Fonts requests get an empty stylesheet (the CSS has fallback stacks).
 """
 import json
 import re
+import sys
 from pathlib import Path
 
 import pytest
 from playwright.sync_api import sync_playwright
 
+import os
+
 ROOT = Path(__file__).resolve().parents[1]
-DIST = ROOT / "dist" / "index.html"
+sys.path.insert(0, str(ROOT))
+import metrics as _M  # noqa: E402
+
+# The whole suite runs against one club's page: TRACKER_CLUB=arsenal pytest tests/test_frontend.py (default: liverpool, the site root)
+CLUB_SLUG = os.environ.get("TRACKER_CLUB", _M.DEFAULT_CLUB)
+CLUB_CFG = _M.CLUBS[CLUB_SLUG]
+CLUB = CLUB_CFG["canonical"]
+DIST_DIR = Path(os.environ.get("TRACKER_DIST", ROOT / "dist"))
+DIST = DIST_DIR / CLUB_CFG["path"] / "index.html"
+PROC = Path(os.environ.get("TRACKER_DATA", ROOT / "data")) / "processed" / CLUB_SLUG
 D3_LOCAL = ROOT / "data" / "raw" / "vendor" / "d3.min.js"
 SHOTS = ROOT / "artifacts" / "screenshots"
 PAGES = ["overview", "attack", "defence", "players", "match", "market", "methodology"]
@@ -107,6 +119,12 @@ def visible_text(page):
     return page.evaluate(VISIBLE_TEXT_JS)
 
 
+def era_slug(e):
+    """The era's URL slug as the page builds it: an explicit `slug`, else the last word of the manager's name, accents stripped."""
+    import unicodedata
+    return e.get("slug") or "".join(c for c in unicodedata.normalize("NFD", e["manager"].split()[-1]) if not unicodedata.combining(c)).lower()
+
+
 def num(text):
     return int(text.strip().replace("−", "-").replace("+", "").replace(",", ""))
 
@@ -135,8 +153,8 @@ def test_no_other_season_labels_after_switching(page, data):
 
 def test_record_values_match_build_json(page, data):
     for season in ["all"] + data["seasons"]:
-        for era in ["all"] + [e["manager"].split()[-1].lower() for e in data["eras"]]:
-            key_era = "all" if era == "all" else next(e["manager"] for e in data["eras"] if e["manager"].split()[-1].lower() == era)
+        for era in ["all"] + [era_slug(e) for e in data["eras"]]:
+            key_era = "all" if era == "all" else next(e["manager"] for e in data["eras"] if era_slug(e) == era)
             sel = data["selections"].get(f"{season}|{key_era}")
             go(page, "overview", season, era)
             if sel is None:
@@ -205,13 +223,18 @@ def test_info_tooltips_come_from_registry(page, data):
 
 def test_routing_is_shareable_and_state_syncs(browser, data):
     ctx, pg = _new_page(browser)
-    pg.goto(DIST.as_uri() + "#/overview?season=2022-23&era=klopp")
+    # a season in which the club's most recent long-serving manager has matches, and a second season to switch to
+    manager = max(data["eras"], key=lambda e: sum(1 for k in data["selections"] if k.endswith("|" + e["manager"]) and not k.startswith("all")))
+    seasons = [k.split("|")[0] for k in data["selections"] if k.endswith("|" + manager["manager"]) and not k.startswith("all")]
+    season, other = seasons[0], next(x for x in data["seasons"] if x != seasons[0])
+    slug = era_slug(manager)
+    pg.goto(DIST.as_uri() + f"#/overview?season={season}&era={slug}")
     pg.wait_for_function("window.__tracker && window.__tracker.ready")
-    assert pg.input_value("#sel-season") == "2022-23" and pg.input_value("#sel-era") == "klopp"
-    assert "2022-23" in pg.text_content("#title") and "Jürgen Klopp era" in pg.inner_text("#subtitle")
-    pg.select_option("#sel-season", "2023-24")
-    pg.wait_for_function("location.hash.includes('season=2023-24')")
-    assert "era=klopp" in pg.evaluate("location.hash")
+    assert pg.input_value("#sel-season") == season and pg.input_value("#sel-era") == slug
+    assert season in pg.text_content("#title") and f"{manager['manager']} era" in pg.inner_text("#subtitle")
+    pg.select_option("#sel-season", other)
+    pg.wait_for_function(f"location.hash.includes('season={other}')")
+    assert f"era={slug}" in pg.evaluate("location.hash")
     pg.goto(DIST.as_uri() + "#/overview?season=1999-00&era=nonsense")  # invalid params fall back
     pg.wait_for_function("window.__tracker && window.__tracker.ready")
     assert pg.input_value("#sel-season") == data["default_season"] and pg.input_value("#sel-era") == "all"
@@ -281,9 +304,9 @@ def test_screenshots(browser, data, width, height):
 # ------------------------------------------------------------------ M4: Attack and Defence pages
 def _shots(season, liverpool=True):
     import pandas as pd
-    s = pd.read_parquet(ROOT / "data" / "processed" / "shots.parquet")
+    s = pd.read_parquet(PROC / "shots.parquet")
     s = s[(s.season == season) & (s.result != "OwnGoal")]
-    return s[s.team == "Liverpool"] if liverpool else s[s.team != "Liverpool"]
+    return s[s.team == CLUB] if liverpool else s[s.team != CLUB]
 
 
 def _circles(page, chart):
@@ -373,7 +396,7 @@ def test_scatter_league_context(page):
     assert page.locator("[data-chart=scatter] circle").count() == 20  # 19 other clubs + Liverpool
     liv = _shots("2025-26")
     rows = _table_rows(page.locator("section[aria-label='Shot volume vs shot quality'] tbody tr"))
-    lfc = next(r for r in rows if r[0] == "Liverpool")
+    lfc = next(r for r in rows if r[0] == CLUB)
     assert lfc[1] == f"{len(liv) / 38:.1f}" and lfc[2] == f"{liv.xg.sum() / len(liv):.3f}"
     assert len(rows) == 20
     go(page, "attack", "all")
@@ -421,8 +444,8 @@ def test_attack_defence_titles_have_registry_tooltips_and_table_views(page, data
 def _players(season):
     """Independent per-player totals for a season from the processed rosters and shots."""
     import pandas as pd
-    r = pd.read_parquet(ROOT / "data" / "processed" / "rosters.parquet")
-    r = r[(r.season == season) & (r.team == "Liverpool")]
+    r = pd.read_parquet(PROC / "rosters.parquet")
+    r = r[(r.season == season) & (r.team == CLUB)]
     g = r.groupby("player").agg(pid=("player_id", "first"), apps=("minutes", lambda x: int((x > 0).sum())), minutes=("minutes", "sum"),
                                 goals=("goals", "sum"), ast=("assists", "sum"), xa=("xa", "sum"), kp=("key_passes", "sum"),
                                 chain=("xgchain", "sum"), build=("xgbuildup", "sum"))
@@ -502,7 +525,7 @@ def test_player_profile_and_comparison(page, data):
     page.locator("table[data-table=squad] tbody tr", has_text="Mohamed Salah").first.click()
     assert "player=1250" in page.evaluate("location.hash")
     assert page.text_content("[data-profile] h3") == "Mohamed Salah"
-    ps = pd.read_parquet(ROOT / "data" / "processed" / "player_seasons.parquet")
+    ps = pd.read_parquet(PROC / "player_seasons.parquet")
     sal = ps[(ps.player_id == 1250) & (ps.minutes > 0)].sort_values("season")
     prof = page.locator("section[aria-label='Player profile']")
     rows = _table_rows(prof.locator("details.tbl tbody tr"))
@@ -543,8 +566,8 @@ def test_players_small_sample_selection_defaults_lower_minimum(page):
 def test_every_match_explorer_page_reconciles_with_data(page, data):
     import pandas as pd
     import metrics as MT
-    m = pd.read_parquet(ROOT / "data" / "processed" / "matches.parquet").set_index("match_id")
-    shots = pd.read_parquet(ROOT / "data" / "processed" / "shots.parquet")
+    m = pd.read_parquet(PROC / "matches.parquet").set_index("match_id")
+    shots = pd.read_parquet(PROC / "shots.parquet")
     shots_by = {k: g for k, g in shots.groupby("match_id")}
     for row in data["matches"]:
         mid = row["id"]
@@ -553,10 +576,10 @@ def test_every_match_explorer_page_reconciles_with_data(page, data):
         sh = shots_by[mid]
         hg, ag = (r.gf, r.ga) if r.is_home else (r.ga, r.gf)
         assert page.inner_text("[data-testid=scoreline]").split("\n")[0] == f"{hg}–{ag}", mid
-        home, away = ("Liverpool", r.opponent) if r.is_home else (r.opponent, "Liverpool")
+        home, away = (CLUB, r.opponent) if r.is_home else (r.opponent, CLUB)
         assert page.text_content("#title") == f"Match Explorer: {home} {hg}–{ag} {away}", mid
         # xG of both teams = sum of that team's shots
-        lx, ox = sh[sh.team == "Liverpool"].xg.sum(), sh[sh.team != "Liverpool"].xg.sum()
+        lx, ox = sh[sh.team == CLUB].xg.sum(), sh[sh.team != CLUB].xg.sum()
         assert page.text_content("[data-race-final=lfc]").split()[0] == f"{lx:.2f}", mid
         assert page.text_content("[data-race-final=opp]").split()[0] == f"{ox:.2f}", mid
         # goals: markers and scorer lists equal the score (own goals credited to the other side)
@@ -570,7 +593,7 @@ def test_every_match_explorer_page_reconciles_with_data(page, data):
         cells = _table_rows(page.locator("table[data-table=probs] tbody tr"))
         assert all(abs(_flt(cells[i][1].rstrip("%")) - exp[i] * 100) <= 0.06 for i in range(3)), mid
         s = sh[sh.result != "OwnGoal"]
-        w, d_, l = MT.outcome_probs(s[s.team == "Liverpool"].xg.values, s[s.team != "Liverpool"].xg.values)
+        w, d_, l = MT.outcome_probs(s[s.team == CLUB].xg.values, s[s.team != CLUB].xg.values)
         assert all(abs(_flt(cells[i][3].rstrip("%")) - v * 100) <= 0.06 for i, v in enumerate((w, d_, l))), mid
         assert page.inner_text("[data-testid=actual-result]") == {"W": "Win", "D": "Draw", "L": "Loss"}[r.result]
     assert page.errors == []
@@ -607,8 +630,8 @@ def _lens(season, era=None):
     import numpy as np
     import pandas as pd
     import metrics as MT
-    m = pd.read_parquet(ROOT / "data" / "processed" / "matches.parquet")
-    sh = pd.read_parquet(ROOT / "data" / "processed" / "shots.parquet")
+    m = pd.read_parquet(PROC / "matches.parquet")
+    sh = pd.read_parquet(PROC / "shots.parquet")
     m = m[m.season == season].sort_values("kickoff_utc").reset_index(drop=True)
     inv = 1 / m[["mkt_h", "mkt_d", "mkt_a"]].values
     prop = inv / inv.sum(axis=1, keepdims=True)                      # proportional de-vig, written out here
@@ -617,7 +640,7 @@ def _lens(season, era=None):
     sim = []
     for r in m.itertuples():
         g = sh[sh.match_id == r.match_id]
-        sim.append(MT.outcome_probs(g[g.team == "Liverpool"].xg.values, g[g.team != "Liverpool"].xg.values))
+        sim.append(MT.outcome_probs(g[g.team == CLUB].xg.values, g[g.team != CLUB].xg.values))
     o = m.result.map({"W": 0, "D": 1, "L": 2}).values
     win_odds = np.where(m.is_home, m.mkt_h, m.mkt_a)
     return m, pm, np.array(sim), o, win_odds
@@ -783,8 +806,8 @@ def test_methodology_generated_from_registry_and_data(page, data):
     for heading in ("Data sources", "Baselines and change", "Expected goals and the exact simulation", "Turning odds into probabilities", "Known limitations", "How accuracy is enforced"):
         assert heading in txt, heading
     # coverage numbers come from the data
-    m = pd.read_parquet(ROOT / "data" / "processed" / "matches.parquet")
-    assert f"{len(m)} Liverpool matches across {m.season.nunique()} seasons" in txt
+    m = pd.read_parquet(PROC / "matches.parquet")
+    assert f"{len(m)} {CLUB} matches across {m.season.nunique()} seasons" in txt
     src = m.mkt_source.value_counts()
     assert f"Pinnacle closing odds for {src['pinnacle_close']} matches" in txt
     # thresholds shown equal the settings used by the takeaway rules
@@ -908,7 +931,7 @@ def test_text_colours_meet_wcag_aa_in_both_themes():
 
 def test_dark_theme_defines_every_token_of_the_light_theme():
     t = _css_tokens()
-    assert set(t["light"]) <= set(t["dark"]) | {"good-bg", "bad-bg"}, set(t["light"]) - set(t["dark"])
+    assert set(t["light"]) <= set(t["dark"]) | {"good-bg", "bad-bg", "brand-deep", "brand-deeper", "record-ink", "record-num"}, set(t["light"]) - set(t["dark"])
 
 
 def test_page_shell_shows_loading_state_before_scripts_run(browser):
@@ -1322,12 +1345,12 @@ def test_drawer_is_a_bottom_sheet_on_mobile(browser):
 
 # ------------------------------------------------------------------ Redesign: crest and sidebar
 def test_crest_renders_at_sidebar_size_and_is_used_once(page):
-    if not (ROOT / "assets" / "crest.png").exists():
+    if CLUB_SLUG == _M.DEFAULT_CLUB and not (ROOT / "assets" / "crest.png").exists():
         pytest.skip("no crest supplied: the fallback bar is tested separately")
     info = page.evaluate("""() => { const i = document.querySelector('.brand img.crest'), r = i.getBoundingClientRect(), cs = getComputedStyle(i);
-        return {alt: i.alt, w: r.width, h: r.height, natural: [i.naturalWidth, i.naturalHeight], src: i.src.slice(0, 22), fit: cs.objectFit, images: document.images.length,
+        return {alt: i.alt, w: r.width, h: r.height, natural: [i.naturalWidth, i.naturalHeight], src: i.src.slice(0, 22), fit: cs.objectFit, images: [...document.images].filter(i => !i.closest('#club-menu')).length,
                 favicon: document.querySelector('link[rel=icon]').href.slice(0, 40), bg: getComputedStyle(document.body).backgroundImage}; }""")
-    assert info["alt"] == "Liverpool FC crest" and info["src"] == "data:image/png;base64," and info["fit"] == "contain"
+    assert info["alt"] in (f"{CLUB_CFG['full_name']} crest", f"{CLUB} badge") and info["src"].startswith("data:image/") and info["fit"] == "contain"
     assert abs(info["w"] - 46) < 1.5 and abs(info["h"] - 54) < 1.5  # the sidebar slot: about 46 x 54 px
     assert info["natural"][1] <= 192 and info["natural"][0] > 0  # resized to at most 192 px tall
     assert info["images"] == 1 and info["bg"] == "none"          # nowhere else on the page, not a background
@@ -1336,19 +1359,23 @@ def test_crest_renders_at_sidebar_size_and_is_used_once(page):
     # the brand text stays inside the sidebar next to the crest
     fit = page.evaluate("""() => { const t = document.querySelector('.brand-text').getBoundingClientRect(), n = document.querySelector('.nav').getBoundingClientRect(); return n.right - t.right; }""")
     assert fit >= 6
-    assert "not affiliated with or endorsed by Liverpool FC or the Premier League" in page.text_content("footer")
+    assert f"not affiliated with or endorsed by {CLUB_CFG['full_name']} or the Premier League" in page.text_content("footer")
 
 
-def test_crest_falls_back_to_a_red_bar_without_errors(browser, data, tmp_path):
+def test_crest_falls_back_without_errors(browser, data, tmp_path):
+    """No crest file: the default club shows its brand bar, every other club its generated monogram badge."""
     import build
     out = tmp_path / "nocrest.html"
     out.write_text(build.render(data, crest_path=tmp_path / "missing.png"), encoding="utf-8")
     ctx, pg = _new_page(browser)
     pg.goto(out.as_uri())
     pg.wait_for_function("window.__tracker && window.__tracker.ready")
-    box = pg.evaluate("""() => { const m = document.querySelector('.brand-mark'), r = m.getBoundingClientRect();
-        return {w: r.width, h: r.height, bg: getComputedStyle(m).backgroundColor, images: document.images.length}; }""")
-    assert abs(box["w"] - 6) < 0.5 and abs(box["h"] - 46) < 0.5 and box["bg"] == "rgb(200, 16, 46)" and box["images"] == 0
+    if CLUB_SLUG == _M.DEFAULT_CLUB:
+        box = pg.evaluate("""() => { const m = document.querySelector('.brand-mark'), r = m.getBoundingClientRect();
+            return {w: r.width, h: r.height, bg: getComputedStyle(m).backgroundColor, images: [...document.images].filter(i => !i.closest('#club-menu')).length}; }""")
+        assert abs(box["w"] - 6) < 0.5 and abs(box["h"] - 46) < 0.5 and box["bg"] == "rgb(200, 16, 46)" and box["images"] == 0
+    else:
+        assert pg.locator(".brand img.crest.mono").count() == 1 and pg.get_attribute(".brand img.crest.mono", "alt") == f"{CLUB} badge"
     for route in PAGES:
         go(pg, route, "2025-26")
     assert pg.errors == []
@@ -1521,7 +1548,7 @@ def test_style_small_sample_badge_and_table_alternatives(page):
     tbl = page.locator("[data-phase=defence] details.tbl").nth(1)
     tbl.locator("summary").click()
     rows = _table_rows(tbl.locator("tbody tr"))
-    assert len(rows) == 20 and any(r[0] == "Liverpool" for r in rows)
+    assert len(rows) == 20 and any(r[0] == CLUB for r in rows)
 
 
 def test_style_screenshots(browser):
@@ -1566,8 +1593,8 @@ def _hex(rgb):
 
 
 def test_champions_trim_only_on_a_season_liverpool_won(page, data):
-    champs = [s for s in data["seasons"] if data["league"][s].get("champion") == "Liverpool"]
-    others = [s for s in data["seasons"] if data["league"][s].get("champion") != "Liverpool"]
+    champs = [s for s in data["seasons"] if data["league"][s].get("champion") == CLUB]
+    others = [s for s in data["seasons"] if data["league"][s].get("champion") != CLUB]
     for s in champs[:2]:
         go(page, "overview", s)
         assert page.locator("[data-testid=champions]").count() == 1 and page.locator(".card.record.champ").count() == 1
@@ -1581,9 +1608,11 @@ def test_champions_trim_only_on_a_season_liverpool_won(page, data):
 def test_sidebar_and_masthead_are_brand_red_and_readable(page):
     def rgb(sel, prop="backgroundColor"):
         return page.evaluate("([s, p]) => getComputedStyle(document.querySelector(s))[p]", [sel, prop])
-    assert rgb(".nav") == "rgb(200, 16, 46)" and rgb(".topbar") == "rgb(200, 16, 46)"
+    brand = (CLUB_CFG.get("theme") or {}).get("brand", "#c8102e").lstrip("#")
+    want = "rgb(%d, %d, %d)" % tuple(int(brand[i:i + 2], 16) for i in (0, 2, 4))
+    assert rgb(".nav") == want and rgb(".topbar") == want
     assert rgb("h1", "color") == "rgb(255, 255, 255)" and rgb(".nav a.item:not([aria-current])", "color") == "rgb(255, 255, 255)"
-    assert page.evaluate("getComputedStyle(document.querySelector('.nav'), '::before').content").strip('"') == "ANFIELD"
+    assert page.evaluate("getComputedStyle(document.querySelector('.nav'), '::before').content").strip('"') == CLUB_CFG["lettering"]
 
 
 def test_record_card_numbers_stay_readable_in_both_themes(browser, data):

@@ -9,6 +9,8 @@ import pandas as pd
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+import os
+PROC = Path(os.environ.get("TRACKER_DATA", ROOT / "data")) / "processed"
 sys.path.insert(0, str(ROOT))
 import style  # noqa: E402
 
@@ -23,7 +25,7 @@ def _league(n=20, seed=3):
 
 
 def _raw():
-    p = ROOT / "data" / "processed" / "style_raw.parquet"
+    p = PROC / "style_raw.parquet"
     if not p.exists():
         pytest.fail("run `python etl.py --no-fetch` first")
     return pd.read_parquet(p)
@@ -162,7 +164,7 @@ def test_box_zone_boundaries_and_zone_counts_sum_to_total():
     assert style.box_zone(0.99, 24.85 / 68) == "six" and style.box_zone(0.99, 24.83 / 68) == "pen"
     assert style.box_zone(0.92, 13.85 / 68) == "pen" and style.box_zone(0.92, 13.83 / 68) == "out"
     assert style.box_zone(0.92, 54.15 / 68) == "pen" and style.box_zone(0.92, 54.17 / 68) == "out"
-    shots = pd.read_parquet(ROOT / "data" / "processed" / "shots.parquet")
+    shots = pd.read_parquet(PROC / "liverpool" / "shots.parquet")
     for season, g in shots[shots.result != "OwnGoal"].groupby("season"):
         assert sum(style.zone_counts(g).values()) == len(g), season
 
@@ -170,7 +172,7 @@ def test_box_zone_boundaries_and_zone_counts_sum_to_total():
 # ------------------------------------------------------------------ real data
 def test_liverpool_conceded_counts_reconcile_with_shot_dataset():
     raw, cfg = _raw(), CFG
-    shots = pd.read_parquet(ROOT / "data" / "processed" / "shots.parquet")
+    shots = pd.read_parquet(PROC / "liverpool" / "shots.parquet")
     kp = style.kpi_table(raw, cfg)
     for season, r in raw[raw.club == "Liverpool"].set_index("season").iterrows():
         d = shots[(shots.season == season) & (shots.team != "Liverpool") & (shots.result != "OwnGoal")]

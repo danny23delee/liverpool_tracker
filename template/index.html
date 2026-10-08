@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Liverpool Performance Tracker</title>
-<meta name="description" content="Liverpool FC Premier League team and player performance since 2014/15, with a betting-market lens: expected goals, market probabilities and results side by side.">
-<meta name="theme-color" content="#100507">
-<meta property="og:title" content="Liverpool Performance Tracker">
+<title>__CLUB_NAME__ Performance Tracker</title>
+<meta name="description" content="__CLUB_FULL__ Premier League team and player performance since 2014/15, with a betting-market lens: expected goals, market probabilities and results side by side.">
+<meta name="theme-color" content="__THEME_COLOR__">
+<meta property="og:title" content="__CLUB_NAME__ Performance Tracker">
 <meta property="og:description" content="Expected goals, betting-market probabilities and results side by side, with every number tested against independent calculations.">
 <meta property="og:type" content="website">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%23c8102e%27/%3E%3Crect x=%277%27 y=%277%27 width=%275%27 height=%2718%27 rx=%271%27 fill=%27white%27/%3E%3Crect x=%2717%27 y=%277%27 width=%275%27 height=%2718%27 rx=%271%27 fill=%27white%27/%3E%3C/svg%3E">
+<link rel="icon" href="__FAVICON__">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -28,6 +28,9 @@
   --bar-sel: #c8102e; --bar-cmp: #b99aa0;
   --stage: #f3e9ea; --pitch-line: rgba(26,12,14,.24); --shot-fill: rgba(26,12,14,.06); --shot-stroke: rgba(26,12,14,.6);
   --drawer: rgba(255,255,255,.96); --shadow: 0 1px 2px rgba(60,20,26,.05), 0 6px 18px rgba(60,20,26,.05);
+  --brand-deep: #8f0b21; --brand-deeper: #7a0a1c; --record-ink: #a30d25; --record-num: #c8102e; --record-soft: rgba(163,13,37,.10);
+  --lettering: "ANFIELD"; --lettering-size: min(190px, 16vh);
+  --seats: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='44'%3E%3Cg fill='%23a80d27'%3E%3Crect x='4' y='1' width='16' height='9' rx='3'/%3E%3Crect x='2' y='11' width='20' height='9' rx='3'/%3E%3Crect x='16' y='23' width='16' height='9' rx='3'/%3E%3Crect x='-8' y='23' width='16' height='9' rx='3'/%3E%3Crect x='14' y='33' width='20' height='9' rx='3'/%3E%3Crect x='-10' y='33' width='20' height='9' rx='3'/%3E%3C/g%3E%3C/svg%3E");
   --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
 }
@@ -458,8 +461,8 @@ button.badge { cursor: help; min-height: 0; position: relative; } button.badge::
 @media (max-width: 600px) { .axis-body { grid-template-columns: minmax(0, 1fr); gap: 6px; } .axis-read { margin-left: 0; flex-basis: 100%; } .style-card .idx .num { font-size: 54px; } }
 /* ---------- Liverpool identity layer: red sidebar, Kop-seat masthead with scarf stripes, cream record card, champions trim ---------- */
 .nav { background: var(--accent); border-right: 0; color: #fff; isolation: isolate; overflow-x: hidden; }
-.nav::before { content: "ANFIELD"; position: absolute; left: 2px; bottom: 0; z-index: -1; writing-mode: vertical-rl; transform: rotate(180deg);
-  font: 700 min(190px, 16vh)/.85 var(--font-display); letter-spacing: 6px; color: rgba(255,255,255,.10); white-space: nowrap; pointer-events: none; user-select: none; }
+.nav::before { content: var(--lettering); position: absolute; left: 2px; bottom: 0; z-index: -1; writing-mode: vertical-rl; transform: rotate(180deg);
+  font: 700 var(--lettering-size)/.85 var(--font-display); letter-spacing: 6px; color: rgba(255,255,255,.10); white-space: nowrap; pointer-events: none; user-select: none; }
 .nav::after { content: ""; position: absolute; right: 0; bottom: 14vh; width: 232px; height: min(520px, 46vh); z-index: -1; pointer-events: none;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 248 520' fill='none' stroke='rgba(255,255,255,0.16)' stroke-width='3'%3E%3Ccircle cx='248' cy='260' r='150'/%3E%3Cline x1='248' y1='0' x2='248' y2='520'/%3E%3Crect x='128' y='130' width='140' height='260'/%3E%3Crect x='198' y='200' width='70' height='120'/%3E%3C/svg%3E") no-repeat right center / auto 100%; }
 .nav :focus-visible { outline-color: #fff; }
@@ -471,45 +474,65 @@ button.badge { cursor: help; min-height: 0; position: relative; } button.badge::
 .nav .num { color: rgba(255,255,255,.88); } .nav a.item[aria-current="page"] .num { color: var(--accent); }
 .nav-foot { color: rgba(255,255,255,.92); }
 .topbar { position: relative; padding: 28px 32px; margin-bottom: 56px; border-radius: 16px 16px 0 0; color: #fff; background-color: var(--accent);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='44'%3E%3Cg fill='%23a80d27'%3E%3Crect x='4' y='1' width='16' height='9' rx='3'/%3E%3Crect x='2' y='11' width='20' height='9' rx='3'/%3E%3Crect x='16' y='23' width='16' height='9' rx='3'/%3E%3Crect x='-8' y='23' width='16' height='9' rx='3'/%3E%3Crect x='14' y='33' width='20' height='9' rx='3'/%3E%3Crect x='-10' y='33' width='20' height='9' rx='3'/%3E%3C/g%3E%3C/svg%3E"); }
+  background-image: var(--seats); }
 .topbar::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 32px; pointer-events: none;
   background: linear-gradient(#fff 0 6px, var(--accent) 6px 12px, #fff 12px 18px, transparent 18px) top / 100% 18px no-repeat,
               repeating-linear-gradient(90deg, var(--accent) 0 7px, transparent 7px 12px) bottom / 100% 14px no-repeat; }
 .topbar h1, .topbar .subtitle { color: #fff; }
 .topbar .field label { color: #fff; }
-.topbar select { background: #8f0b21 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='white' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 12px center; color: #fff; border-color: rgba(255,255,255,.7); }
-.topbar select option { background: #8f0b21; color: #fff; }
-.topbar .icon-btn { background: #8f0b21; color: #fff; border-color: rgba(255,255,255,.7); } .topbar .icon-btn:hover { background: #7a0a1c; }
+.topbar select { background: var(--brand-deep) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='white' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 12px center; color: #fff; border-color: rgba(255,255,255,.7); }
+.topbar select option { background: var(--brand-deep); color: #fff; }
+.topbar .icon-btn { background: var(--brand-deep); color: #fff; border-color: rgba(255,255,255,.7); } .topbar .icon-btn:hover { background: var(--brand-deeper); }
 .topbar .badge { background: #fff; color: #1a0c0e; border-color: #fff; }
 .topbar :focus-visible { outline-color: #fff; }
 .card.record { --surface: #f6efe7; --surface-2: #efe4d8; --ink: #1a1214; --ink-2: #4a3b3e; --muted: #5a4a4d; --line: #e0d0c2; --line-strong: #c9b6a6;
-  --good: #187a4e; --bad: #c2410c; --red: #a30d25; --bar-cmp: #b99aa0; --accent-soft: rgba(163,13,37,.10); background: var(--surface); border-color: var(--surface); color: var(--ink); }
-.card.record h2 { color: #a30d25; }
-.card.record .val[data-metric="points"] { color: #c8102e; }
+  --good: #187a4e; --bad: #c2410c; --red: var(--record-ink); --bar-cmp: #b99aa0; --accent-soft: var(--record-soft); background: var(--surface); border-color: var(--surface); color: var(--ink); }
+.card.record h2 { color: var(--record-ink); }
+.card.record .val[data-metric="points"] { color: var(--record-num); }
 .card.record.champ { border-color: #d4af37; box-shadow: inset 0 0 0 3px #d4af37, inset 0 0 0 9px var(--surface), inset 0 0 0 10px #d4af37; }
 .champ-chip { margin-left: auto; padding: 3px 12px; border-radius: 4px; background: #d4af37; color: #2a1a00; font: 700 13px/1.4 var(--font-display); letter-spacing: .14em; text-transform: uppercase; }
 @media (max-width: 860px) {
   .nav { overflow-x: auto; } .nav::before, .nav::after { display: none; }
   .topbar { padding: 20px 20px; margin-bottom: 52px; }
 }
-@media print { .nav, .controls { display: none; } }
+/* ---------- club switcher: the crest is a button that opens a menu of clubs ---------- */
+.nav { z-index: 40; }   /* the menu is fixed-positioned inside the nav's stacking context: the nav must sit above the page content */
+.crest-btn { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 2px; border-radius: 12px; min-height: 44px; min-width: 44px; position: relative; flex: none; }
+.crest-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.crest-btn .chev { position: absolute; right: -5px; bottom: -3px; width: 17px; height: 17px; border-radius: 50%; background: #fff; color: var(--accent); font-size: 11px; line-height: 17px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+.crest-btn:hover .crest, .crest-btn[aria-expanded="true"] .crest { box-shadow: 0 0 0 3px rgba(255,255,255,.55); }
+.crest.mono { background: transparent; padding: 0; border-radius: 0; }
+.brand-link { display: block; text-decoration: none; color: #fff; min-width: 0; flex: 1 1 auto; } .brand-link .brand-text { display: block; }
+.club-menu { position: fixed; z-index: 60; width: 272px; max-width: calc(100vw - 16px); padding: 6px; border-radius: 14px; background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line-strong); box-shadow: 0 12px 36px rgba(0,0,0,.35); }
+.club-menu[hidden] { display: none; }
+.club-menu .club-head { padding: 8px 10px 6px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.club-item { display: flex; align-items: center; gap: 12px; padding: 8px 10px; min-height: 48px; border-radius: 10px; text-decoration: none; color: var(--ink); border-left: 5px solid var(--club-brand, var(--accent)); }
+.club-item img { width: 30px; height: 36px; object-fit: contain; flex: none; }
+.club-item .nm { font: 600 17px/1.2 var(--font-display); letter-spacing: .02em; flex: 1; }
+.club-item .tick { color: var(--ink-2); font-size: 14px; }
+.club-item:hover, .club-item:focus-visible { background: var(--accent-soft); outline: none; }
+.club-item:focus-visible { box-shadow: inset 0 0 0 2px var(--red); }
+.club-item[aria-current="true"] { background: var(--surface-2); }
+__CLUB_THEME__@media print { .nav, .controls { display: none; } }
 </style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <div class="shell">
   <nav class="nav" aria-label="Pages">
-    <a class="brand" href="#/overview" aria-label="Liverpool Performance Tracker home">
-      __CREST__
-      <span class="brand-text">Performance<br>Tracker<small>Liverpool · Premier League</small></span>
-    </a>
+    <div class="brand">
+      <button class="crest-btn" id="club-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="club-menu" aria-label="Switch club (now __CLUB_NAME__)" title="Switch club">__CREST__<span class="chev" aria-hidden="true">▾</span></button>
+      <a class="brand-link" href="#/overview" aria-label="__CLUB_NAME__ Performance Tracker home"><span class="brand-text">Performance<br>Tracker<small>__CLUB_NAME__ · Premier League</small></span></a>
+    </div>
+    <div id="club-menu" class="club-menu" role="menu" aria-label="Choose a club" hidden></div>
     <ul id="nav-list"></ul>
     <div class="nav-foot" id="nav-foot"></div>
   </nav>
   <div class="content">
     <header class="topbar">
       <div class="titles">
-        <h1 id="title">Liverpool Performance Tracker</h1>
+        <h1 id="title">__CLUB_NAME__ Performance Tracker</h1>
         <p class="subtitle" id="subtitle"></p>
         <div class="badges" id="badges"></div>
       </div>
@@ -535,6 +558,7 @@ if (typeof d3 === 'undefined') {                       // the pinned D3 build co
 }
 const T_BOOT = performance.now();
 const D = JSON.parse(document.getElementById('data').textContent);
+const CLUB = D.club.name;
 const R = D.registry, MATCHES = D.matches, MIN = D.settings.min_sample;
 const $ = (s, r = document) => r.querySelector(s);
 
@@ -614,7 +638,7 @@ const PAGES = [
   { id: 'methodology', label: 'Methodology' },
 ];
 const slug = s => s.split(' ').pop().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-const ERAS = D.eras.map(e => ({ ...e, slug: slug(e.manager) }));
+const ERAS = D.eras.map(e => ({ ...e, slug: e.slug || slug(e.manager) }));   // a club may give an era an explicit slug (two stints by one manager)
 function parseHash() {
   const raw = location.hash.replace(/^#\/?/, '');
   const [path, qs] = raw.split('?');
@@ -632,7 +656,7 @@ const hashFor = (s, page) => {
   return `#/${page}?season=${s.season}&era=${s.era}` + (EXTRA[page] || []).filter(k => s.x && s.x[k]).map(k => `&${k}=${encodeURIComponent(s.x[k])}`).join('');
 };
 function go(s) { const h = hashFor(s); if (location.hash === h) render(); else location.hash = h; }
-function setHeader(title, sub) { $('#title').textContent = title; $('#title').classList.toggle('long', title.length > 30); $('#subtitle').textContent = sub; document.title = `${title} · Liverpool Performance Tracker`; }
+function setHeader(title, sub) { $('#title').textContent = title; $('#title').classList.toggle('long', title.length > 30); $('#subtitle').textContent = sub; document.title = `${title} · ${CLUB} Performance Tracker`; }
 const eraName = slugv => slugv === 'all' ? null : ERAS.find(e => e.slug === slugv).manager;
 const selKey = s => `${s.season}|${eraName(s.era) || 'all'}`;
 
@@ -645,7 +669,7 @@ function buildChrome() {
   $('#footer').append(
     el('div', {}, 'Data: ', el('a', { href: 'https://understat.com', rel: 'noopener' }, 'Understat'), ' (shot-level expected goals, player and team match data) and ',
       el('a', { href: 'https://www.football-data.co.uk', rel: 'noopener' }, 'football-data.co.uk'), ' (results and betting odds). Charts: D3 v7. '),
-    el('div', {}, `Data through ${D.data_through}; built ${D.generated}. Independent portfolio project, not affiliated with or endorsed by Liverpool FC or the Premier League. Retrospective analysis only; not betting advice.`));
+    el('div', {}, `Data through ${D.data_through}; built ${D.generated}. Independent portfolio project, not affiliated with or endorsed by ${D.club.full_name} or the Premier League. Retrospective analysis only; not betting advice.`));
   const setTheme = t => { if (t) document.documentElement.setAttribute('data-theme', t); else document.documentElement.removeAttribute('data-theme'); };
   try { const t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') setTheme(t); } catch (e) { /* storage unavailable */ }
   const effective = () => document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -656,6 +680,36 @@ function buildChrome() {
     paint(); render(true);
   });
   paint();
+  buildClubMenu();
+}
+function buildClubMenu() {                 // the crest is a button; the menu lists the clubs and carries page and season across
+  const btn = $('#club-btn'), menu = $('#club-menu');
+  menu.append(el('div', { class: 'club-head', 'aria-hidden': 'true' }, 'Choose a club'));
+  D.clubs.forEach(c => menu.append(el('a', { class: 'club-item', role: 'menuitem', 'data-club': c.slug, 'aria-current': c.current ? 'true' : null, style: `--club-brand:${c.brand}`, href: c.href },
+    el('img', { src: c.badge, alt: '', width: 30, height: 36 }), el('span', { class: 'nm' }, c.name), c.current && el('span', { class: 'tick', 'aria-hidden': 'true' }, '✓'))));
+  const items = () => [...menu.querySelectorAll('.club-item')];
+  const close = back => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); if (back) btn.focus(); };
+  const open = () => {
+    const s = parseHash();
+    items().forEach((a, i) => { a.href = `${D.clubs[i].href}#/${s.page}?season=${s.season}&era=all`; });   // page and season carry over; eras and player picks are club-specific
+    menu.hidden = false; btn.setAttribute('aria-expanded', 'true');
+    const r = btn.getBoundingClientRect(), w = menu.offsetWidth;
+    menu.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px'; menu.style.top = (r.bottom + 6) + 'px';
+    (items().find(a => a.getAttribute('aria-current')) || items()[0]).focus();
+  };
+  btn.addEventListener('click', e => { e.stopPropagation(); menu.hidden ? open() : close(true); });
+  btn.addEventListener('keydown', e => { if ((e.key === 'ArrowDown') && menu.hidden) { e.preventDefault(); open(); } });
+  menu.addEventListener('keydown', e => {
+    const list = items(), i = list.indexOf(document.activeElement);
+    if (e.key === 'Escape') { e.preventDefault(); close(true); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); list[(i + 1) % list.length].focus(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); list[(i - 1 + list.length) % list.length].focus(); }
+    else if (e.key === 'Home') { e.preventDefault(); list[0].focus(); }
+    else if (e.key === 'End') { e.preventDefault(); list[list.length - 1].focus(); }
+    else if (e.key === 'Tab') close(false);
+  });
+  document.addEventListener('click', e => { if (!menu.hidden && !menu.contains(e.target)) close(false); });
+  addEventListener('resize', () => close(false));
 }
 function paintChrome(s) {
   const list = $('#nav-list'); list.innerHTML = '';
@@ -699,7 +753,7 @@ function wdlBar(r) {                                     // proportional win / d
       el('span', {}, `${r.losses} ${r.losses === 1 ? 'defeat' : 'defeats'} · ${n} played`)));
 }
 function isChampion(s) {                                 // whole season, all managers, and Liverpool finished strictly top (computed in build.py from the league table)
-  return s.season !== 'all' && s.era === 'all' && !!D.league[s.season] && D.league[s.season].champion === 'Liverpool';
+  return s.season !== 'all' && s.era === 'all' && !!D.league[s.season] && D.league[s.season].champion === CLUB;
 }
 function recordCard(sel, s) {
   const r = sel.record, champ = isChampion(s);
@@ -769,7 +823,7 @@ function rollCard(sel) {
     return card;
   }
   const host = el('div', { class: 'chart-fill fill', style: '--minh: 300px', 'data-chart': 'roll' });
-  card.append(host, el('p', { class: 'chart-note' }, 'Average xG difference per match over the latest 10 matches. Above zero, Liverpool created more expected goals than they conceded.'));
+  card.append(host, el('p', { class: 'chart-note' }, 'Average xG difference per match over the latest 10 matches. Above zero, ' + CLUB + ' created more expected goals than they conceded.'));
   const label = `Rolling 10-match xG difference per match, ${pts.length} points, latest ${d3.format('+.2f')(pts[pts.length - 1].v)}`;
   const draw = () => rollChart(host, pts, label);
   card._draw = draw;
@@ -783,7 +837,7 @@ function lastFiveCard(sel, s) {
   const items = sel.last5.map(i => M(i)).reverse();
   return el('section', { class: 'card', 'aria-label': 'Last five results' },
     el('h2', {}, `Last ${items.length} results`, el('span', { class: 'tag' }, 'actual')),
-    el('div', { class: 'form fill' }, items.map(m => el('div', { class: 'res', title: `Expected goals (xG): Liverpool ${m.xg.toFixed(2)}, ${m.opp} ${m.xga.toFixed(2)}` },
+    el('div', { class: 'form fill' }, items.map(m => el('div', { class: 'res', title: `Expected goals (xG): ${CLUB} ${m.xg.toFixed(2)}, ${m.opp} ${m.xga.toFixed(2)}` },
       el('span', { class: 'rl ' + m.r, 'aria-label': { W: 'Win', D: 'Draw', L: 'Loss' }[m.r] }, m.r),
       el('div', { class: 'who' }, el('b', {}, `${m.h ? 'v' : '@'} ${m.opp}`), el('span', {}, `${dfmt(dparse(m.d))} · ${m.h ? 'Home' : 'Away'}`)),
       el('div', { class: 'score' }, m.h ? `${m.gf}–${m.ga}` : `${m.ga}–${m.gf}`, el('small', {}, `Exp. xG ${m.xg.toFixed(1)} v ${m.xga.toFixed(1)}`))))));
@@ -950,7 +1004,7 @@ function mixBody(sel, side) {
     rows.flatMap(r => src.map(([k, name]) => [rows.length > 1 ? r.label : 'Selection', name, r[k].xg.toFixed(1), r[k].shots, r[k].goals])));
   return el('div', { class: 'dmix', role: 'group', 'aria-label': R[id].label },
     el('h3', {}, R[id].label, info(id), el('span', { class: 'tag' }, 'expected')), legend(src.map(([, name, c]) => ({ color: c, text: name }))), body,
-    el('p', { class: 'note-small' }, att ? 'Share of Liverpool xG by source. Hover a segment for shots and goals.' : 'Expected goals conceded per match by source. Bar length is comparable across rows.'), tbl);
+    el('p', { class: 'note-small' }, att ? 'Share of ' + CLUB + ' xG by source. Hover a segment for shots and goals.' : 'Expected goals conceded per match by source. Bar length is comparable across rows.'), tbl);
 }
 /* ---- the shot map card: full-pitch stage with a filters drawer on its left edge ---- */
 let ACTIVE_DRAWER = null;                              // the open drawer, so Escape can close it wherever focus is
@@ -1006,7 +1060,7 @@ function shotStage(sel, mode) {
   stage.append(tab, panel, wrap, lg);
   const card = el('section', { class: 'card span-12', 'aria-label': R[id].label },
     el('h2', {}, R[id].label, info(id), el('span', { class: 'tag' }, 'goals actual · xG expected')), stage,
-    el('p', { class: 'note-small' }, att ? 'Liverpool attack left to right →. Own goals are not shots and are not drawn. Coordinates are the shooter’s view from Understat.' : '← Liverpool defend the left goal. Opposition coordinates are rotated to match. Own goals by Liverpool players are not shots and are not drawn.'), note, tblHost);
+    el('p', { class: 'note-small' }, att ? CLUB + ' attack left to right →. Own goals are not shots and are not drawn. Coordinates are the shooter’s view from Understat.' : '← ' + CLUB + ' defend the left goal. Opposition coordinates are rotated to match. Own goals by ' + CLUB + ' players are not shots and are not drawn.'), note, tblHost);
   draw();
   card._draw = () => { const dense = drawShotMap(wrap, cur, mode, `${R[id].label}: ${cur.length} shots`); const nlg = legendBox(dense); lg.replaceWith(nlg); lg = nlg; };
   return card;
@@ -1056,8 +1110,8 @@ function finishCard(sel) {
 function scatterCard(sel, s) {
   const host = el('div', { class: 'chart-fill fill', style: '--minh: 340px', 'data-chart': 'scatter' }), tbl = el('div');
   const all = s.season === 'all';
-  const others = (all ? D.seasons : [s.season]).flatMap(se => D.league[se].teams.filter(t => t.team !== 'Liverpool').map(t => ({ ...t, se })));
-  const lfc = sel.lfc_points.map(p => ({ team: 'Liverpool', se: p.label, shots_pm: p.shots_pm, xgps: p.xgps, n: p.n }));
+  const others = (all ? D.seasons : [s.season]).flatMap(se => D.league[se].teams.filter(t => t.team !== CLUB).map(t => ({ ...t, se })));
+  const lfc = sel.lfc_points.map(p => ({ team: CLUB, se: p.label, shots_pm: p.shots_pm, xgps: p.xgps, n: p.n }));
   const avg = all ? null : D.league[s.season].avg;
   const draw = () => {
     host.innerHTML = '';
@@ -1066,7 +1120,7 @@ function scatterCard(sel, s) {
     const xe = d3.extent(pts, p => p.shots_pm), ye = d3.extent(pts, p => p.xgps);
     const x = d3.scaleLinear().domain([xe[0] - 1, xe[1] + 1]).nice().range([mg.l, W - mg.r]);
     const y = d3.scaleLinear().domain([ye[0] - 0.005, ye[1] + 0.005]).nice().range([H - mg.b, mg.t]);
-    const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Shots per match against xG per shot, Liverpool and league clubs');
+    const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Shots per match against xG per shot, ' + CLUB + ' and league clubs');
     svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
     svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format('.3f'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
     svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).ticks(6).tickSize(4).tickFormat(d3.format('.0f'))).call(a => { a.select('.domain').style('stroke', 'var(--line-strong)'); a.selectAll('line').style('stroke', 'var(--line-strong)'); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
@@ -1083,13 +1137,13 @@ function scatterCard(sel, s) {
     lg.selectAll('circle').data(lfc).join('circle').attr('cx', p => x(p.shots_pm)).attr('cy', p => y(p.xgps)).attr('r', 7).style('fill', 'var(--red)').style('stroke', 'var(--surface)').attr('stroke-width', 2)
       .on('pointermove pointerdown', tip).on('pointerleave', leaveTip);
     lg.selectAll('text').data(lfc).join('text').attr('x', p => x(p.shots_pm) + 10).attr('y', p => y(p.xgps) + 4).style('fill', 'var(--ink)').style('font-size', '13px').style('font-weight', 600)
-      .text(p => all ? "'" + p.se.slice(2, 4) : 'Liverpool');
+      .text(p => all ? "'" + p.se.slice(2, 4) : CLUB);
     tbl.replaceChildren(tableView('View as a table', ['Club', ...(all ? ['Season'] : []), 'Shots per match', 'xG per shot (expected)'],
       pts.slice().sort((a, b) => b.xgps - a.xgps).map(p => [p.team, ...(all ? [p.se] : []), p.shots_pm.toFixed(1), p.xgps.toFixed(3)])));
   };
   const card = pageCard('', 'vol_vs_quality', 'expected',
-    legend([{ cls: 'dot', color: 'var(--red)', text: all ? 'Liverpool, by season' : 'Liverpool' }, { cls: 'dot', color: 'var(--muted)', text: all ? 'Other clubs, every season' : 'Other clubs' }, ...(avg ? [{ cls: 'dash', text: 'League average' }] : [])]),
-    host, el('p', { class: 'note-small' }, s.era !== 'all' ? 'Liverpool point is the selected manager era; league clubs are full seasons.' : 'Shots exclude own goals; xG per shot is total xG divided by total shots.'), tbl);
+    legend([{ cls: 'dot', color: 'var(--red)', text: all ? CLUB + ', by season' : CLUB }, { cls: 'dot', color: 'var(--muted)', text: all ? 'Other clubs, every season' : 'Other clubs' }, ...(avg ? [{ cls: 'dash', text: 'League average' }] : [])]),
+    host, el('p', { class: 'note-small' }, s.era !== 'all' ? CLUB + ' point is the selected manager era; league clubs are full seasons.' : 'Shots exclude own goals; xG per shot is total xG divided by total shots.'), tbl);
   draw(); card._draw = draw; return card;
 }
 
@@ -1174,7 +1228,7 @@ function sparkline(aid, scope, label) {
   svg.append('path').attr('class', 'ln').attr('d', d3.line().defined(v => v != null).x((v, i) => xs(i)).y(v => y(v))(vals));   // a missing season is a gap
   vals.forEach((v, i) => { if (v != null) svg.append('circle').attr('class', scope.seasons[i] === scope.shown ? 'pt sel' : 'pt').attr('cx', xs(i)).attr('cy', y(v)).attr('r', scope.seasons[i] === scope.shown ? 4.5 : 2); });
   const node = svg.node();
-  node.setAttribute('aria-label', `${label}: Liverpool's score in each of ${n} ${n === 1 ? 'season' : 'seasons'}; the red dot marks the selected season.`);
+  node.setAttribute('aria-label', `${label}: ${CLUB}'s score in each of ${n} ${n === 1 ? 'season' : 'seasons'}; the highlighted dot marks the selected season.`);
   const at = ev => { const r = node.getBoundingClientRect(), i = Math.max(0, Math.min(n - 1, Math.round(((ev.clientX - r.left) / r.width * W - mg) / cell))), se = scope.seasons[i], v = vals[i];
     showTip(`<b>${esc(se)}</b><br>${label}: ${v == null ? 'N/A' : fmt(aid, v)}<br>${eraParts(se).parts.map(p => esc(p.m.split(' ').pop())).join(' then ')}`, ev.clientX, ev.clientY); };
   node.addEventListener('pointermove', at); node.addEventListener('pointerdown', at); node.addEventListener('pointerleave', leaveTip);
@@ -1186,7 +1240,7 @@ function kpiTable(a, ax, S) {
       el('td', { class: 'num' }, fmt(k.id, k.liv)), el('td', { class: 'num' }, fmt(k.id, k.mean)), el('td', { class: 'num' }, k.rank == null ? 'N/A' : `${ordinal(k.rank)} of ${k.n}`)); });
   const missing = a.external_kpis.filter(k => !ax.kpis.some(x => x.id === k)).map(k => el('tr', { class: 'na-row', 'data-kpi': k }, el('td', {}, R[k].label, info(k)),
     el('td', { colspan: 3 }, 'Not computed: needs shot-level data for every club.')));
-  return el('div', { class: 'tbl-scroll kpi-tbl' }, el('table', { class: 'data' }, el('thead', {}, el('tr', {}, el('th', {}, 'How this is measured'), el('th', { class: 'num' }, 'Liverpool'), el('th', { class: 'num' }, 'League avg'), el('th', { class: 'num', title: `Rank among the clubs, 1st = furthest toward ${a.right}` }, `Rank`))),
+  return el('div', { class: 'tbl-scroll kpi-tbl' }, el('table', { class: 'data' }, el('thead', {}, el('tr', {}, el('th', {}, 'How this is measured'), el('th', { class: 'num' }, CLUB), el('th', { class: 'num' }, 'League avg'), el('th', { class: 'num', title: `Rank among the clubs, 1st = furthest toward ${a.right}` }, `Rank`))),
     el('tbody', {}, rows, missing)));
 }
 function axisRow(aid, S, scope, mode) {
@@ -1210,7 +1264,7 @@ function axisRow(aid, S, scope, mode) {
   S.clubs.forEach((c, i) => { const v = ax.scores[i]; if (v == null || c === STC.club) return;
     inn.append(el('i', { class: 'dot', style: `left:${v}%`, 'data-club': c, onpointermove: ev => showTip(`<b>${esc(c)}</b><br>${fmt(aid, v)} · ${ordinal(ax.ranks[i])} of ${ax.n}`, ev.clientX, ev.clientY), onpointerleave: leaveTip })); });
   if (liv) inn.append(el('i', { class: 'dot liv', style: `left:${liv.score}%`, 'data-testid': 'axis-liv' }));
-  const track = el('div', { class: 'track', role: 'img', 'aria-label': liv ? `${a.label}: Liverpool ${fmt(aid, liv.score)} out of 100 toward ${a.right}, ${ordinal(liv.rank)} of ${ax.n} clubs; 50 is the league average.` : `${a.label}: no score.` }, inn);
+  const track = el('div', { class: 'track', role: 'img', 'aria-label': liv ? `${a.label}: ${CLUB} ${fmt(aid, liv.score)} out of 100 toward ${a.right}, ${ordinal(liv.rank)} of ${ax.n} clubs; 50 is the league average.` : `${a.label}: no score.` }, inn);
   const main = el('div', { class: 'axis-main' }, el('div', { class: 'axis-head' }, name, badge, pip, read),
     el('div', { class: 'axis-body' }, track, el('div', { class: 'spark-wrap' }, sparkline(aid, scope, a.label))));
   row.append(main);
@@ -1227,10 +1281,10 @@ function styleCard(phase, s, mode, cls) {
         : el('div', { class: 'chg', 'data-testid': 'style-change' }, change == null ? 'No previous season' : `${d3.format('+d')(change).replace('-', MINUS)} pts vs previous season`)));
   const axes = el('div', { class: 'axes fill' }, ph.axes.map(a => axisRow(a, S, scope, mode)));
   const note = el('p', { class: 'note-small', 'data-testid': 'style-note' },
-    scope.latest ? `Showing ${scope.shown}, the latest season in this selection; the trend lines cover every season in it. ` : `Scores compare Liverpool with the other ${S.n_clubs - 1} clubs in ${scope.shown}. `,
+    scope.latest ? `Showing ${scope.shown}, the latest season in this selection; the trend lines cover every season in it. ` : `Scores compare ${CLUB} with the other ${S.n_clubs - 1} clubs in ${scope.shown}. `,
     S.matches != null && S.matches < 38 ? `Based on the ${S.matches} matches played so far. ` : '',
     'Scores are relative to each season\'s league, cover the whole season (not split by manager) and are proxies, not CIES scores. Style is neither good nor bad. Bands in the trend lines mark manager eras.');
-  const byClub = el('div', { 'data-ref-season': '' }, tableView('View as a table: Liverpool by season', ['Season', ...ph.axes.map(a => STC.axes[a].label), R[ph.index_id].label],
+  const byClub = el('div', { 'data-ref-season': '' }, tableView('View as a table: ' + CLUB + ' by season', ['Season', ...ph.axes.map(a => STC.axes[a].label), R[ph.index_id].label],
     scope.seasons.map(se => [se, ...ph.axes.map(a => fmt(a, ST.series[a][se])), fmt(ph.index_id, ST.series[ph.index_id][se])])));
   const clubs = tableView(`View as a table: every club in ${scope.shown}`, ['Club', ...ph.axes.map(a => STC.axes[a].label)],
     S.clubs.map((c, i) => [c, ...ph.axes.map(a => { const ax = S.axes[a]; return ax.status === 'computed' && ax.scores[i] != null ? fmt(a, ax.scores[i]) : 'N/A'; })]));
@@ -1275,7 +1329,7 @@ function defence(s, d) {
     legend: ref => [{ cls: 'dot', color: 'var(--ink-2)', text: 'Single match' }, { cls: 'line', text: '10-match average' }, ...(ref ? [{ cls: 'dash', text: 'League average' }] : [])],
     tip: r => `<b>${vsTxt(r.m)}</b><br>PPDA ${r.v == null ? 'N/A' : r.v.toFixed(1)}${r.roll != null ? `<br>10-match average ${r.roll.toFixed(1)}` : ''}`,
     head: ['Match', 'PPDA', '10-match average'], tr: r => [`${r.m.h ? 'H' : 'A'} ${r.m.opp} ${dfmt(dparse(r.m.d))}`, r.v == null ? 'N/A' : r.v.toFixed(1), r.roll == null ? 'N/A' : r.roll.toFixed(1)],
-    note: 'Passes the opposition are allowed per defensive action of Liverpool in their attacking 40%. Lower means more intense pressing. ' + rollNote,
+    note: 'Passes the opposition are allowed per defensive action of ' + CLUB + ' in their attacking 40%. Lower means more intense pressing. ' + rollNote,
   });
   const deep = trendCard(sel, {
     id: 'deep_allowed_pm', chart: 'deep-trend', span: '', kind: 'dots', tag: 'lower is better', label: 'Deep completions allowed per match with rolling average and league average', ref: 'deep_pm', yfmt: '.0f',
@@ -1444,7 +1498,7 @@ function raceChart(host, rows, m, ev) {
   const series = (fl) => { let c = 0; const pts = [[0, 0]]; rows.filter(r => r[SI.fl] === fl && SH.codes.res[r[SI.res]] !== 'OwnGoal').forEach(r => { pts.push([r[SI.min], c]); c += r[SI.xg]; pts.push([r[SI.min], c]); }); pts.push([maxMin, c]); return { pts, total: c }; };
   const L = series(1), O = series(0), top = Math.max(L.total, O.total, 0.5);
   const y = d3.scaleLinear().domain([0, top * 1.1]).nice().range([H - mg.b, mg.t]);
-  const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', `Cumulative xG: Liverpool ${L.total.toFixed(2)}, ${m.opp} ${O.total.toFixed(2)}`);
+  const svg = d3.select(host).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', `Cumulative xG: ${CLUB} ${L.total.toFixed(2)}, ${m.opp} ${O.total.toFixed(2)}`);
   svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).style('stroke', 'var(--chart-grid)');
   svg.append('line').attr('x1', xs(45)).attr('x2', xs(45)).attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--line-strong)').attr('stroke-dasharray', '3 3');
   svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0).tickPadding(8).tickFormat(d3.format('.1f'))).call(a => { a.select('.domain').remove(); a.selectAll('text').style('fill', 'var(--muted)').style('font-size', '13px'); });
@@ -1453,12 +1507,12 @@ function raceChart(host, rows, m, ev) {
   const cumAt = (S, t) => { let last = 0; for (let i = 0; i < S.pts.length; i++) { if (S.pts[i][0] <= t) last = S.pts[i][1]; } return last; };
   [[O, 'var(--s1)', 'opp'], [L, 'var(--red)', 'lfc']].forEach(([S, col, cls]) => svg.append('path').datum(S.pts).attr('d', line).attr('fill', 'none').style('stroke', col).attr('stroke-width', 2.5).attr('stroke-linejoin', 'round').attr('class', 'race-' + cls));
   ev.forEach(e => { const S = e.lfc ? L : O, yy = y(cumAt(S, e.min + 0.001)); svg.append('circle').attr('class', 'goal-mark').attr('cx', xs(e.min)).attr('cy', yy).attr('r', 6).style('fill', e.lfc ? 'var(--red)' : 'var(--s1)').style('stroke', 'var(--surface)').attr('stroke-width', 2)
-    .on('pointermove pointerdown', evn => showTip(`<b>${esc(e.name)}${e.og ? ' (own goal)' : ''}</b> · ${e.min}'<br>Goal for ${e.lfc ? 'Liverpool' : esc(m.opp)} (actual)`, evn.clientX, evn.clientY)).on('pointerleave', leaveTip); });
+    .on('pointermove pointerdown', evn => showTip(`<b>${esc(e.name)}${e.og ? ' (own goal)' : ''}</b> · ${e.min}'<br>Goal for ${e.lfc ? CLUB : esc(m.opp)} (actual)`, evn.clientX, evn.clientY)).on('pointerleave', leaveTip); });
   const yl = y(L.total), yo = y(O.total), gap = Math.abs(yl - yo) < 16 ? 9 : 0, dir = yl <= yo ? -1 : 1;
-  svg.append('text').attr('x', W - mg.r + 8).attr('y', yl + 4 + gap * dir * -1).style('fill', 'var(--ink)').style('font-size', '13px').style('font-weight', 600).attr('data-race-final', 'lfc').text(m.xg.toFixed(2)).append('tspan').style('font-weight', 400).style('fill', 'var(--ink-2)').text(' Liverpool');
+  svg.append('text').attr('x', W - mg.r + 8).attr('y', yl + 4 + gap * dir * -1).style('fill', 'var(--ink)').style('font-size', '13px').style('font-weight', 600).attr('data-race-final', 'lfc').text(m.xg.toFixed(2)).append('tspan').style('font-weight', 400).style('fill', 'var(--ink-2)').text(' ' + CLUB);
   svg.append('text').attr('x', W - mg.r + 8).attr('y', yo + 4 + gap * dir).style('fill', 'var(--ink)').style('font-size', '13px').style('font-weight', 600).attr('data-race-final', 'opp').text(m.xga.toFixed(2)).append('tspan').style('font-weight', 400).style('fill', 'var(--ink-2)').text(' ' + (m.opp.length > 13 ? m.opp.slice(0, 12) + '…' : m.opp));
   svg.append('rect').attr('x', mg.l).attr('y', mg.t).attr('width', W - mg.l - mg.r).attr('height', H - mg.t - mg.b).attr('fill', 'transparent').style('touch-action', 'pan-y')
-    .on('pointermove pointerdown', evn => { const t = Math.max(0, Math.min(maxMin, Math.round(xs.invert(d3.pointer(evn)[0])))); showTip(`<b>Minute ${t}</b><br>Liverpool xG ${cumAt(L, t).toFixed(2)}<br>${esc(m.opp)} xG ${cumAt(O, t).toFixed(2)}`, evn.clientX, evn.clientY); })
+    .on('pointermove pointerdown', evn => { const t = Math.max(0, Math.min(maxMin, Math.round(xs.invert(d3.pointer(evn)[0])))); showTip(`<b>Minute ${t}</b><br>${CLUB} xG ${cumAt(L, t).toFixed(2)}<br>${esc(m.opp)} xG ${cumAt(O, t).toFixed(2)}`, evn.clientX, evn.clientY); })
     .on('pointerleave', leaveTip);
 }
 function matchPitch(host, rows, m) {
@@ -1472,7 +1526,7 @@ function matchPitch(host, rows, m) {
     .attr('cx', px).attr('cy', py).attr('r', r => (3.5 + 12 * Math.sqrt(r[SI.xg])) / ppm)
     .style('fill', r => isGoal(r) ? (l(r) ? 'var(--goal)' : 'var(--s1)') : 'var(--ink-2)').attr('fill-opacity', r => isGoal(r) ? 0.95 : 0.16)
     .style('stroke', r => isGoal(r) ? 'var(--surface)' : (l(r) ? 'var(--red)' : 'var(--s1)')).attr('stroke-width', r => (isGoal(r) ? 1.5 : 1.6) / ppm)
-    .on('pointermove pointerdown', (ev, r) => showTip(`<b>${esc(SH.players[r[SI.pl]])}</b> · ${r[SI.min]}'<br>${l(r) ? 'Liverpool' : esc(m.opp)} · xG ${r[SI.xg].toFixed(2)} (expected)<br>${RES_L[SH.codes.res[r[SI.res]]]} · ${TYP_L[SH.codes.typ[r[SI.typ]]]} · ${SIT_L[SH.codes.sit[r[SI.sit]]]}`, ev.clientX, ev.clientY)).on('pointerleave', leaveTip);
+    .on('pointermove pointerdown', (ev, r) => showTip(`<b>${esc(SH.players[r[SI.pl]])}</b> · ${r[SI.min]}'<br>${l(r) ? CLUB : esc(m.opp)} · xG ${r[SI.xg].toFixed(2)} (expected)<br>${RES_L[SH.codes.res[r[SI.res]]]} · ${TYP_L[SH.codes.typ[r[SI.typ]]]} · ${SIT_L[SH.codes.sit[r[SI.sit]]]}`, ev.clientX, ev.clientY)).on('pointerleave', leaveTip);
 }
 function probBar(p) { return el('div', { class: 'pbar' }, [['w', p[0]], ['d', p[1]], ['l', p[2]]].map(([c, v]) => el('span', { class: c, style: `flex:${v} 1 0` }))); }
 function marketPanel(m) {
@@ -1488,7 +1542,7 @@ function marketPanel(m) {
     el('div', { class: 'tbl-x' }, el('table', { class: 'data compact', 'data-table': 'probs' }, el('thead', {}, el('tr', {}, ['Outcome', `Market (${names[dv]})`, `Market (${names[other]})`, 'xG sim', 'Actual'].map(h => el('th', {}, h)))),
       el('tbody', {}, ['Win', 'Draw', 'Loss'].map((n, i) => el('tr', { class: i === act ? 'hl-row' : null }, el('td', {}, n), el('td', {}, fpct(mk[i])), el('td', {}, fpct(alt[i])), el('td', {}, fpct(sim[i])), el('td', {}, i === act ? '✓' : '')))),
       el('tfoot', {}, el('tr', {}, el('td', {}, 'Expected points'), el('td', {}, m.xptm.toFixed(2)), el('td', {}, (3 * alt[0] + alt[1]).toFixed(2)), el('td', {}, m.xpts.toFixed(2)), el('td', {}, m.pts))))),
-    el('p', { class: 'note-small' }, `Closing odds (${home ? 'Liverpool' : m.opp} home / draw / ${home ? m.opp : 'Liverpool'} away): ${o[0].toFixed(2)} / ${o[1].toFixed(2)} / ${o[2].toFixed(2)}. Shin insider share z = ${m.shin_z.toFixed(3)}.`));
+    el('p', { class: 'note-small' }, `Closing odds (${home ? CLUB : m.opp} home / draw / ${home ? m.opp : CLUB} away): ${o[0].toFixed(2)} / ${o[1].toFixed(2)} / ${o[2].toFixed(2)}. Shin insider share z = ${m.shin_z.toFixed(3)}.`));
 }
 function matchPage(s, d) {
   const sel = d.sel, idxs = sel.idx;
@@ -1506,7 +1560,7 @@ function matchPage(s, d) {
     cur = i; const m = M(i), rows = matchShots(i), ev = matchEvents(rows);
     pick.querySelector('select').value = String(i);
     prev.disabled = idxs.indexOf(i) === 0; next.disabled = idxs.indexOf(i) === idxs.length - 1;
-    const home = m.h ? 'Liverpool' : m.opp, away = m.h ? m.opp : 'Liverpool', hg = m.h ? m.gf : m.ga, ag = m.h ? m.ga : m.gf;
+    const home = m.h ? CLUB : m.opp, away = m.h ? m.opp : CLUB, hg = m.h ? m.gf : m.ga, ag = m.h ? m.ga : m.gf;
     const evList = side => el('ul', {}, ev.filter(e => (side === 'home') === (e.lfc === m.h)).map(e => el('li', { 'data-goal': e.lfc ? 'lfc' : 'opp' }, `${e.name}${e.og ? ' (og)' : ''} ${e.min}'`)));
     const xgH = m.h ? m.xg : m.xga, xgA = m.h ? m.xga : m.xg;
     const score = el('section', { class: 'card span-12', 'aria-label': 'Scoreboard' },
@@ -1520,13 +1574,13 @@ function matchPage(s, d) {
     const sorted = rows.slice().sort((a, b) => a[SI.min] - b[SI.min] || a[SI.xg] - b[SI.xg]);
     const list = el('div', { class: 'shot-list' }, el('table', { class: 'data compact', 'data-table': 'match-shots' }, el('thead', {}, el('tr', {}, ['Min', 'Team', 'Player', 'xG (expected)', 'Outcome'].map(h => el('th', {}, h)))),
       el('tbody', {}, sorted.map(r => { const og = SH.codes.res[r[SI.res]] === 'OwnGoal', l = r[SI.fl] === 1;
-        return el('tr', {}, el('td', {}, r[SI.min] + "'"), el('td', {}, l ? 'Liverpool' : m.opp), el('td', {}, SH.players[r[SI.pl]]), el('td', {}, r[SI.xg].toFixed(2)), el('td', {}, og ? `Own goal for ${l ? m.opp : 'Liverpool'}` : RES_L[SH.codes.res[r[SI.res]]])); }))));
+        return el('tr', {}, el('td', {}, r[SI.min] + "'"), el('td', {}, l ? CLUB : m.opp), el('td', {}, SH.players[r[SI.pl]]), el('td', {}, r[SI.xg].toFixed(2)), el('td', {}, og ? `Own goal for ${l ? m.opp : CLUB}` : RES_L[SH.codes.res[r[SI.res]]])); }))));
     body.replaceChildren(score,
-      pageCard('span-6', 'xg_race', 'expected · goals actual', legend([{ cls: 'line', color: 'var(--red)', text: 'Liverpool xG' }, { cls: 'line', color: 'var(--s1)', text: `${m.opp} xG` }, { cls: 'dot', color: 'var(--ink-2)', text: 'Goal' }]), race,
+      pageCard('span-6', 'xg_race', 'expected · goals actual', legend([{ cls: 'line', color: 'var(--red)', text: CLUB + ' xG' }, { cls: 'line', color: 'var(--s1)', text: `${m.opp} xG` }, { cls: 'dot', color: 'var(--ink-2)', text: 'Goal' }]), race,
         el('p', { class: 'note-small' }, 'Cumulative expected goals by minute; dashed line marks half-time (45\'). Hover for the score of the chances at any minute.')),
       marketPanel(m),
-      pageCard('span-6', 'match_shots', 'goals actual · xG expected', legend([{ cls: 'dot', color: 'var(--goal)', text: 'Liverpool goal' }, { cls: 'dot', color: 'var(--s1)', text: `${m.opp} goal` }, { cls: 'ring', text: 'No goal' }]), el('div', { class: 'stage' }, pitch),
-        el('p', { class: 'note-small' }, 'Liverpool attack left to right →. The opposition’s shots are rotated to attack ←. Own goals are not shots and are not drawn.')),
+      pageCard('span-6', 'match_shots', 'goals actual · xG expected', legend([{ cls: 'dot', color: 'var(--goal)', text: CLUB + ' goal' }, { cls: 'dot', color: 'var(--s1)', text: `${m.opp} goal` }, { cls: 'ring', text: 'No goal' }]), el('div', { class: 'stage' }, pitch),
+        el('p', { class: 'note-small' }, CLUB + ' attack left to right →. The opposition’s shots are rotated to attack ←. Own goals are not shots and are not drawn.')),
       el('section', { class: 'card span-6', 'aria-label': 'Shots list' }, el('h2', {}, 'Shots in order', el('span', { class: 'tag' }, `${rows.filter(r => SH.codes.res[r[SI.res]] !== 'OwnGoal').length} shots`)), list));
     drawRace(); drawPitch2();
     const title = `Match Explorer: ${home} ${hg}–${ag} ${away}`;
@@ -1692,7 +1746,7 @@ function stakingCards(s, sel) {
   const c1 = pageCard('span-7', 'pnl_cum', 'retrospective', el('span', { class: 'badge retro', 'data-testid': 'retro-badge' }, 'Retrospective analysis, not a strategy'),
     el('div', { class: 'tiles c3', style: 'margin:12px 0' }, el('div', { class: 'tile' }, el('div', { class: 'lbl' }, 'Stakes (1 unit each)'), el('div', { class: 'val', 'data-metric': 'stakes' }, sel.n)),
       tile('pnl', el('span', { class: r.pnl >= 0 ? 'good' : 'bad' }, f2(r.pnl))), tile('roi', el('span', { class: r.pnl >= 0 ? 'good' : 'bad' }, fmt('roi', r.roi).replace('-', MINUS)))),
-    host, el('p', { class: 'note-small' }, 'A 1-unit stake on a Liverpool win in every match at the closing odds (Pinnacle where available, else the market average). Profit is odds − 1 on a win, −1 otherwise.'));
+    host, el('p', { class: 'note-small' }, 'A 1-unit stake on a ' + CLUB + ' win in every match at the closing odds (Pinnacle where available, else the market average). Profit is odds − 1 on a win, −1 otherwise.'));
   c1._draw = () => cumChart(host, sel, sel.cum_pnl, { label: 'Cumulative flat-stake profit in units', yfmt: '+.1f', tip: v => `${f2(v)} units` });
   const c2 = pageCard('span-5', 'roi_season', 'retrospective', rhost, el('p', { class: 'note-small' }, `Each season is about 38 bets, so ROI is mostly luck. Seasons with fewer than ${MIN} matches are omitted.`),
     tableView('View as a table', ['Season', 'Stakes', 'Profit (units)', 'ROI'], rows.map(x => [x.se, x.n, f2(x.pnl), fmt('roi', x.roi).replace('-', MINUS)])));
@@ -1767,7 +1821,7 @@ function render() {
   const pageNeedsData = !['methodology'].includes(s.page);
   if (pageNeedsData && !d.sel) {
     view.append(el('div', { class: 'empty', 'data-testid': 'empty' },
-      s.era !== 'all' && s.season !== 'all' ? `${eraName(s.era)} did not manage Liverpool in any of the ${s.season} matches.` : 'No matches for this selection.',
+      s.era !== 'all' && s.season !== 'all' ? `${eraName(s.era)} did not manage ${CLUB} in any of the ${s.season} matches.` : 'No matches for this selection.',
       ' ', el('a', { href: hashFor({ ...s, era: 'all' }) }, 'Show all managers')));
     return;
   }

@@ -9,13 +9,24 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import etl  # noqa: E402
 
 
-@pytest.fixture(scope="session")
-def t():
-    names = ["matches", "fixtures", "team_matches", "team_seasons", "shots", "rosters", "player_seasons"]
-    missing = [n for n in names if not (etl.PROCESSED / f"{n}.parquet").exists()]
+def _slugs():
+    """Clubs with processed data (all of config/clubs.json when the ETL has run for every club)."""
+    return [c for c in etl.CLUBS if (etl.club_dir(c) / "matches.parquet").exists()] or list(etl.CLUBS)
+
+
+@pytest.fixture(scope="session", params=_slugs())
+def t(request):
+    """Every ETL test below runs once per club: the club-specific tables plus the shared league tables."""
+    slug = request.param
+    own = ["matches", "fixtures", "shots", "rosters", "player_seasons"]
+    shared = ["team_matches", "team_seasons"]
+    missing = [n for n in own if not (etl.club_dir(slug) / f"{n}.parquet").exists()] + [n for n in shared if not (etl.PROCESSED / f"{n}.parquet").exists()]
     if missing:
-        pytest.fail(f"missing processed tables {missing}: run `python etl.py` first")
-    return {n: pd.read_parquet(etl.PROCESSED / f"{n}.parquet") for n in names}
+        pytest.fail(f"missing processed tables {missing} for {slug}: run `python etl.py` first")
+    out = {n: pd.read_parquet(etl.club_dir(slug) / f"{n}.parquet") for n in own}
+    out.update({n: pd.read_parquet(etl.PROCESSED / f"{n}.parquet") for n in shared})
+    out["slug"], out["club"] = slug, etl.CLUBS[slug]["canonical"]
+    return out
 
 
 def test_season_match_counts(t):
@@ -70,7 +81,7 @@ def test_shot_xg_sums_match_team_xg(t):
     m, s = t["matches"], t["shots"]
     sx = s.groupby(["match_id", "team"]).xg.sum()
     for r in m.itertuples():
-        assert abs(sx.get((r.match_id, etl.LIV), 0.0) - r.xg) <= 1e-9, (r.match_id, "for")
+        assert abs(sx.get((r.match_id, t["club"]), 0.0) - r.xg) <= 1e-9, (r.match_id, "for")
         assert abs(sx.get((r.match_id, r.opponent), 0.0) - r.xga) <= 1e-9, (r.match_id, "against")
     d = pd.concat([m.xg - m.xg_reported, m.xga - m.xga_reported])
     assert d.min() >= -0.001, "shot sum fell below Understat team xG"
@@ -84,7 +95,7 @@ def test_goals_from_shots_plus_own_goals_equal_score(t):
     m, s = t["matches"], t["shots"]
     goals = s[s.result.isin(["Goal", "OwnGoal"])].groupby(["match_id", "scoring_team"]).size()
     for r in m.itertuples():
-        assert goals.get((r.match_id, etl.LIV), 0) == r.gf, (r.match_id, "for")
+        assert goals.get((r.match_id, t["club"]), 0) == r.gf, (r.match_id, "for")
         assert goals.get((r.match_id, r.opponent), 0) == r.ga, (r.match_id, "against")
 
 
@@ -98,11 +109,11 @@ def test_player_goals_plus_own_goals_equal_team_goals_per_season(t):
     for season, g in m.groupby("season"):
         ids = set(g.match_id)
         rr = r[r.match_id.isin(ids)]
-        liv_goals = rr[rr.team == etl.LIV].goals.sum()
-        opp_og = rr[rr.team != etl.LIV].own_goals.sum()  # opponents' own goals count for Liverpool
+        liv_goals = rr[rr.team == t["club"]].goals.sum()
+        opp_og = rr[rr.team != t["club"]].own_goals.sum()  # opponents' own goals count for Liverpool
         assert liv_goals + opp_og == g.gf.sum(), season
-        opp_goals = rr[rr.team != etl.LIV].goals.sum()
-        liv_og = rr[rr.team == etl.LIV].own_goals.sum()
+        opp_goals = rr[rr.team != t["club"]].goals.sum()
+        liv_og = rr[rr.team == t["club"]].own_goals.sum()
         assert opp_goals + liv_og == g.ga.sum(), season
 
 
@@ -120,7 +131,7 @@ def test_player_seasons_agree_with_understat_league_totals(t):
     checked = 0
     for s in etl.season_range():
         for p in etl.understat_league(s)["players"]:
-            if p["team_title"] != etl.LIV:
+            if p["team_title"] != t["club"]:
                 continue
             key = (etl.season_label(s), int(p["id"]))
             assert key in ps.index, key
@@ -145,9 +156,9 @@ def test_team_season_shotlevel_matches_liverpool_shots(t):
     """Understat's team statistics include opponent own goals as 1.0-xG shots; the corrected
     shot-level figures must equal the sums of Liverpool's actual shots exactly."""
     ts, m = t["team_seasons"], t["matches"]
-    liv = ts[ts.team == etl.LIV].set_index("season")
+    liv = ts[ts.team == t["club"]].set_index("season")
     s = t["shots"]
-    s = s[(s.team == etl.LIV) & (s.result != "OwnGoal")]
+    s = s[(s.team == t["club"]) & (s.result != "OwnGoal")]
     by = s.groupby("season").agg(n=("xg", "size"), xg=("xg", "sum"))
     for season in liv.index:
         assert liv.loc[season, "shots_shotlevel"] == by.loc[season, "n"], season
@@ -236,17 +247,17 @@ def test_style_raw_reconciles_with_liverpool_shot_dataset(style_raw, t):
     """Liverpool's conceded / created shot counts from the team page equal the existing shot-level dataset exactly,
     and the zone split agrees with a geometric box classification to within 6%."""
     s = t["shots"]
-    liv = style_raw[style_raw.club == etl.LIV].set_index("season")
+    liv = style_raw[style_raw.club == t["club"]].set_index("season")
     for season, r in liv.iterrows():
         d = s[s.season == season]
-        opp_shots = int(((d.team != etl.LIV) & (d.result != "OwnGoal")).sum())
-        own_goals_by_liv = int(((d.team == etl.LIV) & (d.result == "OwnGoal")).sum())
+        opp_shots = int(((d.team != t["club"]) & (d.result != "OwnGoal")).sum())
+        own_goals_by_liv = int(((d.team == t["club"]) & (d.result == "OwnGoal")).sum())
         assert r.situation_shots_against == opp_shots + own_goals_by_liv, season          # against = their shots + our own goals
-        liv_shots = int(((d.team == etl.LIV) & (d.result != "OwnGoal")).sum())
-        opp_own_goals = int(((d.team != etl.LIV) & (d.result == "OwnGoal")).sum())
+        liv_shots = int(((d.team == t["club"]) & (d.result != "OwnGoal")).sum())
+        opp_own_goals = int(((d.team != t["club"]) & (d.result == "OwnGoal")).sum())
         assert r.situation_shots_for == liv_shots + opp_own_goals, season                 # for = our shots + their own goals
         assert r.zone_og_shots_against == own_goals_by_liv and r.zone_og_shots_for == opp_own_goals, season
-        opp = d[(d.team != etl.LIV) & (d.result != "OwnGoal")]
+        opp = d[(d.team != t["club"]) & (d.result != "OwnGoal")]
         x, y = opp.x * 105, opp.y * 68
         six = (x >= 105 - 5.5) & (y >= 24.84) & (y <= 43.16)
         pen = (x >= 105 - 16.5) & (y >= 13.84) & (y <= 54.16) & ~six

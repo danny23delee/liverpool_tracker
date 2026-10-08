@@ -11,17 +11,25 @@ sys.path.insert(0, str(ROOT))
 import build  # noqa: E402
 
 
-@pytest.fixture(scope="module")
-def tables():
-    if not (build.PROCESSED / "matches.parquet").exists():
-        pytest.fail("run `python etl.py` first")
-    return build.load_tables()
+def _slugs():
+    return [c for c in build.CLUBS if (build.PROCESSED / c / "matches.parquet").exists()] or list(build.CLUBS)
+
+
+@pytest.fixture(scope="module", params=_slugs())
+def tables(request):
+    """Every payload test below runs once per club."""
+    slug = request.param
+    if not (build.PROCESSED / slug / "matches.parquet").exists():
+        pytest.fail(f"run `python etl.py` first (no data for {slug})")
+    t = build.load_tables(slug)
+    t["slug"], t["club"] = slug, build.CLUBS[slug]["canonical"]
+    return t
 
 
 @pytest.fixture(scope="module")
 def payload(tables):
     t = tables
-    return build.dashboard(t["enriched"], t["fixtures"], t["shots"], t["rosters"], t["team_seasons"], t["team_matches"])
+    return build.dashboard(t["enriched"], t["fixtures"], t["shots"], t["rosters"], t["team_seasons"], t["team_matches"], club=t["slug"])
 
 
 def test_payload_is_strict_json(payload):
@@ -45,8 +53,8 @@ def test_shots_payload_matches_table(payload, tables):
 
 
 def test_player_rows_match_player_seasons(payload, tables):
-    ps = pd.read_parquet(build.PROCESSED / "player_seasons.parquet")
-    for season in ("2019-20", "2024-25", "2025-26"):
+    ps = pd.read_parquet(build.PROCESSED / tables["slug"] / "player_seasons.parquet")
+    for season in payload["seasons"][-3:]:
         rows = {p["id"]: p for p in payload["selections"][f"{season}|all"]["players"]}
         ref = ps[ps.season == season].set_index("player_id")
         ref = ref[ref.minutes > 0]
@@ -72,12 +80,12 @@ def test_source_mix_equals_shot_sums(payload, tables):
         assert sum(g["n"] for g in sel["mix"]["for"]) == len(d)
 
 
-def test_league_context_agrees_with_liverpool_matches(payload, tables):
+def test_league_context_agrees_with_the_clubs_matches(payload, tables):
     e = tables["enriched"]
     for season, g in e.groupby("season"):
         lg = payload["league"][season]
         assert len(lg["teams"]) == 20
-        liv = next(t for t in lg["teams"] if t["team"] == "Liverpool")
+        liv = next(t for t in lg["teams"] if t["team"] == tables["club"])
         assert abs(liv["shots_pm"] - g.shots_for.mean()) < 1e-3, season
         assert abs(liv["xgps"] - g.xg.sum() / g.shots_for.sum()) < 1e-3, season
         # league average xG per shot must be a plausible pooled figure
@@ -88,12 +96,13 @@ def test_league_context_agrees_with_liverpool_matches(payload, tables):
 
 
 def test_lfc_points_and_rolls(payload):
-    sel = payload["selections"]["2025-26|all"]
+    last_full = [s for s in payload["seasons"] if payload["scheduled"][s] == 38 and payload["selections"][f"{s}|all"]["n"] == 38][-1]
+    sel = payload["selections"][f"{last_full}|all"]
     assert len(sel["lfc_points"]) == 1 and sel["lfc_points"][0]["n"] == 38
     for k in ("roll_xg", "roll_xga", "roll_ppda", "roll_deepa", "roll"):
         assert len(sel[k]) == sel["n"]
         assert all(v is None for v in sel[k][:9]) and all(v is not None for v in sel[k][9:])
-    assert len(payload["selections"]["all|all"]["lfc_points"]) == 13
+    assert len(payload["selections"]["all|all"]["lfc_points"]) == len(payload["seasons"])
 
 
 def test_player_per90_fields_are_consistent(payload):
@@ -127,7 +136,8 @@ def test_match_market_payload_matches_metrics(payload, tables):
 # ------------------------------------------------------------------ M6: market payload and methodology generation
 def test_market_payload_matches_independent_calculation(payload, tables):
     import numpy as np
-    for key in ("2024-25|all", "all|all", "2019-20|all", "all|Arne Slot"):
+    keys = [f"{payload['seasons'][-2]}|all", "all|all", f"{payload['seasons'][0]}|all", f"all|{payload['eras'][-1]['manager']}"]
+    for key in keys:
         sel = payload["selections"][key]
         season, era = key.split("|")
         e = tables["enriched"]
@@ -205,6 +215,9 @@ def test_crest_is_resized_optimised_and_inlined(tmp_path):
     assert out.getpixel((0, 0))[3] == 0                                                              # transparency kept
     assert len(html) < src.stat().st_size * 4 / 3 + 500                                              # smaller than the original
     assert build.crest_html(tmp_path / "missing.png") == '<span class="brand-mark" aria-hidden="true"></span>'
+    # a club without a supplied image gets an original monogram badge instead (never a borrowed crest)
+    mono = build.crest_html(tmp_path / "missing.png", build.CLUBS["arsenal"])
+    assert mono.startswith('<img class="crest mono" src="data:image/svg+xml;base64,') and 'alt="Arsenal badge"' in mono
 
 
 def test_supplied_crest_has_a_transparent_background():
@@ -234,3 +247,13 @@ def test_no_champion_while_a_season_is_unfinished_or_when_points_are_tied():
     assert build.league_payload(ts, tm)["2025-26"]["champion"] is None                 # not everyone has played 38
     ts, tm = _league_inputs([("2010-11", "Liverpool", 38, 80), ("2010-11", "Arsenal", 38, 80), ("2010-11", "Everton", 38, 48)])
     assert build.league_payload(ts, tm)["2010-11"]["champion"] is None                 # a tie is never called
+
+
+def test_every_payload_is_themed_for_its_club(payload, tables):
+    cc = build.CLUBS[tables["slug"]]
+    assert payload["club"]["name"] == cc["name"] and payload["club"]["canonical"] == tables["club"]
+    assert [c["slug"] for c in payload["clubs"]] == list(build.CLUBS) and sum(c["current"] for c in payload["clubs"]) == 1
+    blob = json.dumps(build.clean(payload))
+    if tables["slug"] != "liverpool":
+        assert "Liverpool" not in json.dumps(payload["registry"]), "registry text still names Liverpool"
+    assert len(blob) < 4 * 1024 * 1024

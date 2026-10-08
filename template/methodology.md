@@ -72,7 +72,7 @@ Betting odds contain a margin (the "vig" or overround), so the implied probabili
 
 The Attack and Defence pages show **how** Liverpool play, not how well. The idea comes from the [CIES Football Observatory](https://football-observatory.com)'s "style of play of teams" work: three phases of the game (defence, build-up, attack), three tactical options in each, every option scored from 0 to 100 against the other teams of the league, and a composite index per phase. **What is borrowed** is that framework: the nine axes and their end labels, the 0 to 100 league-relative scale, and the idea of a composite index per phase. **What is changed** is the data and so the measurement: CIES scores come from Impect event data (pressure locations, pass lengths, reception heights, possession phases), which is not freely available. Every score here is a **proxy built from Understat team data** and is never a CIES score or the CIES index.
 
-**Style is neither good nor bad.** High pressing is not better than a low block, so none of these components use the green and orange change colours or arrows. Liverpool are drawn in red, other clubs in grey.
+**Style is neither good nor bad.** High pressing is not better than a low block, so none of these components use the green and orange change colours or arrows. Liverpool are drawn in the club colour, other clubs in grey.
 
 **How a score is computed**, for each season and each axis separately, over the clubs of that season's Premier League:
 

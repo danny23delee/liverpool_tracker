@@ -1,0 +1,13 @@
+[
+  {"manager": "José Mourinho",      "from": "2014-08-01", "to": "2015-12-17"},
+  {"manager": "Guus Hiddink",       "from": "2015-12-18", "to": "2016-06-30"},
+  {"manager": "Antonio Conte",      "from": "2016-07-01", "to": "2018-07-13"},
+  {"manager": "Maurizio Sarri",     "from": "2018-07-14", "to": "2019-06-30"},
+  {"manager": "Frank Lampard",      "from": "2019-07-01", "to": "2021-01-25"},
+  {"manager": "Thomas Tuchel",      "from": "2021-01-26", "to": "2022-09-06"},
+  {"manager": "Graham Potter",      "from": "2022-09-07", "to": "2023-04-02"},
+  {"manager": "Frank Lampard (interim)", "slug": "lampard-interim", "from": "2023-04-03", "to": "2023-06-30"},
+  {"manager": "Mauricio Pochettino", "from": "2023-07-01", "to": "2024-05-31"},
+  {"manager": "Enzo Maresca",       "from": "2024-06-01", "to": "2025-12-31"},
+  {"manager": "Liam Rosenior",      "from": "2026-01-01", "to": null}
+]
