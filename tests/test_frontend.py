@@ -26,6 +26,7 @@ DIST = DIST_DIR / CLUB_CFG["path"] / "index.html"
 PROC = Path(os.environ.get("TRACKER_DATA", ROOT / "data")) / "processed" / CLUB_SLUG
 D3_LOCAL = ROOT / "data" / "raw" / "vendor" / "d3.min.js"
 SHOTS = ROOT / "artifacts" / "screenshots"
+MIN_SAMPLE = 10
 PAGES = ["overview", "attack", "defence", "players", "match", "market", "methodology"]
 SEASON_RE = re.compile(r"\b\d{4}-\d{2}\b")
 BAD_TEXT = re.compile(r"NaN|undefined|Infinity|\bnull\b|\[object")
@@ -125,6 +126,35 @@ def era_slug(e):
     return e.get("slug") or "".join(c for c in unicodedata.normalize("NFD", e["manager"].split()[-1]) if not unicodedata.combining(c)).lower()
 
 
+def _club_shots(season):
+    import pandas as pd
+    sh = pd.read_parquet(PROC / "shots.parquet")
+    sh = sh[(sh.season == season) & (sh.team == CLUB) & (sh.result != "OwnGoal")]
+    return sh
+
+
+def _star(season, rank=0):
+    """(name, player id) of the club's rank-th most prolific shooter in a season: the player the player-specific tests pick, whoever the club is."""
+    top = _club_shots(season).groupby(["player", "player_id"]).size().sort_values(ascending=False)
+    (name, pid), _ = list(top.items())[rank]
+    return name, int(pid)
+
+
+def _eras_with_matches(data):
+    """[(manager, slug, [seasons with matches])] for the club's eras, oldest first."""
+    out = []
+    for e in data["eras"]:
+        ss = [s for s in data["seasons"] if f"{s}|{e['manager']}" in data["selections"]]
+        if ss:
+            out.append((e["manager"], era_slug(e), ss))
+    return out
+
+
+def _hex_to_rgb(h):
+    h = h.lstrip("#")
+    return "rgb(%d, %d, %d)" % tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+
+
 def num(text):
     return int(text.strip().replace("−", "-").replace("+", "").replace(",", ""))
 
@@ -181,8 +211,11 @@ def test_small_sample_badge(page, data):
         go(page, "overview", s)
         assert page.locator("[data-testid=small-sample]").count() == 0, s
     # an era slice below the threshold is also flagged
-    go(page, "overview", "2015-16", "rodgers")
-    assert page.locator("[data-testid=small-sample]").count() == 1
+    short = [(s, era_slug(e)) for e in data["eras"] for s in data["seasons"]
+             if (data["selections"].get(f"{s}|{e['manager']}") or {"n": 99})["n"] < MIN_SAMPLE]
+    if short:                                                    # the club has an era slice under the threshold: it must be flagged too
+        go(page, "overview", short[0][0], short[0][1])
+        assert page.locator("[data-testid=small-sample]").count() == 1
 
 
 def test_baseline_panel_states_baseline_and_na(page, data):
@@ -333,8 +366,9 @@ def test_attack_shot_map_stats_and_filters_match_data(page):
     # circle size grows with xG: the biggest circle is the biggest shot
     radii = page.eval_on_selector_all("[data-chart=attack] circle.shot", "els => els.map(e => +e.getAttribute('r'))")
     assert len(radii) <= len(liv) and max(radii) > 2.5 * min(radii)
-    page.select_option("#f-player", label="Mohamed Salah")
-    sal = liv[liv.player == "Mohamed Salah"]
+    star = _star("2024-25")[0]
+    page.select_option("#f-player", label=star)
+    sal = liv[liv.player == star]
     assert n() == len(sal) and page.inner_text("[data-stat=xg]") == f"{sal.xg.sum():.1f}"
     page.select_option("#f-sit", "Penalty")
     pen = sal[sal.situation == "Penalty"]
@@ -419,12 +453,19 @@ def test_defence_charts_and_clean_sheets(page, data):
     assert page.locator("[aria-label='Open play vs set piece xGA'] .mixrow").count() == 13
 
 
-def test_attack_defence_small_sample_and_empty_states(page):
-    go(page, "attack", "2026-27")
-    assert page.locator("[data-testid=small-sample]").count() == 1
-    go(page, "defence", "2026-27")
-    assert page.locator("[data-strip=clean-sheets] i").count() == 5
-    go(page, "attack", "2025-26", "iraola")
+def test_attack_defence_small_sample_and_empty_states(page, data):
+    cur = data["seasons"][-1]
+    n = data["selections"][f"{cur}|all"]["n"]
+    if n < MIN_SAMPLE:                                           # an unfinished season is flagged on both pages
+        go(page, "attack", cur)
+        assert page.locator("[data-testid=small-sample]").count() == 1
+    go(page, "defence", cur)
+    assert page.locator("[data-strip=clean-sheets] i").count() == n
+    # a manager who did not manage the club in a season gives an explained empty state
+    gap = next(((s, era_slug(e)) for s in reversed(data["seasons"]) for e in data["eras"] if f"{s}|{e['manager']}" not in data["selections"]), None)
+    if not gap:
+        pytest.skip("this club has one manager in every season: no empty (season, manager) pair to test")
+    go(page, "attack", gap[0], gap[1])
     assert page.locator("[data-testid=empty]").count() == 1
 
 
@@ -487,9 +528,10 @@ def test_squad_table_matches_data_and_filters(page):
     assert page.locator("table[data-table=squad] tbody tr").count() == int((g.minutes >= 1500).sum())
     page.select_option("#p-min", "0")
     assert page.locator("table[data-table=squad] tbody tr").count() == len(g)
-    page.fill("#p-search", "salah")
+    star = _star("2024-25")[0]
+    page.fill("#p-search", star.lower())
     assert page.locator("table[data-table=squad] tbody tr").count() == 1
-    assert page.inner_text("table[data-table=squad] tbody tr td") == "Mohamed Salah"
+    assert page.inner_text("table[data-table=squad] tbody tr td") == star
     page.fill("#p-search", "zzzz")
     assert page.locator("table[data-table=squad] tbody tr[data-pid]").count() == 0
     assert page.locator("[data-testid=no-players]").count() == 1 and "No players match" in page.inner_text("[data-testid=no-players]")
@@ -522,11 +564,12 @@ def test_role_leaders_match_data(page):
 def test_player_profile_and_comparison(page, data):
     import pandas as pd
     go(page, "players", "2024-25")
-    page.locator("table[data-table=squad] tbody tr", has_text="Mohamed Salah").first.click()
-    assert "player=1250" in page.evaluate("location.hash")
-    assert page.text_content("[data-profile] h3") == "Mohamed Salah"
+    (star, spid), (other, opid) = _star("2024-25"), _star("2024-25", 3)
+    page.locator("table[data-table=squad] tbody tr", has_text=star).first.click()
+    assert f"player={spid}" in page.evaluate("location.hash")
+    assert page.text_content("[data-profile] h3") == star
     ps = pd.read_parquet(PROC / "player_seasons.parquet")
-    sal = ps[(ps.player_id == 1250) & (ps.minutes > 0)].sort_values("season")
+    sal = ps[(ps.player_id == spid) & (ps.minutes > 0)].sort_values("season")
     prof = page.locator("section[aria-label='Player profile']")
     rows = _table_rows(prof.locator("details.tbl tbody tr"))
     assert [r[0] for r in rows] == list(sal.season)
@@ -536,21 +579,22 @@ def test_player_profile_and_comparison(page, data):
     hollow = prof.locator("[data-mini=npxg_p90] circle.pt").evaluate_all("cs => cs.filter(c => c.style.fill.includes('surface')).length")
     assert hollow == int((sal.minutes < 450).sum())
     # comparison
-    page.select_option("#cmp-a", "1250")
-    page.select_option("#cmp-b", label="Virgil van Dijk")
+    page.select_option("#cmp-a", str(spid))
+    page.select_option("#cmp-b", label=other)
     g = _players("2024-25")
-    for name, tag in (("Mohamed Salah", "a"), ("Virgil van Dijk", "b")):
+    for name, tag in ((star, "a"), (other, "b")):
         assert abs(_flt(page.inner_text(f"[data-cmp='npxg_p90:{tag}'] b")) - g.loc[name, "npxg90"]) < 0.006
         assert _flt(page.inner_text(f"[data-cmp='minutes:{tag}'] b")) == g.loc[name, "minutes"]
         assert abs(_flt(page.inner_text(f"[data-cmp='npg_minus_npxg:{tag}'] b")) - g.loc[name, "fin"]) < 0.06
-    assert f"vs={g.loc['Virgil van Dijk', 'pid']}" in page.evaluate("location.hash")
+    assert f"vs={g.loc[other, 'pid']}" in page.evaluate("location.hash")
 
 
 def test_players_url_is_shareable(browser):
     ctx, pg = _new_page(browser)
-    pg.goto(DIST.as_uri() + "#/players?season=2024-25&era=all&player=8260&vs=1250")
+    (_, spid), (_, opid) = _star("2024-25"), _star("2024-25", 3)
+    pg.goto(DIST.as_uri() + f"#/players?season=2024-25&era=all&player={opid}&vs={spid}")
     pg.wait_for_function("window.__tracker && window.__tracker.ready")
-    assert pg.input_value("#cmp-b") == "1250" and pg.inner_text("[data-profile] h3") != ""
+    assert pg.input_value("#cmp-b") == str(spid) and pg.inner_text("[data-profile] h3") != ""
     assert pg.errors == []
     ctx.close()
 
@@ -580,8 +624,10 @@ def test_every_match_explorer_page_reconciles_with_data(page, data):
         assert page.text_content("#title") == f"Match Explorer: {home} {hg}–{ag} {away}", mid
         # xG of both teams = sum of that team's shots
         lx, ox = sh[sh.team == CLUB].xg.sum(), sh[sh.team != CLUB].xg.sum()
-        assert page.text_content("[data-race-final=lfc]").split()[0] == f"{lx:.2f}", mid
-        assert page.text_content("[data-race-final=opp]").split()[0] == f"{ox:.2f}", mid
+        for sel_, v in (("[data-race-final=lfc]", lx), ("[data-race-final=opp]", ox)):
+            shown = page.text_content(sel_).split()[0]
+            # the payload carries xG to 6 decimals, so a total within 1e-6 of a rounding boundary may legitimately show the other neighbour
+            assert shown == f"{v:.2f}" or (abs(float(shown) - v) < 0.0051 and abs(v * 100 - round(v * 100 - 0.5) - 0.5) < 1e-3), (mid, shown, v)
         # goals: markers and scorer lists equal the score (own goals credited to the other side)
         assert page.locator("circle.goal-mark").count() == r.gf + r.ga, mid
         assert page.locator("[data-goal=lfc]").count() == r.gf and page.locator("[data-goal=opp]").count() == r.ga, mid
@@ -690,9 +736,10 @@ def test_market_lens_season_table_and_points(page, data):
     for tag, expect in (("points", "Actual points"), ("xpts_sim", "xPts"), ("xpts_market", "Market")):
         assert page.locator(f"[data-chart=season-points] rect.sbar[data-series={tag}]").count() == len(data["seasons"]) - 1
     # manager-era filter restricts the seasons
-    go(page, "market", "all", "klopp")
+    mgr, slug_, ss = max(_eras_with_matches(data), key=lambda t: len(t[2]))
+    go(page, "market", "all", slug_)
     rows = _table_rows(page.locator("section[aria-label='Points: actual vs expected'] tbody tr"))
-    assert [r[0] for r in rows] == data["seasons"][1:10]
+    assert [r[0] for r in rows] == ss
 
 
 def test_market_lens_staking_matches_independent_pnl(page):
@@ -974,9 +1021,12 @@ def test_render_failure_shows_message_and_keeps_navigation(browser, data, tmp_pa
 
 
 def test_empty_filter_results_are_explained(page):
+    sh = _club_shots("2025-26")
+    no_pens = sorted(set(sh.player) - set(sh[sh.situation == "Penalty"].player))     # a player who took shots but never a penalty
+    assert no_pens
     go(page, "attack", "2025-26")
     open_drawer(page)
-    page.select_option("#f-player", label="Virgil van Dijk")
+    page.select_option("#f-player", label=no_pens[0])
     page.select_option("#f-sit", "Penalty")
     assert page.inner_text("[data-stat=shots]") == "0" and page.locator("[data-chart=attack] .empty-note").count() == 1
     assert page.inner_text("[data-stat=xgps]") == "N/A"  # never a divide-by-zero figure
@@ -984,7 +1034,12 @@ def test_empty_filter_results_are_explained(page):
     assert page.locator("[data-chart=attack] .empty-note").count() == 0
     go(page, "defence", "2025-26")
     open_drawer(page)
-    page.select_option("#f-opp", label="Arsenal")
+    import pandas as pd
+    allsh = pd.read_parquet(PROC / "shots.parquet")
+    conc = allsh[(allsh.season == "2025-26") & (allsh.team != CLUB) & (allsh.result != "OwnGoal")]
+    opps = sorted(conc.team.unique())
+    quiet = next(o for o in opps if not ((conc.team == o) & (conc.result == "ShotOnPost") & (conc.shot_type == "OtherBodyPart")).any())
+    page.select_option("#f-opp", label=quiet)
     page.select_option("#f-res", "ShotOnPost")
     page.select_option("#f-typ", "OtherBodyPart")
     assert page.inner_text("[data-stat=shots]") == "0" and page.locator("[data-chart=defence] .empty-note").count() == 1
@@ -1221,11 +1276,13 @@ def test_map_scale_is_unchanged_at_1920_and_pitch_keeps_its_aspect_everywhere(br
         ctx.close()
 
 
-def test_shots_shown_equals_plotted_dots_and_tab_label_for_several_filters(page):
+def test_shots_shown_equals_plotted_dots_and_tab_label_for_several_filters(page, data):
     import re
+    star = _star("2024-25")[0]
+    opps = sorted({m["opp"] for m in data["matches"] if m["s"] == "2024-25"})
     for route, combos in (
-        ("attack", [{}, {"#f-sit": "OpenPlay"}, {"#f-player": "Mohamed Salah", "#f-typ": "RightFoot"}, {"#f-res": "Goal", "#f-sit": "Penalty"}, {"#f-typ": "Head", "#f-res": "SavedShot"}]),
-        ("defence", [{}, {"#f-opp": "Arsenal"}, {"#f-sit": "FromCorner", "#f-typ": "Head"}, {"#f-res": "Goal", "#f-opp": "Chelsea"}]),
+        ("attack", [{}, {"#f-sit": "OpenPlay"}, {"#f-player": star, "#f-typ": "RightFoot"}, {"#f-res": "Goal", "#f-sit": "Penalty"}, {"#f-typ": "Head", "#f-res": "SavedShot"}]),
+        ("defence", [{}, {"#f-opp": opps[0]}, {"#f-sit": "FromCorner", "#f-typ": "Head"}, {"#f-res": "Goal", "#f-opp": opps[-1]}]),
     ):
         go(page, route, "2024-25")
         open_drawer(page)
@@ -1251,7 +1308,8 @@ def test_goal_and_no_goal_shots_differ_by_fill_not_hue(page):
     styles = page.evaluate("""() => { const c = [...document.querySelectorAll('[data-chart=attack] circle.shot')].map(e => { const s = getComputedStyle(e); return [s.fill, s.stroke, s.strokeWidth]; });
         return {goal: c.find(x => x[0].startsWith('rgb(')), miss: c.find(x => x[0].startsWith('rgba(')), n: c.length}; }""")
     assert styles["goal"] and styles["miss"]
-    assert styles["goal"][1] == "rgb(255, 255, 255)" and styles["goal"][0] == "rgb(255, 59, 82)"  # #ff3b52 with a white 1.3px stroke
+    goal = _hex_to_rgb(page.evaluate("getComputedStyle(document.documentElement).getPropertyValue('--goal').trim()"))
+    assert styles["goal"][1] == "rgb(255, 255, 255)" and styles["goal"][0] == goal  # the club's dark goal colour (Liverpool #ff3b52) with a white 1.3px stroke
     assert styles["miss"][0].endswith(", 0.07)")  # a near-transparent (hollow) fill with an outline
 
 
@@ -1500,7 +1558,8 @@ def test_style_components_use_no_good_bad_colours_or_arrows(browser):
 
 def test_style_changes_with_season_and_era(page, data):
     seen = set()
-    for season in ("2015-16", "2019-20", "2024-25"):
+    full = [s for s in data["seasons"] if data["selections"][f"{s}|all"]["n"] >= MIN_SAMPLE]
+    for season in (full[1], full[len(full) // 2], full[-2]):
         go(page, "defence", season)
         row = [r for r in _rows(page) if r["id"] == "style_def_press"][0]
         assert float(row["score"]) == data["style"]["seasons"][season]["axes"]["style_def_press"]["liv"]["score"]
@@ -1508,12 +1567,12 @@ def test_style_changes_with_season_and_era(page, data):
         assert page.locator("[data-axis=style_def_press] .spark .pt.sel").count() == 1
         assert set(SEASON_RE.findall(visible_text(page))) <= {season}
     assert len(seen) == 3
-    go(page, "defence", "all", era="slot")                # season 'all' shows the latest season of the era
-    assert "Showing 2025-26" in page.inner_text("[data-testid=style-note]")
-    go(page, "defence", "all", era="klopp")
-    assert "Showing 2023-24" in page.inner_text("[data-testid=style-note]")
-    n = len([s for s in data["seasons"] if f"{s}|Jürgen Klopp" in data["selections"]])
-    assert page.locator("[data-axis=style_def_press] .spark .pt").count() == n
+    for mgr, slug_, ss in _eras_with_matches(data)[-2:]:
+        go(page, "defence", "all", era=slug_)             # season 'all' shows the latest season of the era
+        assert f"Showing {ss[-1]}" in page.inner_text("[data-testid=style-note]"), mgr
+    mgr, slug_, ss = _eras_with_matches(data)[-1]
+    go(page, "defence", "all", era=slug_)
+    assert page.locator("[data-axis=style_def_press] .spark .pt").count() == len(ss)
     assert page.locator(".spark .band").count() > 0 and page.errors == []
 
 
