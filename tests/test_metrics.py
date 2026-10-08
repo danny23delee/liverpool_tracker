@@ -11,7 +11,9 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import metrics as M  # noqa: E402
 
-PROCESSED = Path(__file__).resolve().parents[1] / "data" / "processed"
+import os
+
+PROCESSED = Path(os.environ.get("TRACKER_DATA", Path(__file__).resolve().parents[1] / "data")) / "processed"
 
 
 # ------------------------------------------------------------------ registry
@@ -223,11 +225,20 @@ def test_baseline_seasons():
 
 
 # ------------------------------------------------------------------ real data
-@pytest.fixture(scope="module")
-def enriched():
-    if not (PROCESSED / "matches.parquet").exists():
-        pytest.fail("run `python etl.py` first")
-    return M.enrich_matches(pd.read_parquet(PROCESSED / "matches.parquet"), pd.read_parquet(PROCESSED / "shots.parquet"))
+def _slugs():
+    return [c for c in M.CLUBS if (PROCESSED / c / "matches.parquet").exists()] or list(M.CLUBS)
+
+
+@pytest.fixture(scope="module", params=_slugs())
+def enriched(request):
+    """Every real-data test below runs once per club."""
+    slug = request.param
+    if not (PROCESSED / slug / "matches.parquet").exists():
+        pytest.fail(f"run `python etl.py` first (no data for {slug})")
+    e = M.enrich_matches(pd.read_parquet(PROCESSED / slug / "matches.parquet"), pd.read_parquet(PROCESSED / slug / "shots.parquet"),
+                         M.CLUBS[slug]["canonical"], M.load_eras(slug))
+    e.attrs["slug"] = slug
+    return e
 
 
 def test_real_season_xpts_within_2_of_understat(enriched):
@@ -247,7 +258,9 @@ def test_real_record_invariants(enriched):
     assert (enriched[["sim_w", "sim_d", "sim_l"]].sum(axis=1) - 1).abs().max() < 1e-9
     assert (enriched[["mp_w", "mp_d", "mp_l"]].sum(axis=1) - 1).abs().max() < 1e-9
     assert (enriched.xpts_market - (3 * enriched.mp_w + enriched.mp_d)).abs().max() < 1e-12
-    assert set(enriched.era) <= {e["manager"] for e in M.ERAS}, "match outside every era"
+    eras = {e["manager"] for e in M.load_eras(enriched.attrs["slug"])}
+    unknown = enriched[~enriched.era.isin(eras)]
+    assert unknown.empty, f"{len(unknown)} matches outside every era (first: {unknown.kickoff_utc.min()}): add the new manager to config/eras/{enriched.attrs['slug']}.json"
 
 
 def test_real_pnl_matches_definition(enriched):

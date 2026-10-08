@@ -1,0 +1,11 @@
+[
+  {"manager": "Louis van Gaal",     "from": "2014-08-01", "to": "2016-05-26"},
+  {"manager": "José Mourinho",      "from": "2016-05-27", "to": "2018-12-18"},
+  {"manager": "Ole Gunnar Solskjær", "from": "2018-12-19", "to": "2021-11-21"},
+  {"manager": "Michael Carrick (2021)", "slug": "carrick-2021", "from": "2021-11-22", "to": "2021-12-02"},
+  {"manager": "Ralf Rangnick",      "from": "2021-12-03", "to": "2022-05-31"},
+  {"manager": "Erik ten Hag",       "from": "2022-06-01", "to": "2024-10-27"},
+  {"manager": "Ruud van Nistelrooy", "from": "2024-10-28", "to": "2024-11-10"},
+  {"manager": "Ruben Amorim",       "from": "2024-11-11", "to": "2026-01-04"},
+  {"manager": "Michael Carrick",    "from": "2026-01-05", "to": null}
+]

@@ -1,4 +1,4 @@
-# Liverpool FC Performance Tracker
+# Premier League Big Five Performance Tracker
 
 An interactive dashboard of Liverpool's Premier League performance since 2014/15, with a **market lens** that sets
 betting-market expectations beside expected-goals (xG) performance and actual results. One self-contained HTML file,
@@ -7,6 +7,18 @@ no backend, no runtime API calls.
 **Live site:** https://danny23delee.github.io/liverpool_tracker/ (deployed by GitHub Actions; refreshed every Tuesday)
 
 ![Overview](docs/screenshots/overview.png)
+
+## Five clubs, one codebase
+
+The same dashboard is built for **Liverpool, Arsenal, Chelsea, Manchester United and Manchester City**. Click the crest in the
+top-left corner to open the club switcher; the page and season you are on carry across, and each club gets its own colours
+(sidebar, masthead, charts, light and dark themes), its own stadium lettering and its own manager eras. Every club page is a
+separate self-contained file (Liverpool at `dist/index.html`, the others at `dist/<club>/index.html`), each under the 5 MB
+budget. Everything below (sources, methodology, the accuracy tests) applies to every club; the ETL and payload tests run once per
+club.
+
+Adding a sixth club is one entry in `config/clubs.json` (name as Understat spells it, colours, lettering) and one file in
+`config/eras/`.
 
 ## The problem
 
@@ -107,13 +119,13 @@ site stays live when a source changes shape.
 ## Architecture
 
 ```
-etl.py               fetch + cache + clean + join  -> data/processed/*.parquet
+etl.py               fetch + cache + clean + join  -> data/processed/*.parquet (league-wide) and data/processed/<club>/*.parquet
 metrics.py           registry access, baselines, xG simulation, de-vig, market maths, takeaways
-build.py             processed data -> dashboard JSON -> inlined into the template -> dist/index.html
+build.py             processed data -> per-club dashboard JSON + theme -> inlined into the template -> dist/index.html and dist/<club>/index.html
 metrics.json         the metric registry (labels, formats, tooltips, colouring): single source of truth
-config/              eras.json (manager eras by date), teams.json (name mapping), settings.json
+config/              clubs.json (clubs, colours, lettering), eras/<club>.json (manager eras by date), teams.json (name mapping), settings.json
 template/            index.html (vanilla JS + D3 v7 from cdnjs) and methodology.md
-tests/               test_etl / test_metrics / test_build / test_frontend
+tests/               test_etl / test_metrics / test_build / test_clubs / test_frontend / test_switcher (+ fixtures/make_synthetic.py)
 data/external/       optional model_probs.csv (see below)
 ```
 
@@ -127,9 +139,11 @@ of a second and the slowest page draws in under half a second.
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 python -m playwright install chromium                   # only for the browser tests
-python etl.py          # first run fetches ~750 files at 1 request/second (about 13 minutes), then it is cached
-python build.py        # writes dist/index.html; open it in a browser
-python -m pytest -q    # everything above (needs dist/ built first)
+python etl.py          # first run fetches ~750 files for Liverpool plus ~490 per other club at 1 request/second (about 45 minutes in all), then it is cached
+                       # (python etl.py --club arsenal does one club only)
+python build.py        # writes dist/index.html and dist/<club>/index.html; open one in a browser
+                       # (python build.py arsenal builds one club)
+python -m pytest -q    # everything above (needs dist/ built first); TRACKER_CLUB=chelsea pytest tests/test_frontend.py runs the browser suite on another club's page
 ```
 
 Python 3.11+ is the target; it was developed on 3.10 and CI runs 3.11. Behind a TLS-inspecting corporate proxy on Windows, `truststore` is installed
@@ -138,7 +152,7 @@ automatically and uses the OS certificate store while keeping verification on.
 ## Deployment
 
 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) runs weekly (Tuesday 06:00 UTC), on manual dispatch and on
-pushes to `main`: **ETL → pipeline/metric/payload tests → build → browser tests → deploy to GitHub Pages**. If anything
+pushes to `main`: **ETL → pipeline/metric/payload/config tests (every club) → build → browser tests (the full suite once per club, in parallel, plus the switcher) → deploy to GitHub Pages**. If anything
 fails, nothing is deployed. Raw responses are cached between runs, so after the first run only new matches are fetched.
 To enable it: repository *Settings → Pages → Build and deployment → Source: GitHub Actions*.
 
@@ -178,8 +192,11 @@ season,club,kpi_id,value
 Shot-level and player data: [Understat](https://understat.com). Results and odds:
 [football-data.co.uk](https://www.football-data.co.uk). Charts: [D3](https://d3js.org). This is an independent portfolio
 project and is not affiliated with or endorsed by Liverpool FC, the Premier League, Understat or football-data.co.uk. The
-only club imagery is the Liverpool crest in the sidebar, an image supplied by the project owner (`assets/crest.png`, shown
-in that one place; if the file is absent the site shows a plain red bar instead). No player photos or other licensed
+only club imagery is the Liverpool crest, an image supplied by the project owner (`assets/crest.png`), shown in the sidebar and
+the club switcher. The other four clubs use an **original monogram badge** (initials on a shield in the club colours, generated in
+`build.py`); to use an official crest instead, drop a transparent PNG at `assets/crests/<club>.png` (for example
+`assets/crests/arsenal.png`) and rebuild: it is resized and inlined exactly like Liverpool's. If the Liverpool file is absent the
+site shows a plain red bar instead. No player photos or other licensed
 imagery are used.
 
 Code is released under the MIT licence (see [LICENSE](LICENSE)); the data belongs to its sources and is subject to their terms.

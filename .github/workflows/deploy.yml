@@ -19,7 +19,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
 
@@ -29,12 +29,11 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: |
-          python -m pip install -r requirements.txt
-          python -m playwright install --with-deps chromium
+        run: python -m pip install -r requirements.txt
 
-      # Raw responses are cached between runs, so only new matches are fetched after the first run
-      # (the first run downloads ~750 files at one request per second, about 13 minutes).
+      # Raw responses are cached between runs, so only new matches are fetched after the first run. The first run
+      # downloads about 750 files for Liverpool plus about 490 match files for each of the other four clubs (a match between
+      # two tracked clubs is fetched once), at one request per second: roughly 45 minutes in total.
       - name: Restore raw data cache
         uses: actions/cache/restore@v4
         with:
@@ -42,17 +41,14 @@ jobs:
           key: raw-v1-${{ github.run_id }}
           restore-keys: raw-v1-
 
-      - name: ETL (fetch, cache, clean, join)
+      - name: ETL (fetch, cache, clean, join) for every club
         run: python etl.py
 
-      - name: Test pipeline, metrics and payload
-        run: python -m pytest tests/test_etl.py tests/test_metrics.py tests/test_build.py -q
+      - name: Test pipeline, metrics, club configuration and payload (every club)
+        run: python -m pytest tests/test_etl.py tests/test_metrics.py tests/test_style.py tests/test_build.py tests/test_clubs.py -q
 
-      - name: Build dist/index.html
+      - name: Build dist/ (Liverpool at the root, one folder per other club)
         run: python build.py
-
-      - name: Test the built site in a real browser
-        run: python -m pytest tests/test_frontend.py -q
 
       - name: Save raw data cache (even if a later step failed, so a long first fetch is not lost)
         if: always()
@@ -61,22 +57,80 @@ jobs:
           path: data/raw
           key: raw-v1-${{ github.run_id }}
 
+      - name: Share the build with the browser test jobs
+        uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: |
+            dist
+            data/processed
+          retention-days: 1
+
+  # The full browser suite runs against each club's page, in parallel.
+  frontend:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        club: [liverpool, arsenal, chelsea, manchester-united, manchester-city]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+      - name: Test the built page in a real browser
+        run: python -m pytest tests/test_frontend.py -q
+        env:
+          TRACKER_CLUB: ${{ matrix.club }}
       - name: Keep screenshots for inspection
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: screenshots
+          name: screenshots-${{ matrix.club }}
           path: artifacts/screenshots
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Upload site
-        uses: actions/upload-pages-artifact@v3
+  # The club switcher and per-club themes, across all five built pages.
+  switcher:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          path: dist
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+      - run: python -m pytest tests/test_switcher.py -q
+      - name: Keep screenshots for inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-clubs
+          path: artifacts/screenshots
+          if-no-files-found: ignore
+          retention-days: 14
 
   deploy:
-    needs: build   # skipped automatically if any step above failed
+    needs: [build, frontend, switcher]   # skipped automatically if any job above failed: the last good site stays live
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -85,5 +139,11 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
       - id: deployment
         uses: actions/deploy-pages@v4

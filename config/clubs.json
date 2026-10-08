@@ -1,0 +1,162 @@
+{
+ "_comment": "One entry per club. canonical = the Understat team title. theme.hue tints the neutral greys (the Liverpool palette is the template default); brand is the sidebar/masthead ground (white text on it, >= 4.5:1); the light/dark blocks hold the club colour used for marks and links on the page surface. lettering is the faded word in the sidebar.",
+ "default": "liverpool",
+ "clubs": [
+  {
+   "slug": "liverpool",
+   "name": "Liverpool",
+   "full_name": "Liverpool FC",
+   "canonical": "Liverpool",
+   "initials": "LFC",
+   "path": "",
+   "crest": "assets/crest.png",
+   "lettering": "ANFIELD",
+   "record_ink": "#a30d25",
+   "theme": null
+  },
+  {
+   "slug": "arsenal",
+   "name": "Arsenal",
+   "full_name": "Arsenal FC",
+   "canonical": "Arsenal",
+   "initials": "AFC",
+   "path": "arsenal/",
+   "crest": "assets/crests/arsenal.png",
+   "lettering": "EMIRATES",
+   "record_ink": "#a30008",
+   "theme": {
+    "hue": 2,
+    "brand": "#db0007",
+    "brand_deep": "#a30008",
+    "brand_deeper": "#80000a",
+    "pattern": "#b50006",
+    "light": {
+     "accent": "#db0007",
+     "mark": "#a30008",
+     "goal": "#db0007",
+     "s1": "#00998f",
+     "s2": "#e0b400",
+     "s3": "#063672",
+     "bar_cmp": "#b99aa0"
+    },
+    "dark": {
+     "accent": "#db0007",
+     "mark": "#ff5a5f",
+     "goal": "#ff4349",
+     "s1": "#00b2a9",
+     "s2": "#f6eb61",
+     "s3": "#7aa7e6",
+     "bar_cmp": "#7a5a60"
+    }
+   }
+  },
+  {
+   "slug": "chelsea",
+   "name": "Chelsea",
+   "full_name": "Chelsea FC",
+   "canonical": "Chelsea",
+   "initials": "CFC",
+   "path": "chelsea/",
+   "crest": "assets/crests/chelsea.png",
+   "lettering": "STAMFORD BRIDGE",
+   "record_ink": "#023a7d",
+   "theme": {
+    "hue": 215,
+    "brand": "#034694",
+    "brand_deep": "#023370",
+    "brand_deeper": "#02275a",
+    "pattern": "#023d82",
+    "light": {
+     "accent": "#034694",
+     "mark": "#034694",
+     "goal": "#034694",
+     "s1": "#d9480f",
+     "s2": "#b88a00",
+     "s3": "#6b7280",
+     "bar_cmp": "#9aa6b8"
+    },
+    "dark": {
+     "accent": "#034694",
+     "mark": "#6aa4ff",
+     "goal": "#5b9bff",
+     "s1": "#f2c230",
+     "s2": "#ff8a4c",
+     "s3": "#9aa6b8",
+     "bar_cmp": "#566580"
+    }
+   }
+  },
+  {
+   "slug": "manchester-united",
+   "name": "Manchester United",
+   "full_name": "Manchester United FC",
+   "canonical": "Manchester United",
+   "initials": "MUFC",
+   "path": "manchester-united/",
+   "crest": "assets/crests/manchester-united.png",
+   "lettering": "OLD TRAFFORD",
+   "record_ink": "#a8200f",
+   "theme": {
+    "hue": 5,
+    "brand": "#da291c",
+    "brand_deep": "#a8200f",
+    "brand_deeper": "#86190c",
+    "pattern": "#b82216",
+    "light": {
+     "accent": "#da291c",
+     "mark": "#a8200f",
+     "goal": "#da291c",
+     "s1": "#00998f",
+     "s2": "#b88a00",
+     "s3": "#1f1f1f",
+     "bar_cmp": "#b99aa0"
+    },
+    "dark": {
+     "accent": "#da291c",
+     "mark": "#ff6a5c",
+     "goal": "#ff5446",
+     "s1": "#00b2a9",
+     "s2": "#fbe122",
+     "s3": "#d6d6d6",
+     "bar_cmp": "#7a5a60"
+    }
+   }
+  },
+  {
+   "slug": "manchester-city",
+   "name": "Manchester City",
+   "full_name": "Manchester City FC",
+   "canonical": "Manchester City",
+   "initials": "MCFC",
+   "path": "manchester-city/",
+   "crest": "assets/crests/manchester-city.png",
+   "lettering": "ETIHAD",
+   "record_ink": "#1c2c5b",
+   "theme": {
+    "hue": 218,
+    "brand": "#1c2c5b",
+    "brand_deep": "#121c3d",
+    "brand_deeper": "#0c1330",
+    "pattern": "#26397a",
+    "light": {
+     "accent": "#1c2c5b",
+     "mark": "#2f7dc0",
+     "goal": "#2a74b5",
+     "s1": "#d9480f",
+     "s2": "#b88a00",
+     "s3": "#1c2c5b",
+     "bar_cmp": "#9aa6b8"
+    },
+    "dark": {
+     "accent": "#1c2c5b",
+     "mark": "#6cabdd",
+     "goal": "#8cc3ee",
+     "s1": "#f2c230",
+     "s2": "#ff8a4c",
+     "s3": "#c7d3ea",
+     "bar_cmp": "#566580"
+    }
+   }
+  }
+ ]
+}

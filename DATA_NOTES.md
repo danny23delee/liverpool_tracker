@@ -129,3 +129,34 @@ Result of the S0 stop rule: Defence has 3 computable axes and Attack has 2, so t
 - The Passive ◄► Active axis is given two KPIs (PPDA and defensive actions per match) instead of one, to respect the "at least 2 KPIs" rule. They are correlated (PPDA is the opponent's passes divided by the actions), so the confidence is capped at medium.
 - The Lenient ◄► Tight axis uses two in-box KPIs; the central-rectangle KPI is dropped (needs league-wide coordinates).
 - The Grouped axis replaces the two coordinate-based KPIs with in-box shot share.
+
+
+## Multi-club (Liverpool, Arsenal, Chelsea, Manchester United, Manchester City)
+
+**What changed in the data layer.** League payloads, team pages and football-data CSVs are club-independent and shared. Only the
+per-match files (`getMatchData/<id>`, shots and rosters) are per club: one fetch per match involving a tracked club, cached by match
+id, so Liverpool v Arsenal is fetched once. Understat team ids are no longer hard-coded: each club is found by its canonical title
+(the Understat `title`, which `config/clubs.json` stores) and the ETL fails if a season has zero or several teams with that title.
+Processed tables: league-wide `team_matches`, `team_seasons`, `style_raw` in `data/processed/`; per club `matches`, `fixtures`, `shots`,
+`rosters`, `player_seasons` in `data/processed/<slug>/`.
+
+**Request budget (first run).** About 750 requests for Liverpool (13 league files, 260 team pages, 13 CSVs, ~490 matches) plus
+about 490 match files for each other club, less the matches between two tracked clubs (about 24 per pair across 12 seasons).
+Roughly 1,900 extra requests, about 32 minutes at 1 request per second. The CI cache keeps this to the weekly delta afterwards.
+
+**Manager eras: UNVERIFIED, needs a human check.** `config/eras/<slug>.json` was written from memory without access to a source
+(the sandbox it was written in could not reach the web). Dates up to 2025 are believed right to within a few days; the following
+are the ones to check against the clubs' announcements before trusting the era filter:
+- Arsenal: Ljungberg interim stint (30 Nov to 21 Dec 2019) and Arteta's start (22 Dec 2019).
+- Chelsea: Hiddink (18 Dec 2015 on), Lampard interim spring 2023, Maresca to 31 Dec 2025 and **Liam Rosenior from 1 Jan 2026**; a web search
+  on 8 Oct 2026 hinted at a further change in 2026 that this file does not contain.
+- Manchester United: Carrick caretaker (Nov to Dec 2021), van Nistelrooy interim (28 Oct to 10 Nov 2024), Amorim to 4 Jan 2026 and
+  **Carrick from 5 Jan 2026** (the Darren Fletcher interim match is counted inside Carrick's era).
+- Manchester City: **Guardiola is shown as still in charge**; the same web search suggested he has left and that Enzo Maresca has
+  taken over. Add the new era (with dates) to `config/eras/manchester-city.json` and the Guardiola end date.
+A match whose date falls in no era is labelled "Unknown" and `tests/test_metrics.py::test_real_record_invariants` fails with the
+file to edit, so a missing manager change stops the deploy rather than silently mislabelling matches. A change that *is* in
+the file but has wrong dates is not detectable by tests.
+
+**Team-name mapping.** All five clubs use names already in `config/teams.json` ("Man City" and "Man United" on football-data,
+"Manchester City" and "Manchester United" on Understat). Arsenal and Chelsea are spelled identically in both sources.

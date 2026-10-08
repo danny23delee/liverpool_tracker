@@ -1,12 +1,19 @@
 """ETL: fetch + cache + clean + join -> data/processed/*.parquet.
 
-Run `python etl.py` (fetch, cache, build) or `python etl.py --no-fetch` (rebuild from cache).
+Run `python etl.py` (fetch, cache, build) or `python etl.py --no-fetch` (rebuild from cache). `--club arsenal`
+limits the club-specific work to one club (the league-wide tables are always built).
+
+League-wide tables (every club's matches and season aggregates, style inputs) are built once into
+data/processed/; the club-specific ones (matches joined to odds, shots, rosters, player seasons, fixtures)
+go to data/processed/<slug>/ for each club in config/clubs.json. Cached raw responses are shared, so a
+match between two tracked clubs is fetched once.
 """
 from __future__ import annotations
 
 import argparse
 import datetime as dt
 import json
+import os
 import time
 from pathlib import Path
 
@@ -20,8 +27,9 @@ except ImportError:  # pragma: no cover
     pass
 
 ROOT = Path(__file__).parent
-RAW = ROOT / "data" / "raw"
-UA = "Mozilla/5.0 (liverpool-tracker portfolio project; polite, cached, <=1 req/s)"
+DATA = Path(os.environ.get("TRACKER_DATA", ROOT / "data"))   # TRACKER_DATA lets tests point at a synthetic data tree
+RAW = DATA / "raw"
+UA = "Mozilla/5.0 (club-performance-tracker portfolio project; polite, cached, <=1 req/s)"
 MIN_INTERVAL = 1.0  # seconds between requests to any source
 
 _last_request = 0.0
@@ -111,10 +119,10 @@ def football_data_csv(season_start: int, refresh: bool = False) -> Path:
 
 
 # ---------------------------------------------------------------- config / constants
-PROCESSED = ROOT / "data" / "processed"
-FIRST_SEASON = 2014
-LIV_ID = "87"
-LIV = "Liverpool"
+PROCESSED = DATA / "processed"
+FIRST_SEASON = int(os.environ.get("TRACKER_FIRST_SEASON", 2014))
+CLUBS_CFG = json.loads((ROOT / "config" / "clubs.json").read_text(encoding="utf-8"))
+CLUBS = {c["slug"]: c for c in CLUBS_CFG["clubs"]}
 TEAMS = json.loads((ROOT / "config" / "teams.json").read_text(encoding="utf-8"))
 FD_TO_CANON = TEAMS["football_data_to_canonical"]
 
@@ -136,9 +144,28 @@ def _is_complete(league: dict) -> bool:
     return all(m["isResult"] for m in league["dates"])
 
 
+def club_dir(slug: str) -> Path:
+    return PROCESSED / slug
+
+
+def club_id(league: dict, club: str) -> str:
+    """Understat team id of a club (matched on its canonical title) in a league payload; exactly one must match."""
+    ids = [tid for tid, t in league["teams"].items() if t["title"] == club]
+    if len(ids) != 1:
+        raise ValueError(f"expected exactly one Understat team titled {club!r}, found {len(ids)}")
+    return ids[0]
+
+
+def _club_matches(league: dict, club: str):
+    cid = club_id(league, club)
+    return [m for m in league["dates"] if cid in (m["h"]["id"], m["a"]["id"])]
+
+
 # ---------------------------------------------------------------- fetch orchestration
-def fetch_all() -> None:
-    """Fetch (and cache) everything the build needs. Completed seasons are never re-fetched."""
+def fetch_all(slugs: list[str] | None = None) -> None:
+    """Fetch (and cache) everything the build needs for the given clubs (default all). Completed seasons are
+    never re-fetched, and a match JSON is shared by both clubs when two tracked clubs played each other."""
+    clubs = [CLUBS[s]["canonical"] for s in (slugs or CLUBS)]
     for s in season_range():
         cache = RAW / "understat" / f"league_EPL_{s}.json"
         refresh = False
@@ -146,9 +173,10 @@ def fetch_all() -> None:
             refresh = not _is_complete(json.loads(cache.read_text(encoding="utf-8")))
         league = understat_league(s, refresh=refresh)
         complete = _is_complete(league)
-        for m in league["dates"]:
-            if LIV_ID in (m["h"]["id"], m["a"]["id"]) and m["isResult"]:
-                understat_match(m["id"])  # a played match never changes: cached forever
+        for club in clubs:
+            for m in _club_matches(league, club):
+                if m["isResult"]:
+                    understat_match(m["id"])  # a played match never changes: cached forever
         for t in league["teams"].values():  # team payloads: shots for/against by situation
             name = t["title"].replace(" ", "_")
             cache = RAW / "understat" / f"team_{name}_{s}.json"
@@ -233,11 +261,12 @@ def t_goals(lg: dict, title: str) -> int:
     return sum(int(h["scored"]) for h in lg["teams"][tid]["history"])
 
 
-def build_shots_rosters(leagues: dict[int, dict]) -> tuple[pd.DataFrame, pd.DataFrame]:
+def build_shots_rosters(leagues: dict[int, dict], club: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Shots and player-match rosters (both teams) for every played match of `club`."""
     shots, rosters = [], []
     for s, lg in leagues.items():
-        for m in lg["dates"]:
-            if not (m["isResult"] and LIV_ID in (m["h"]["id"], m["a"]["id"])):
+        for m in _club_matches(lg, club):
+            if not m["isResult"]:
                 continue
             md = understat_match(m["id"])
             names = {"h": m["h"]["title"], "a": m["a"]["title"]}
@@ -264,16 +293,16 @@ def build_shots_rosters(leagues: dict[int, dict]) -> tuple[pd.DataFrame, pd.Data
     return pd.DataFrame(shots), pd.DataFrame(rosters)
 
 
-def build_player_seasons(rosters: pd.DataFrame, shots: pd.DataFrame) -> pd.DataFrame:
-    """Liverpool player-season totals from player-match rosters (+ non-penalty split from shots)."""
-    r = rosters[rosters.team == LIV]
+def build_player_seasons(rosters: pd.DataFrame, shots: pd.DataFrame, club: str) -> pd.DataFrame:
+    """The club's player-season totals from player-match rosters (+ non-penalty split from shots)."""
+    r = rosters[rosters.team == club]
     ps = r.groupby(["season", "player_id", "player"], as_index=False).agg(
         position=("position", lambda s: s[s != "Sub"].mode().iat[0] if (s != "Sub").any() else "Sub"),
         apps=("minutes", lambda s: int((s > 0).sum())), minutes=("minutes", "sum"),
         goals=("goals", "sum"), own_goals=("own_goals", "sum"), shots=("shots", "sum"),
         xg=("xg", "sum"), assists=("assists", "sum"), xa=("xa", "sum"), key_passes=("key_passes", "sum"),
         xgchain=("xgchain", "sum"), xgbuildup=("xgbuildup", "sum"))
-    s = shots[(shots.team == LIV) & (shots.situation != "Penalty") & (shots.result != "OwnGoal")]
+    s = shots[(shots.team == club) & (shots.situation != "Penalty") & (shots.result != "OwnGoal")]
     np_ = s.groupby(["season", "player_id"], as_index=False).agg(
         npxg=("xg", "sum"), npg=("result", lambda x: int((x == "Goal").sum())))
     ps = ps.merge(np_, on=["season", "player_id"], how="left")
@@ -304,17 +333,17 @@ def load_football_data() -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
-def build_matches(team_matches: pd.DataFrame, shots: pd.DataFrame) -> pd.DataFrame:
-    """Liverpool matches joined exactly once to football-data results and odds.
+def build_matches(team_matches: pd.DataFrame, shots: pd.DataFrame, club: str) -> pd.DataFrame:
+    """The club's matches joined exactly once to football-data results and odds.
 
     xg/xga are the sums of the match's shot xG (what every shot map, xG race and the xG
     simulation use). Understat's own team-level figure is kept as xg_reported/xga_reported:
     it is lower than the shot sum in ~17% of team-matches (see DATA_NOTES.md).
     """
     fd = load_football_data()
-    liv = team_matches[team_matches.team == LIV].copy()
-    liv["home"] = liv.apply(lambda r: LIV if r.side == "h" else r.opponent, axis=1)
-    liv["away"] = liv.apply(lambda r: r.opponent if r.side == "h" else LIV, axis=1)
+    liv = team_matches[team_matches.team == club].copy()
+    liv["home"] = liv.apply(lambda r: club if r.side == "h" else r.opponent, axis=1)
+    liv["away"] = liv.apply(lambda r: r.opponent if r.side == "h" else club, axis=1)
     liv["date"] = liv.kickoff_utc.dt.normalize()
     fd_by_pair = {k: g for k, g in fd.groupby(["home", "away"])}
     out = []
@@ -345,7 +374,7 @@ def build_matches(team_matches: pd.DataFrame, shots: pd.DataFrame) -> pd.DataFra
     m = pd.DataFrame(out)
     sx = shots.groupby(["match_id", "team"]).xg.sum()
     m["xg_reported"], m["xga_reported"] = m["xg"], m["xga"]
-    m["xg"] = [sx.get((r.match_id, LIV), 0.0) for r in m.itertuples()]
+    m["xg"] = [sx.get((r.match_id, club), 0.0) for r in m.itertuples()]
     m["xga"] = [sx.get((r.match_id, r.opponent), 0.0) for r in m.itertuples()]
     if m.fd_row_key.duplicated().any():
         raise ValueError("a football-data row joined to more than one match")
@@ -396,30 +425,43 @@ def build_style_raw(leagues: dict[int, dict]) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values(["season_start", "club"]).reset_index(drop=True)
 
 
-def build() -> dict[str, pd.DataFrame]:
+def build_club(slug: str, leagues: dict[int, dict], tm: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    """The club-specific tables, written to data/processed/<slug>/."""
+    club = CLUBS[slug]["canonical"]
+    shots, rosters = build_shots_rosters(leagues, club)
+    tables = dict(
+        matches=build_matches(tm, shots, club),
+        fixtures=pd.DataFrame([
+            dict(match_id=int(m["id"]), season=season_label(s), kickoff_utc=pd.Timestamp(m["datetime"]),
+                 home=m["h"]["title"], away=m["a"]["title"], played=bool(m["isResult"]))
+            for s, lg in leagues.items() for m in _club_matches(lg, club)]),
+        shots=shots, rosters=rosters, player_seasons=build_player_seasons(rosters, shots, club))
+    out = club_dir(slug)
+    out.mkdir(parents=True, exist_ok=True)
+    for name, df in tables.items():
+        df.to_parquet(out / f"{name}.parquet", index=False)
+        print(f"{slug}/{name}: {len(df)} rows", flush=True)
+    return tables
+
+
+def build(slugs: list[str] | None = None) -> None:
     leagues = {s: understat_league(s) for s in season_range()}
     tm = build_team_matches(leagues)
-    ts = build_team_seasons(leagues, tm)
-    shots, rosters = build_shots_rosters(leagues)
-    matches = build_matches(tm, shots)
-    ps = build_player_seasons(rosters, shots)
-    fixtures = pd.DataFrame([
-        dict(match_id=int(m["id"]), season=season_label(s), kickoff_utc=pd.Timestamp(m["datetime"]),
-             home=m["h"]["title"], away=m["a"]["title"], played=bool(m["isResult"]))
-        for s, lg in leagues.items() for m in lg["dates"] if LIV_ID in (m["h"]["id"], m["a"]["id"])])
-    tables = dict(matches=matches, fixtures=fixtures, team_matches=tm, team_seasons=ts,
-                  shots=shots, rosters=rosters, player_seasons=ps, style_raw=build_style_raw(leagues))
+    shared = dict(team_matches=tm, team_seasons=build_team_seasons(leagues, tm), style_raw=build_style_raw(leagues))
     PROCESSED.mkdir(parents=True, exist_ok=True)
-    for name, df in tables.items():
+    for name, df in shared.items():
         df.to_parquet(PROCESSED / f"{name}.parquet", index=False)
         print(f"{name}: {len(df)} rows", flush=True)
-    return tables
+    for slug in (slugs or CLUBS):
+        build_club(slug, leagues, tm)
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-fetch", action="store_true", help="rebuild from cache only")
+    ap.add_argument("--club", choices=list(CLUBS), help="only this club's data (default: all clubs)")
     args = ap.parse_args()
+    which = [args.club] if args.club else None
     if not args.no_fetch:
-        fetch_all()
-    build()
+        fetch_all(which)
+    build(which)

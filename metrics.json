@@ -369,7 +369,7 @@
  {
   "id": "shot_map",
   "label": "Shot map",
-  "description": "Every Liverpool shot in the selection, drawn on a 105 x 68 m pitch attacking left to right. Circle size grows with the shot xG; filled red circles are goals. Own goals are not shots and are not drawn.",
+  "description": "Every Liverpool shot in the selection, drawn on a 105 x 68 m pitch attacking left to right. Circle size grows with the shot xG; filled circles are goals. Own goals are not shots and are not drawn.",
   "unit": "count",
   "higher_is_better": null,
   "format": ",d",
@@ -379,7 +379,7 @@
  {
   "id": "shots_conceded_map",
   "label": "Shots conceded map",
-  "description": "Every shot Liverpool faced. Opposition coordinates are flipped so that Liverpool defend the left goal and attack left to right, as on the attack map. Circle size grows with xG; filled red circles are goals conceded from shots.",
+  "description": "Every shot Liverpool faced. Opposition coordinates are flipped so that Liverpool defend the left goal and attack left to right, as on the attack map. Circle size grows with xG; filled circles are goals conceded from shots.",
   "unit": "count",
   "higher_is_better": null,
   "format": ",d",
