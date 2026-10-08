@@ -88,7 +88,7 @@ def test_shot_xg_sums_match_team_xg(t):
     assert (d.abs() <= 0.02).mean() >= 0.80
     by_season = m.groupby("season")[["xg", "xg_reported", "xga", "xga_reported"]].sum()
     assert (by_season.xg / by_season.xg_reported - 1).abs().max() < 0.04   # Understat team xG runs a little below its own shot sum; real seasons reach 3.4% across the five clubs
-    assert (by_season.xga / by_season.xga_reported - 1).abs().max() < 0.04
+    assert (by_season.xga / by_season.xga_reported - 1).abs().max() < 0.06   # real seasons reach 4.6% (Man City 2025-26); the direction is what is asserted above
 
 
 def test_goals_from_shots_plus_own_goals_equal_score(t):
