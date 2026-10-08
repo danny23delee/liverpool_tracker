@@ -267,7 +267,8 @@ def test_routing_is_shareable_and_state_syncs(browser, data):
     assert season in pg.text_content("#title") and f"{manager['manager']} era" in pg.inner_text("#subtitle")
     pg.select_option("#sel-season", other)
     pg.wait_for_function(f"location.hash.includes('season={other}')")
-    assert f"era={slug}" in pg.evaluate("location.hash")
+    from urllib.parse import unquote
+    assert f"era={slug}" in unquote(pg.evaluate("location.hash"))   # the browser percent-encodes non-ASCII slugs such as solskjær
     pg.goto(DIST.as_uri() + "#/overview?season=1999-00&era=nonsense")  # invalid params fall back
     pg.wait_for_function("window.__tracker && window.__tracker.ready")
     assert pg.input_value("#sel-season") == data["default_season"] and pg.input_value("#sel-era") == "all"

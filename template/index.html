@@ -249,7 +249,7 @@ table.sq td .pl { all: unset; cursor: pointer; font-weight: 600; } table.sq td .
 .cmp-bar .zero { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--ink-2); }
 .cmp-bar b { text-align: right; font-variant-numeric: tabular-nums; }
 .score-card { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px 28px; align-items: center; }
-.score-card .tm { font: 700 clamp(26px, 3vw, 40px)/1.1 var(--font-display); letter-spacing: .02em; text-transform: uppercase; } .score-card .tm.away { text-align: right; }
+.score-card .tm { font: 700 clamp(24px, 2.6vw, 40px)/1.1 var(--font-display); letter-spacing: .02em; text-transform: uppercase; min-width: 0; overflow-wrap: anywhere; }   /* long names (Wolverhampton Wanderers v Manchester United) must wrap, not widen the page */ .score-card .tm.away { text-align: right; }
 .score-card .tm small { display: block; font: 400 15px/1.4 var(--font-body); color: var(--ink-2); margin-top: 6px; text-transform: none; letter-spacing: 0; }
 .score-card .sc { font: 700 clamp(48px, 6vw, 84px)/1 var(--font-display); font-variant-numeric: tabular-nums; text-align: center; }
 .score-card .sc small { display: block; font: 500 14px/1.4 var(--font-body); color: var(--muted); margin-top: 8px; }
