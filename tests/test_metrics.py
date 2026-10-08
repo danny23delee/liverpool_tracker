@@ -253,8 +253,10 @@ def test_real_record_invariants(enriched):
         assert r["points"] == 3 * r["wins"] + r["draws"]
         assert r["points"] == int(d.pts.sum()) and r["goals_for"] == int(d.gf.sum())
         assert r["goals_from_shots"] <= r["goals_for"]
-    p = enriched[["sim_w", "sim_d", "sim_l", "mp_w", "mp_d", "mp_l", "mp_proportional_w", "mp_shin_w"]]
-    assert ((p > 0) & (p < 1)).all().all()
+    p = enriched[["mp_w", "mp_d", "mp_l", "mp_proportional_w", "mp_shin_w"]]
+    assert ((p > 0) & (p < 1)).all().all()                       # de-vigged market probabilities are strictly inside (0, 1)
+    q = enriched[["sim_w", "sim_d", "sim_l"]]
+    assert ((q >= 0) & (q <= 1)).all().all()                     # an exact xG simulation is 0 when a side had no shots (a dominant side cannot lose)
     assert (enriched[["sim_w", "sim_d", "sim_l"]].sum(axis=1) - 1).abs().max() < 1e-9
     assert (enriched[["mp_w", "mp_d", "mp_l"]].sum(axis=1) - 1).abs().max() < 1e-9
     assert (enriched.xpts_market - (3 * enriched.mp_w + enriched.mp_d)).abs().max() < 1e-12

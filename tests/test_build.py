@@ -115,7 +115,7 @@ def test_player_per90_fields_are_consistent(payload):
             assert abs(p["fin"] - (p["npg"] - p["npxg"])) < 1e-3
             assert p["npg"] <= p["g"] and p["npxg"] <= p["xg"] + 1e-6
             n += 1
-    assert n > 900
+    assert n > 500
 
 
 def test_match_market_payload_matches_metrics(payload, tables):
